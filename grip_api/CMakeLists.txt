@@ -122,7 +122,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/modular_manipulation_framework_api.cpp
+#   src/${PROJECT_NAME}/grip_api.cpp
 # )
 
 ## Add cmake target dependencies of the library
