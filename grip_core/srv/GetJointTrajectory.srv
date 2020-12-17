@@ -1,0 +1,4 @@
+string trajectory_name
+---
+trajectory_msgs/JointTrajectory joint_trajectory
+bool success

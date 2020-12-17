@@ -1,0 +1,4 @@
+sensor_msgs/JointState joint_state
+string joint_state_name
+---
+bool success

@@ -1,0 +1,151 @@
+#!/usr/bin/env python
+
+# Copyright 2020 Shadow Robot Company Ltd.
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+{% for state_to_import in state_machine.states_source %}
+from {{ state_to_import[0] }}.{{ state_to_import[1] }} import {{ state_to_import[2] }}
+{% endfor %}
+import smach
+from sr_robot_commander.sr_arm_commander import SrArmCommander
+from moveit_commander.exception import MoveItCommanderException
+from moveit_msgs.msg import PlanningSceneComponents, PlanningScene
+from moveit_msgs.srv import GetPlanningScene
+from grip_core.msg import GraspAction
+from grip_core.srv import SetInitACM
+import actionlib
+import rospy
+
+
+class {{ state_machine.type }}(smach.StateMachine):
+
+    """
+        Generic state machine allowing to create a behavior depending on the states' outcome
+    """
+
+    def __init__(self, outcomes={% if "outcomes" in state_machine.parameters%}{{ state_machine.parameters.outcomes }}{% else %}["task success", "task failure"]{% endif %}):
+        """
+            Initialise the state machine and all information required to run it
+        """
+        smach.StateMachine.__init__(self, outcomes=outcomes)
+        with self:
+        {% for state_name, state in state_machine.components.items() %}
+            smach.StateMachine.add("{{ state_name }}", {{ state.type }}({% for param_name, param_value in state.parameters.items() %}{% if param_name != "name" %}{{ param_name }}={% if param_value is string and "self" not in param_value %}"{{ param_value }}"{% else %}{{ param_value }}{% endif %}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}), transitions={{ state.transitions}})
+        {% endfor %}
+        # Initialise all userdata parameters
+        self.initialise_userdata_parameters()
+
+    def initialise_userdata_parameters(self):
+        """
+            Initialise all the userdata values required to run the state machine
+        """
+        # Store a potentially selected grasp that can be executed
+        self.userdata.selected_grasp = None
+        # Store a potentially selected joint state that can be executed
+        self.userdata.selected_joint_state = None
+        # Store a potentially selected trajectory that can be executed
+        self.userdata.selected_trajectory = None
+        # Store a potentially selected pose that can be executed
+        self.userdata.selected_pose = None
+        # Store a potentially selected plan that can be executed
+        self.userdata.selected_plan = None
+        # Get and store the original ACM that should correspond to the one provided indirectly by the SRDF file
+        self.get_initial_acm()
+        # Initialise the arm commander
+        self.initialise_arm_commander()
+        # Initialise the grasp controller
+        self.initialise_manipulator_controller_client()
+        # Store in userdata all information store in ROS param server
+        self.initialise_userdata_from_param_server()
+
+    def get_initial_acm(self):
+        """
+            Get and store the original Allowed Collision Matrix (ACM) that should correspond to the one provided
+            indirectly by the SRDF file
+        """
+        # Create a Planning Scene msg
+        planning_scene_diff = PlanningScene()
+        planning_scene_diff.is_diff = True
+        # Wait for the service providing the current planning scene (blocking state)
+        rospy.wait_for_service("/get_planning_scene")
+        # Get the proxy for the service
+        get_planning_scene_service = rospy.ServiceProxy("/get_planning_scene", GetPlanningScene)
+        # Create a request for the service that contains the ACM
+        request = PlanningSceneComponents(components=(PlanningSceneComponents.ALLOWED_COLLISION_MATRIX |
+                                                      PlanningSceneComponents.SCENE_SETTINGS))
+        # Get the response of the request through the proxy
+        response = get_planning_scene_service(request)
+        # Get the name of all the links of the scene
+        link_names = response.scene.allowed_collision_matrix.entry_names
+        # Get the prefix that must be before all links of the manipulator to discriminate it over the links of the arm
+        manipulator_prefix = rospy.get_param("manipulator_prefix")
+        # Get and store the indices corresponding to the links of the manipulator
+        hand_links_indices = []
+        for index, link_name in enumerate(link_names):
+            if manipulator_prefix in link_name:
+                hand_links_indices.append(index)
+        # Send this to the ROS parameter server
+        rospy.set_param("manipulator_links_indices", hand_links_indices)
+        # Use this ACM as the initial one for the manager
+        init_acm = rospy.ServiceProxy("set_init_acm", SetInitACM)
+        storage_response = init_acm(response.scene.allowed_collision_matrix)
+        # Sanity check
+        if not storage_response.success:
+            rospy.logwarn("Error while setting the initial ACM")
+
+    def initialise_arm_commander(self):
+        """
+            Initialise the arm commander that will take care of controlling the robot arm
+        """
+        # Get the name of the group that will be used in Moveit!
+        arm_moveit_group = rospy.get_param("arm_group_name")
+        rospy.loginfo("Initialising arm commander for move group: {}".format(arm_moveit_group))
+        # Create the SrArmCommander corresponding to the aforementioned group
+        arm_commander = SrArmCommander(name=arm_moveit_group, set_ground=False)
+        # If it fails, raises an exception
+        if arm_commander is None:
+            raise MoveItCommanderException("Failed to initialise arm commander!")
+        # Otherwise set the options of the arm commander coming from the user
+        else:
+            arm_commander.set_max_velocity_scaling_factor(rospy.get_param("robot_speed_factor"))
+            arm_commander.set_planner_id(rospy.get_param("planner_name"))
+            arm_commander.set_num_planning_attempts(rospy.get_param("number_plan_attempt"))
+            arm_commander.set_planning_time(rospy.get_param("planning_max_time"))
+
+            # Store the arm controller in userdata
+            self.userdata.arm_commander = arm_commander
+
+    def initialise_manipulator_controller_client(self):
+        """
+            Initialise the grasp client allowing to control the hand
+        """
+        # Get the name of the action_server that execute grasps. Loaded from manipulator_controller_parameters.yaml
+        controller_action_name = rospy.get_param("manipulator_controller_action_server_name")
+        # Initialise the grasp client which is a SimpleActionClient from actionlib
+        self.userdata.manipulator_controller_client = actionlib.SimpleActionClient(controller_action_name, GraspAction)
+
+    def initialise_userdata_from_param_server(self):
+        """
+            Store in userdata all required information that is stored in the ROS parameter server
+        """
+        # Store the maximal torque of the manipulator to apply when grasping
+        self.userdata.max_torque = rospy.get_param("max_torque")
+
+{% if "node_name" in state_machine.parameters %}
+if __name__ == "__main__":
+    rospy.init_node("{{state_machine.parameters.node_name}}")
+    state_machine = {{ state_machine.type }}()
+    # Execute the state machine
+    state_machine.execute()
+{% endif %}

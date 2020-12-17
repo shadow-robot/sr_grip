@@ -1,0 +1,4 @@
+RobotPose robot_pose
+string robot_pose_name
+---
+bool success

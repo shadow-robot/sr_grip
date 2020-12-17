@@ -1,0 +1,4 @@
+string plan_name
+---
+moveit_msgs/RobotTrajectory moveit_plan
+bool success

@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+# Copyright 2020 Shadow Robot Company Ltd.
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import smach
+{% for state_to_import in state_machine.states_source %}
+from {{ state_to_import[0] }}.{{ state_to_import[1] }} import {{ state_to_import[2] }}
+{% endfor %}
+
+
+class {{ state_machine.type }}(smach.Concurrence):
+
+    """
+        Generic concurrent state machine allowing to execute several states at the same time
+    """
+
+    def __init__(self{% if "userdata" in state_machine.parameters %}, userdata{% endif %}, outcomes={{ state_machine.parameters.outcomes }}, default_outcome="{{ state_machine.parameters.default_outcome }}",
+                 outcome_map={{ state_machine.parameters.outcome_map }}):
+        """
+            Initialise state machine
+
+            @param userdata: Input and output data that can be communicated to other states
+        """
+        smach.Concurrence.__init__(self, outcomes=outcomes, default_outcome=default_outcome, outcome_map=outcome_map)
+        {% if "userdata" in state_machine.parameters %}
+        self.userdata = userdata
+        {% endif %}
+        # Build the Concurrence state machine
+        with self:
+        {% for state_name, state in state_machine.components.items() %}
+            smach.Concurrence.add("{{ state_name }}", {{ state.type }}({% for param_name, param_value in state.parameters.items() %}{{ param_name }}={% if param_value is string and "self" not in param_value %}"{{ param_value }}"{% else %}{{ param_value }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}))
+        {% endfor %}
+
+{% if "node_name" in state_machine.parameters %}
+if __name__ == "__main__":
+    rospy.init_node("{{state_machine.parameters.node_name}}")
+    state_machine = {{ state_machine.type }}()
+    # Execute the state machine
+    state_machine.execute()
+{% endif %}

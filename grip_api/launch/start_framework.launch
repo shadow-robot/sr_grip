@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="grip_api" type="framework_gui.py" name="framework_GUI" output="screen"/>
+</launch>

@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+# Copyright 2020 Shadow Robot Company Ltd.
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+{% for state_to_import in state_machine.states_source %}
+from {{ state_to_import[0] }}.{{ state_to_import[1] }} import {{ state_to_import[2] }}
+{% endfor %}
+import smach
+
+
+class {{ state_machine.type }}(smach.StateMachine):
+
+    """
+        Generic state machine allowing to create a behavior depending on the states' outcome
+    """
+
+    def __init__(self{% if "userdata" in state_machine.parameters %}, userdata{% endif %}, outcomes={% if "outcomes" in state_machine.parameters%}{{ state_machine.parameters.outcomes }}{% else %}["success", "failure"]{% endif %}):
+        """
+            Initialise the state machine and all information required to run it
+        """
+        smach.StateMachine.__init__(self, outcomes=outcomes)
+        {% if "userdata" in state_machine.parameters %}
+        self.userdata = userdata
+        {% endif %}
+        with self:
+        {% for state_name, state in state_machine.components.items() %}
+            smach.StateMachine.add("{{ state_name }}", {{ state.type }}({% for param_name, param_value in state.parameters.items() %}{% if param_name != "name" %}{{ param_name }}={% if param_value is string and "self" not in param_value %}"{{ param_value }}"{% else %}{{ param_value }}{% endif %}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}), transitions={{ state.transitions}})
+        {% endfor %}

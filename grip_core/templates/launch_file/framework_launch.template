@@ -1,0 +1,109 @@
+<launch>
+
+  <!-- Get the path of the urdf file -->
+  <arg name="robot_urdf_file_path" value="{{ launch_parameters.urdf_file }}"/>
+
+  <!-- Load the urdf file -->
+  <param name="robot_description" command="xacro --inorder '$(arg robot_urdf_file_path)' {{ launch_parameters.urdf_args }}"/>
+
+  <node pkg="grip_core" type="joint_state_manager_server" name="joint_state_manager_server" args="{{ launch_parameters.recorded_joint_state_path }}" output="screen"/>
+  <node pkg="grip_core" type="standardised_grasp_manager_server" name="standardised_grasp_manager_server" output="screen"/>
+  <node pkg="grip_core" type="moveit_plan_manager_server" name="moveit_plan_manager_server" output="screen"/>
+  <node pkg="grip_core" type="pose_stamped_manager_server" name="pose_stamped_manager_server" output="screen" args="{{ launch_parameters.recorded_poses }}"/>
+  <node pkg="grip_core" type="robot_pose_manager_server" name="robot_pose_manager_server" output="screen" args="{{ launch_parameters.recorded_poses }}"/>
+  <node pkg="grip_core" type="joint_trajectory_manager_server" name="joint_trajectory_manager_server" args="{{ launch_parameters.recorded_trajectories_path }}" output="screen"/>
+  <node pkg="grip_core" type="acm_manager_server" name="acm_manager_server" output="screen"/>
+
+  {% if launch_parameters.launch_file_path %}
+  {{ launch_parameters.launch_file_configuration }}
+  {% elif launch_parameters.simulation %}
+  <arg name="gazebo_model_path" value="{{ launch_parameters.gazebo_model_path }}"/>
+  <!-- Set environment variables allowing to access the proper workspace and models to display in gazebo and MoveIt! -->
+  <env name="GAZEBO_MODEL_PATH" value="$(arg gazebo_model_path)"/>
+  <env name="GAZEBO_MODEL_DATABASE_URI" value="" />
+  <env name="MESH_WORKSPACE_PATH" value="$(arg gazebo_model_path)" />
+  <param name="gazebo_model_path" value="$(arg gazebo_model_path)"/>
+
+  <!-- SIMULATED ROBOTS -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+      <!-- Get the gazebo .world file contained is the description package  -->
+      <arg name="world_name" value="{{ launch_parameters.world_file }}"/>
+      <arg name="gui" default="true"/>
+      <arg name="paused" value={% if launch_parameters.starting_pose != "" %}"true"{% else %}"false"{% endif %}/>
+      <arg name="debug" value="false"/>
+      <arg name="verbose" value="false"/>
+  </include>
+
+  <!-- Format starting pose to give the information when spawning the robot -->
+  <arg name="spawn_model_extra_args" value={% if launch_parameters.starting_pose != "" %}"-unpause {{ launch_parameters.starting_pose }}"{% else %}""{% endif %}/>
+  <!-- Spawn the robot given the previously loaded urdf file -->
+  <node name="respawn_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model {{ launch_parameters.robot_name }} $(arg spawn_model_extra_args)" respawn="false" output="screen"/>
+
+  <node name="gazebo_mapping_server" pkg="grip_core" type="gazebo_mapping_server" output="screen" />
+  <!-- ARM -->
+  <!-- Launch the joint state publisher provided by ros_ethercat_model (not default one) -->
+  <include file="$(find ros_ethercat_model)/launch/joint_state_publisher.launch" />
+  <!-- Spawn controllers to interface with gazebo -->
+  <node pkg="grip_core" type="robot_controllers_spawner.py" name="custom_controller_spawner" args="{{ launch_parameters.ros_controllers }}" output="screen"/>
+
+  <!-- Robot state publisher -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="50.0"/>
+      <param name="tf_prefix" type="string" value=""/>
+  </node>
+
+  <!-- Set scene for robot - restrains movement -->
+  <include file="$(find gazebo2rviz)/launch/gazebo2moveit.launch">
+      <arg name="frequency" default="1" />
+  </include>
+  {% else %}
+  <!-- REAL ROBOTS -->
+  {% if launch_parameters.hardware_connection %}<rosparam command="load" file="{{ launch_parameters.hardware_connection}}"/>{% endif %}
+
+  <include file="$(find ros_ethercat_model)/launch/joint_state_publisher.launch"/>
+
+  <node name="robot_hw" pkg="ros_control_robot" type="ros_control_robot" args="" output="screen" launch-prefix="ethercat_grant">
+    <param name="initial_controller" type="str" value="torque"/>
+  </node>
+
+  <node pkg="grip_core" type="robot_controllers_spawner.py" name="custom_controller_spawner" args="{{ launch_parameters.ros_controllers }}" output="screen"/>
+
+  <!-- Robot state publisher -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" respawn="false">
+    <param name="publish_frequency" type="double" value="50.0"/>
+    <param name="tf_prefix" type="string" value=""/>
+  </node>
+
+  {% if launch_parameters.scene %}
+  <!-- Set scene for robot to restrain robot's movement -->
+  <node pkg="moveit_ros_planning" type="moveit_publish_scene_from_text" name="publish_moveit_scene" args="{{ launch_parameters.scene }}" output="screen"/>
+  {% endif %}
+
+  {% endif %}
+
+  {% if (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics) | any %}
+  <!-- Launch the server for all the set external components -->
+  {% for external_component in (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics) %}
+  {% if external_component != None %}
+  {% for component_name, component_args in external_component.items() %}
+  <node name="external_{{ component_name }}" pkg="{{ component_args.server_package }}" type="{{ component_args.node_type }}" output="screen" />
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+
+  {% if launch_parameters.sensors_config_path %}
+  <!-- Loading a node that adds the kinect frame and carries out some transform so that we have a nice point cloud display in Rviz -->
+  <node pkg="grip_core" type="sensors_tf2_broadcaster" args="{{ launch_parameters.sensors_config_path }}" name="sensors_tf2_broadcaster" output="screen"/>
+  {% endif %}
+
+  {% if launch_parameters.is_using_moveit %}
+  <!-- Launch moveit configuration -->
+  {{ launch_parameters.moveit_configuration }}
+  {% if launch_parameters.sensor_plugin %} <rosparam command="load" ns= "move_group" file="{{ launch_parameters.sensor_plugin }}" /> {% endif %}
+
+  <!-- Launch Rviz -->
+  {{ launch_parameters.rviz_configuration }}
+  {% endif %}
+
+</launch>
