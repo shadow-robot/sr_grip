@@ -18,7 +18,7 @@ from graphical_editor_base import Serializable
 from terminal_socket import TerminalSocket
 from socket import Socket
 from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_file,
-                                                       AVAILABLE_STATEMACHINES)
+                                          AVAILABLE_STATEMACHINES)
 from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
 from connector import Connector

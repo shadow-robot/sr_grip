@@ -19,10 +19,9 @@ import rospy
 import signal
 from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QTabWidget, QFileDialog
 from PyQt5.QtCore import QFileInfo, QSettings
-from grip_core.utils.common_paths import (GUI_CONFIGS_FOLDER, ROBOT_INTEGRATION_MAIN_CONFIG_FILE,
+from modular_framework_core.utils.common_paths import (GUI_CONFIGS_FOLDER, ROBOT_INTEGRATION_MAIN_CONFIG_FILE,
                                                        ROBOT_INTEGRATION_DEFAULT_CONFIG_FILE, STATES_FOLDER,
-                                                       STATE_MACHINES_TEMPLATES_FOLDER
-                                                       )
+                                                       STATE_MACHINES_TEMPLATES_FOLDER)
 from grip_core.utils.file_parsers import fill_available_states, fill_available_state_machines
 from robot_integration_area import RobotIntegrationArea
 from task_editor_area import TaskEditorArea

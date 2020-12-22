@@ -17,7 +17,7 @@
 import smach
 import rospy
 from grip_core.srv import (GetStandardisedGrasp, GetJointState, GetPoseStamped,
-                                        GetMoveitPlan, GetJointTrajectory)
+                           GetMoveitPlan, GetJointTrajectory)
 
 
 class Select(smach.State):
