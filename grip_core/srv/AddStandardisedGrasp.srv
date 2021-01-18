@@ -1,4 +1,0 @@
-StandardisedGrasp grasp_message
-string grasp_name
----
-bool success

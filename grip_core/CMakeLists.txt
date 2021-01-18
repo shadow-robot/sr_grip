@@ -59,10 +59,6 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  TorqueIntensity.msg
-  StandardisedGrasp.msg
-  ManipulatorState.msg
-  GraspCommand.msg
   RobotPose.msg
 )
 
@@ -72,8 +68,6 @@ add_service_files(
   SetInitACM.srv
   GetModifiedACM.srv
   UpdateACMEntry.srv
-  AddStandardisedGrasp.srv
-  GetStandardisedGrasp.srv
   AddMoveitPlan.srv
   GetMoveitPlan.srv
   AddJointState.srv
@@ -92,7 +86,6 @@ add_service_files(
 ## Generate actions in the 'action' folder
 add_action_files(
   FILES
-  Grasp.action
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -188,10 +181,6 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 #   ${catkin_LIBRARIES}
 # )
 
-add_executable(moveit_grasp_action_server nodes/moveit_grasp_action_server.cpp)
-target_link_libraries(moveit_grasp_action_server ${catkin_LIBRARIES})
-add_dependencies(moveit_grasp_action_server grip_core)
-
 add_executable(sensors_tf2_broadcaster nodes/add_sensors_tf2_frame.cpp)
 target_link_libraries(sensors_tf2_broadcaster ${catkin_LIBRARIES} ${YAML_CPP_LIBRARIES})
 add_dependencies(sensors_tf2_broadcaster grip_core)
@@ -199,10 +188,6 @@ add_dependencies(sensors_tf2_broadcaster grip_core)
 add_executable(acm_manager_server nodes/acm_manager.cpp)
 target_link_libraries(acm_manager_server ${catkin_LIBRARIES})
 add_dependencies(acm_manager_server grip_core)
-
-add_executable(standardised_grasp_manager_server nodes/standardised_grasp_manager.cpp)
-target_link_libraries(standardised_grasp_manager_server ${catkin_LIBRARIES})
-add_dependencies(standardised_grasp_manager_server grip_core)
 
 add_executable(moveit_plan_manager_server nodes/moveit_plan_manager.cpp)
 target_link_libraries(moveit_plan_manager_server ${catkin_LIBRARIES})
