@@ -415,7 +415,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
 
     def get_launch_config(self):
         """
-            Returns the configuration according to the editor's content
+            Return the launch configuration according to the editor's content
 
             @return: String corresponding to what will be added to the generated launch file
         """
@@ -426,7 +426,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         arguments = self.launch_file_editor.get_formated_arguments()
         ind = launch_file_path.split("/").index(package_name)
         # Not sure the strip is needed
-        test = "/" + "/".join(launch_file_path.split("/")[ind + 1:]).strip("/")
+        launch_file_subpath = "/" + "/".join(launch_file_path.split("/")[ind + 1:]).strip("/")
         if arguments is None:
             arguments = ""
         else:
@@ -434,7 +434,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
 
         return "<include file=\"$(find {}){}\">\n  "\
                "<!-- You can add any options you want to the file -->\n{}</include>".format(package_name,
-                                                                                            test,
+                                                                                            launch_file_subpath,
                                                                                             arguments)
 
     def connect_update(self):
