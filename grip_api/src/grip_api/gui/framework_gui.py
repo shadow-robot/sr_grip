@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -66,7 +66,7 @@ class FrameworkGui(QMainWindow):
         self.create_menus()
         # set window properties
         self.setGeometry(200, 200, 1000, 800)
-        self.setWindowTitle("Modular Benchmarking Framework GUI")
+        self.setWindowTitle("GRIP GUI")
         self.showMaximized()
         self.show()
 

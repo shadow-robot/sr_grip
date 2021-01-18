@@ -255,19 +255,24 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         package_path = self.moveit_package_entry_widget.valid_input[0]
         # Initialize a dictionary with an empty string as key. It is useful to let the user input another controller
         controllers_info = {"": ""}
-        # Parse the name of the controllers used by MoveIt! (likely to be ROS controllers)
-        with open(os.path.join(package_path, "config", "controllers.yaml"), "r") as f:
-            moveit_controllers = yaml.safe_load(f)
-        for controller in moveit_controllers["controller_list"]:
-            controllers_info[controller["name"]] = controller["joints"]
+        assumed_moveit_controller_file_path = os.path.join(package_path, "config", "controllers.yaml")
+        # Parse the name of the controllers used by MoveIt! (must be ROS controllers), if part of the provided package
+        if os.path.exists(assumed_moveit_controller_file_path):
+            with open(assumed_moveit_controller_file_path, "r") as file_:
+                moveit_controllers = yaml.safe_load(file_)
+            for controller in moveit_controllers["controller_list"]:
+                controllers_info[controller["name"]] = controller["joints"]
 
         planning_groups_info = dict()
-        # Get the name of the planning groups as well as their list of possible planners
-        with open(os.path.join(package_path, "config", "ompl_planning.yaml"), "r") as f:
-            planning_groups = yaml.safe_load(f)
-        for group_name, config in planning_groups.items():
-            if group_name != "planner_configs":
-                planning_groups_info[group_name] = config["planner_configs"]
+        assumed_available_planners_file = os.path.join(package_path, "config", "ompl_planning.yaml")
+        # Get the name of the planning groups as well as their list of possible planners, if the correpsonding file is
+        # part of the package
+        if os.path.exists(assumed_available_planners_file):
+            with open(assumed_available_planners_file, "r") as file_:
+                planning_groups = yaml.safe_load(file_)
+            for group_name, config in planning_groups.items():
+                if group_name != "planner_configs":
+                    planning_groups_info[group_name] = config["planner_configs"]
 
         return controllers_info, planning_groups_info
 
@@ -410,7 +415,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
 
     def get_launch_config(self):
         """
-            Returns the configuration according to the editor's content
+            Return the launch configuration according to the editor's content
 
             @return: String corresponding to what will be added to the generated launch file
         """
@@ -421,7 +426,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         arguments = self.launch_file_editor.get_formated_arguments()
         ind = launch_file_path.split("/").index(package_name)
         # Not sure the strip is needed
-        test = "/" + "/".join(launch_file_path.split("/")[ind+1:]).strip("/")
+        launch_file_subpath = "/" + "/".join(launch_file_path.split("/")[ind + 1:]).strip("/")
         if arguments is None:
             arguments = ""
         else:
@@ -429,7 +434,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
 
         return "<include file=\"$(find {}){}\">\n  "\
                "<!-- You can add any options you want to the file -->\n{}</include>".format(package_name,
-                                                                                            test,
+                                                                                            launch_file_subpath,
                                                                                             arguments)
 
     def connect_update(self):
