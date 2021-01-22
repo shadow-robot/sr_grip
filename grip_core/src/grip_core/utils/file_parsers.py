@@ -157,3 +157,28 @@ def fill_available_states(path_folders):
                         print("The state named {} already exists. Ignoring the others.".format(name))
     if not_a_path:
         return True
+
+
+def is_def_file_valid(file_path):
+    """
+        Check whether an input file (.action or .srv) has the expected fields to be integrated to GRIP
+
+        @param file_path: Path of the file (string)
+
+        @return: True if the definition file (.action or .srv) is valid, False otherwise
+    """
+    # Get a single string with the whole file inside
+    with open(file_path, "r") as file_:
+        file_content = "\n".join(file_.readlines())
+    # Get request/reply (srv file) or goal/result/feedback (action file)
+    parts = re.split('---', file_content)
+    # Double check that we have the proper number of parts
+    if len(parts) < 2 or len(parts) > 3:
+        return False
+    # We are just interested in the two first elements anyway
+    # We must have the input field in the first element (space is very important)
+    is_first_part_ok = " input" in parts[0]
+    # In the second part we must have both int8 outcome and returned_object
+    is_second_part_ok = "int8 outcome" in parts[1] and " returned_object" in parts[1]
+    # Return whether the file is correct or not
+    return is_first_part_ok and is_second_part_ok

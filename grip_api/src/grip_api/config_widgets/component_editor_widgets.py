@@ -16,6 +16,7 @@
 
 from PyQt5.QtWidgets import QFileDialog, QInputDialog, QLineEdit
 from grip_core.utils.common_paths import CATKIN_WS
+from grip_core.utils.file_parsers import is_def_file_valid
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_api.utils.common_checks import is_pose_valid, is_topic_valid, is_moveit_planner_valid
 from plain_editor_widgets import YAMLEditorWidget
@@ -147,24 +148,28 @@ class ComponentEditorWidget(YAMLEditorWidget):
         self.components[component_name]["run_node"] = True
         returned_server_path, _ = QFileDialog.getOpenFileName(self, "Select the action/service server",
                                                               filter="python(*.py);;C++(*.cpp)", directory=CATKIN_WS)
-        # If no input is provided then exit
+        # If no input is provided then exit and remove the component from the class' atribute
         if not returned_server_path:
             error_message("Error message", "A server file must be provided", parent=self)
+            del self.components[component_name]
             return
         # Fill in the component attribute if the input is valid
         is_valid = self.fill_component(component_name, returned_server_path)
         if not is_valid:
+            del self.components[component_name]
             return
         returned_path, _ = QFileDialog.getOpenFileName(self, "Select the action/service file",
                                                        filter="action(*.action);;service(*.srv)",
                                                        directory=CATKIN_WS)
         if not returned_path:
             error_message("Error message", "An action or service file must be provided", parent=self)
+            del self.components[component_name]
             return
 
         # Fill in the component attribute if the input is valid
         is_valid = self.fill_component(component_name, returned_path, False)
         if not is_valid:
+            del self.components[component_name]
             return
 
         text_to_display = "{}:\n  file: {}\n  action/service: {}\n  "\
@@ -211,8 +216,15 @@ class ComponentEditorWidget(YAMLEditorWidget):
         # Fill the component attribute
         if is_server:
             self.components[component_name]["server_package"] = ros_pkg_name
+        # If we have a srv or action file, make sure it has the expected fields!
         else:
-            self.components[component_name]["action_package"] = ros_pkg_name
+            is_good_format = is_def_file_valid(file_path)
+            if not is_good_format:
+                filename = os.path.basename(file_path)
+                error_message("Error message", "The file {} does not contain the expected fields".format(filename),
+                              parent=self)
+                return False
+            self.components[component_name]["def_file_package"] = ros_pkg_name
         return True
 
     def load_file(self):

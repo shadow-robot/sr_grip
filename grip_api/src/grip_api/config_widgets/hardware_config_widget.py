@@ -107,14 +107,16 @@ class HardwareConfigWidget(QWidget):
         self.ros_controllers.canBeSaved.connect(self.update_config)
         self.moveit_planners_config.canBeSaved.connect(self.update_config)
 
-    def update_config(self, test):
+    def update_config(self, has_widget_changed):
         """
             Update the current hardware configuration
+
+            @param has_widget_changed: Boolean stating whether the content of the sender has changed
         """
         self.configuration[self.sender().objectName()] = self.sender().valid_input
         self.update_validity()
         # Emit signal stating whether the widget has changed
-        self.handle_editor_content_signal(test)
+        self.handle_editor_content_signal(has_widget_changed)
 
     def update_validity(self):
         """
