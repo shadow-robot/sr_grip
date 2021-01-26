@@ -17,6 +17,7 @@
 import os
 import re
 from collections import OrderedDict
+from grip_core.utils.common_paths import COMMANDER_FOLDER
 
 AVAILABLE_STATES = OrderedDict()
 AVAILABLE_STATEMACHINES = OrderedDict()
@@ -144,17 +145,27 @@ def fill_available_states(path_folders):
             continue
 
         for root, dirs, files in os.walk(path_folder):
+            # When getting states associated to commanders, create a new dictionary
+            if root == COMMANDER_FOLDER:
+                dict_to_fill = OrderedDict()
+            else:
+                dict_to_fill = AVAILABLE_STATES
+
             for file in files:
                 if file.endswith(".py") and file != "__init__.py":
                     file_path = os.path.join(root, file)
                     name = "".join([word.capitalize() for word in file.replace(".py", "").split("_")])
                     description = extract_description_from_file(file_path)
                     parameters = extract_state_parameters_from_file(file_path)
-                    if name not in AVAILABLE_STATES.keys():
-                        AVAILABLE_STATES[name] = {"source": file_path, "parameters": parameters,
-                                                  "description": description}
+                    # Add the state to the proper dictionary
+                    if name not in dict_to_fill.keys():
+                        dict_to_fill[name] = {"source": file_path, "parameters": parameters, "description": description}
                     else:
                         print("The state named {} already exists. Ignoring the others.".format(name))
+            # If the loaded states are related to commanders, then add the associated dictionary to AVAILABLE_STATES
+            if root == COMMANDER_FOLDER:
+                AVAILABLE_STATES["Commander"] = dict_to_fill
+
     if not_a_path:
         return True
 

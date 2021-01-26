@@ -15,6 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import QFileDialog, QInputDialog, QLineEdit
+from PyQt5.QtCore import pyqtSignal
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_core.utils.file_parsers import is_def_file_valid
 from grip_api.utils.common_dialog_boxes import error_message
@@ -31,6 +32,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
     """
         Generic widget allowing to add components to the framework
     """
+    contentUpdated = pyqtSignal()
 
     def __init__(self, name, enabled=False, margin_marker=True, parent=None):
         """
@@ -67,6 +69,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
                                  state of the editor
         """
         filtered_input = OrderedDict()
+        self.components = OrderedDict()
         for component_name, component_args in self.code_editor.parsed_content.items():
             is_dict = isinstance(component_args, OrderedDict)
             # If the argument is not a dict or does not contain the mandatory fields when mark it as wrong
@@ -123,9 +126,10 @@ class ComponentEditorWidget(YAMLEditorWidget):
             display_star = is_different
         # Update the title of the widget
         self.title.setText(self.name + "*" if display_star and self.file_path else self.name)
-        # If needs be then update the initial state of the widget
+        # If needs be then update the initial state of the widget (i.e. when loading a new file)
         if self.update_init_state:
             self.update_init_widget()
+            self.contentUpdated.emit()
 
     def on_margin_click(self, margin_index, line_index, state):
         """
@@ -232,8 +236,6 @@ class ComponentEditorWidget(YAMLEditorWidget):
             Loads a configuration file integrating components to the framework
         """
         super(ComponentEditorWidget, self).load_file()
-        # Get the number of components contained in the file
-        self.number_components = len(self.valid_input)
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
 
@@ -245,6 +247,26 @@ class ComponentEditorWidget(YAMLEditorWidget):
         self.number_components = 0
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
+
+    def save_file(self):
+        """
+            Save the content of the editor to the linked file and emit a signal stating that the content of the file has
+            been modified
+        """
+        super(ComponentEditorWidget, self).save_file()
+        # Emit the signal
+        self.contentUpdated.emit()
+
+    def close_file(self):
+        """
+            Reset the editor, unlinks the editor to any file and emit a signal stating that the content of the file has
+            been modified
+        """
+        super(ComponentEditorWidget, self).close_file()
+        # Make sure valid_input is set to None
+        self.valid_input = None
+        # Emit the signal
+        self.contentUpdated.emit()
 
 
 class MoveItPlannerEditorWidget(ComponentEditorWidget):
