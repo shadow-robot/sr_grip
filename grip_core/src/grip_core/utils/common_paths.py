@@ -48,6 +48,7 @@ STATE_ICON = os.path.join(IMAGES, "state_icon.png")
 
 # States provided by the framework
 STATES_FOLDER = os.path.join(CORE_PATH, "src", "grip_core", "states")
+COMMANDER_FOLDER = os.path.join(STATES_FOLDER, "commander")
 
 # Generated state machines
 GENERATED_STATE_MACHINE_FOLDER = os.path.join(CORE_PATH, "src", "grip_core", "generated_state_machines")

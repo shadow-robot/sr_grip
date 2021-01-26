@@ -14,71 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from grip_core.msg import StandardisedGrasp
 import rospy
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
 from tf.transformations import quaternion_from_euler
-
-
-def get_standardised_grasp(manipulator_joint_names, pregrasp_joint_values, grasp_joint_values, postgrasp_joint_values,
-                           torque_intensity, pregrasp_pose, grasp_pose, postgrasp_pose, grasp_quality=0,
-                           grasp_id="", hand_id="", object_id=""):
-    """
-        Given all required information, return a StandardisedGrasp message compatible with the framework
-
-        @param manipulator_joint_names: List containing the name of each joint, e.g ["joint1", "joint2", ...]
-        @param pregrasp_joint_values: List of floats containing the position of each joint for the pregrasp state
-        @param grasp_joint_values: List of floats containing the position of each joint for the grasp state
-        @param postgrasp_joint_values: List of floats containing the position of each joint for the postgrasp state
-        @param torque_intensity: List of torque intensity (percentage) to apply with each joint, e.g [0.4, 0.2, ...]
-        @param pregrasp_pose: PoseStamped message of the end-effector corresponding to the pregrasp state
-        @param grasp_pose: PoseStamped message of the end-effector corresponding to the grasp state
-        @param postgrasp_pose: PoseStamped message of the end-effector corresponding to the postgrasp state
-        @param grasp_quality: Float evaluating how good the grasp should be.
-        @param grasp_id: String specifying the name of the grasp.
-        @param hand_id: String specifying the name of the hand for which the grasp has been generated.
-        @param object_id: String specifying the name of the object that has been used to generate the grasp.
-
-        @return: StandardisedGrasp message
-
-    """
-    standardised_grasp = StandardisedGrasp()
-
-    standardised_grasp.grasp_id = grasp_id
-    standardised_grasp.hand_id = hand_id
-    standardised_grasp.object_id = object_id
-
-    standardised_grasp.torque_intensity.joint_names = manipulator_joint_names
-    standardised_grasp.torque_intensity.torque_intensity = torque_intensity
-
-    # Fill information related the grasp context (frame, object...)
-    standardised_grasp.pregrasp.posture.header.stamp = rospy.Time.now()
-    standardised_grasp.pregrasp.posture.header.frame_id = ""
-    standardised_grasp.pregrasp.posture.name = manipulator_joint_names
-
-    standardised_grasp.grasp.posture.header.stamp = rospy.Time.now()
-    standardised_grasp.grasp.posture.header.frame_id = ""
-    standardised_grasp.grasp.posture.name = manipulator_joint_names
-
-    standardised_grasp.postgrasp.posture.header.stamp = rospy.Time.now()
-    standardised_grasp.postgrasp.posture.header.frame_id = ""
-    standardised_grasp.postgrasp.posture.name = manipulator_joint_names
-
-    # Add the pregrasp posture to the message
-    standardised_grasp.pregrasp.posture.position = pregrasp_joint_values
-    standardised_grasp.pregrasp.pose = pregrasp_pose
-
-    # Add the pregrasp posture to the message
-    standardised_grasp.grasp.posture.position = grasp_joint_values
-    standardised_grasp.grasp.pose = grasp_pose
-
-    standardised_grasp.postgrasp.posture.position = postgrasp_joint_values
-    standardised_grasp.postgrasp.pose = postgrasp_pose
-
-    standardised_grasp.grasp_quality = grasp_quality
-
-    return standardised_grasp
 
 
 def generate_pose_stamped_message(reference_frame_name, position, orientation):

@@ -17,6 +17,7 @@
 from PyQt5.QtWidgets import QListWidget, QAbstractItemView, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QDrag
 from PyQt5.QtCore import Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
+from collections import OrderedDict
 from list_item_widgets import BoxItemContent
 from grip_core.utils.file_parsers import AVAILABLE_STATES, AVAILABLE_STATEMACHINES
 from grip_api.utils.files_specifics import LISTITEM_MIMETYPE
@@ -29,16 +30,18 @@ class CommonDraggableListWidget(QListWidget):
         Common widget allowing to show a list of items that can be dragged
     """
 
-    def __init__(self, items, parent=None):
+    def __init__(self, parent=None):
         """
-            Initialize the widget and fill the list
+            Initialize the widget
 
-            @param items: Dictionary containing the name of elements to integrate as keys and the description as value
             @param parent: Parent of the widget
         """
         super(CommonDraggableListWidget, self).__init__(parent)
+        # By default each element of the list is not associated to any icon
+        self.icon = QPixmap(".")
         self.init_ui()
-        self.add_items(items)
+        # Get a track of the name of the items displayed in the list
+        self.item_names = list()
 
     def init_ui(self):
         """
@@ -48,15 +51,30 @@ class CommonDraggableListWidget(QListWidget):
         # Make it draggable
         self.setDragEnabled(True)
 
-    def add_items(self, items_to_fill):
+    def add_item(self, item_name, item_description, is_state=True):
         """
-            Add the items to the list
+            Add an item to the list widget
 
-            @param items_to_fill: Dictionary containing the elements to integrate
+            @param item_name: Name of the item (string)
+            @param item_description: Description of the item (string)
+            @param is_state: Boolean specifying whether the item is a state or not. Default is True
         """
-        for item_name, item_parameters in items_to_fill.items():
-            # Function defined in each children
-            self.add_item(item_name, item_description=item_parameters["description"])
+        # If an item with the same name already exists, then pass
+        if item_name in self.item_names:
+            return
+        # Create a new QListWidgetItem
+        list_item = QListWidgetItem()
+        # Create a widget properly formatting the content of the item to display
+        widget_item = BoxItemContent(item_name, item_description, is_state=is_state, parent=self)
+        # Adjust the size of the list widget item
+        list_item.setSizeHint(widget_item.size())
+        list_item.setData(Qt.UserRole, self.icon)
+        # Add the item to the list
+        self.addItem(list_item)
+        # Store the name of the item
+        self.item_names.append(item_name)
+        # Set our widget to the list widget item
+        self.setItemWidget(list_item, widget_item)
 
     def startDrag(self, *args, **kwargs):
         """
@@ -106,28 +124,19 @@ class StateMachineListWidget(CommonDraggableListWidget):
         """
             Initialize the widget
         """
+        super(StateMachineListWidget, self).__init__(parent=parent)
         # Set the icon of each item
         self.icon = QPixmap(STATE_MACHINE_ICON).scaledToHeight(32)
-        super(StateMachineListWidget, self).__init__(items=AVAILABLE_STATEMACHINES, parent=parent)
+        self.add_items(AVAILABLE_STATEMACHINES)
 
-    def add_item(self, item_name, item_description):
+    def add_items(self, items_to_fill):
         """
-            Add an item to the list widget
+            Add the items to the list
 
-            @param item_name: Name of the item (string)
-            @param item_description: Description of the item (string)
+            @param items_to_fill: Dictionary containing the elements to display
         """
-        # Create a new QListWidgetItem
-        list_item = QListWidgetItem()
-        # Create a widget properly formatting the content of the item to display
-        widget_item = BoxItemContent(item_name, item_description, is_state=False, parent=self)
-        # Adjust the size of the list widget item
-        list_item.setSizeHint(widget_item.size())
-        list_item.setData(Qt.UserRole, self.icon)
-        # Add the item to the list
-        self.addItem(list_item)
-        # Set our widget to the list  widget item
-        self.setItemWidget(list_item, widget_item)
+        for item_name, item_parameters in items_to_fill.items():
+            self.add_item(item_name, item_description=item_parameters["description"], is_state=False)
 
     def update_content(self):
         """
@@ -147,32 +156,82 @@ class StateListWidget(CommonDraggableListWidget):
         """
             Initialize the widget
         """
+        super(StateListWidget, self).__init__(parent=parent)
         # Set the icon of all the items
         self.icon = QPixmap(STATE_ICON).scaledToHeight(32)
-        super(StateListWidget, self).__init__(items=AVAILABLE_STATES, parent=parent)
+        # Create the attribute of the class that will store all the different kind of states to be displayed
+        self.states_to_display = OrderedDict()
+        # This widget can have different "kind" of states to display, but external and some provided states should
+        # always be displayed
+        self.add_items("Constant")
 
-    def add_item(self, item_name, item_description):
+    def add_items(self, state_type):
         """
-            Add an item to the list widget
+            Add all the items part of a "kind" of states
 
-            @param item_name: Name of the item (string)
-            @param item_description: Description of the item (string)
+            @param state_type: Kind of state to be integrated. Must be either "Constant", "Commander" or "Generated"
         """
-        # Create a new QListWidgetItem
-        list_item = QListWidgetItem()
-        # Create a widget properly formatting the content of the item to display
-        widget_item = BoxItemContent(item_name, item_description, parent=self)
-        # Adjust the size of the list widget item
-        list_item.setSizeHint(widget_item.size())
-        list_item.setData(Qt.UserRole, self.icon)
-        # Add the item to the list
-        self.addItem(list_item)
-        # Set our widget to the list widget item
-        self.setItemWidget(list_item, widget_item)
+        # If state_type does not correspond to expected input then just quit
+        if state_type not in ["Constant", "Commander", "Generated"]:
+            return
+        # If we want to add items of a category of states that is not part of the attribute, then get them
+        if state_type == "Constant" and state_type not in self.states_to_display:
+            self.extract_constant_states()
+        elif state_type == "Commander" and state_type not in self.states_to_display:
+            self.extract_commander_states()
+        # Add items corresponding to the category of states input
+        for state_name, state_info in self.states_to_display[state_type].items():
+            self.add_item(state_name, state_info["description"])
 
-    def update_content(self):
+    def remove_items(self, state_type):
         """
-            Update the content of the list
+            Remove all the items part of "kind" of states
+
+            @param state_type: Kind of state to be integrated. Must be either "Constant", "Commander" or "Generated".
         """
-        self.clear()
-        super(StateListWidget, self).add_items(AVAILABLE_STATES)
+        # If state_type does not correspond to expected input then just quit
+        if state_type not in ["Constant", "Commander", "Generated"]:
+            return
+        # If state_type is not already part of the attribute then just quit
+        if state_type not in self.states_to_display:
+            return
+        # For each state
+        for state_name in self.states_to_display[state_type].keys():
+            # Remove the item from the widget
+            self.takeItem(self.item_names.index(state_name))
+            # And remove its name from the interal list
+            self.item_names.remove(state_name)
+        # Remove the category of states
+        del self.states_to_display[state_type]
+
+    def update_generated_items(self, new_items):
+        """
+            Update the display of generated states
+
+            @param new_items: Dictionary containing the name and description of the states to display
+        """
+        # If we already have some, remove them to make sure we have the latest version of integrated components
+        if "Generated" in self.states_to_display:
+            self.remove_items("Generated")
+        # Set and add the items
+        self.states_to_display["Generated"] = new_items
+        self.add_items("Generated")
+
+    def extract_constant_states(self):
+        """
+            Store all the "constant" states, i.e. the one that should always be displayed, from the different sources
+        """
+        # Get all "constant" states, i.e. the one that should always be displayed
+        constant_states = OrderedDict()
+        for state_name, state_info in AVAILABLE_STATES.items():
+            if state_name != "Commander":
+                constant_states[state_name] = state_info
+        # Store them into the class' attribute
+        self.states_to_display["Constant"] = constant_states
+
+    def extract_commander_states(self):
+        """
+            Store all the states that allows the user to operate the robot through MoveIt!
+        """
+        # Store the commander states
+        self.states_to_display["Commander"] = AVAILABLE_STATES["Commander"]

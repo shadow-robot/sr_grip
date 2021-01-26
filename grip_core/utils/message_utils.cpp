@@ -18,53 +18,6 @@
 #include <string>
 #include <grip_core/message_utils.hpp>
 
-grip_core::StandardisedGrasp
-get_standardised_grasp(std::vector<std::string> manipulator_joint_names, std::vector<double> pregrasp_joint_values,
-                       std::vector<double> grasp_joint_values, std::vector<double> postgrasp_joint_values,
-                       std::vector<double> torque_intensity, geometry_msgs::PoseStamped pregrasp_pose,
-                       geometry_msgs::PoseStamped grasp_pose, geometry_msgs::PoseStamped postgrasp_pose,
-                       double grasp_quality, std::string grasp_id, std::string hand_id, std::string object_id)
-{
-    grip_core::StandardisedGrasp standardised_grasp;
-
-    standardised_grasp.grasp_id = grasp_id;
-    standardised_grasp.hand_id = hand_id;
-    standardised_grasp.object_id = object_id;
-
-    standardised_grasp.torque_intensity.joint_names = manipulator_joint_names;
-    standardised_grasp.torque_intensity.torque_intensity = torque_intensity;
-
-    // Fill information related the grasp context (frame, object...)
-    standardised_grasp.pregrasp.posture.header.stamp = ros::Time::now();
-    standardised_grasp.pregrasp.posture.header.frame_id = "";
-    standardised_grasp.pregrasp.posture.name = manipulator_joint_names;
-
-    standardised_grasp.grasp.posture.header.stamp = ros::Time::now();
-    standardised_grasp.grasp.posture.header.frame_id = "";
-    standardised_grasp.grasp.posture.name = manipulator_joint_names;
-
-    standardised_grasp.postgrasp.posture.header.stamp = ros::Time::now();
-    standardised_grasp.postgrasp.posture.header.frame_id = "";
-    standardised_grasp.postgrasp.posture.name = manipulator_joint_names;
-
-    // Affect the joint values and pose to the pregrasp field
-    standardised_grasp.pregrasp.posture.position = pregrasp_joint_values;
-    standardised_grasp.pregrasp.pose = pregrasp_pose;
-
-    // Affect the joint values and pose to the grasp field
-    standardised_grasp.grasp.posture.position = grasp_joint_values;
-    standardised_grasp.grasp.pose = grasp_pose;
-
-    // Affect the joint values and pose to the postgrasp field
-    standardised_grasp.postgrasp.posture.position = postgrasp_joint_values;
-    standardised_grasp.postgrasp.pose = postgrasp_pose;
-
-    // Specify the grasp quality
-    standardised_grasp.grasp_quality = grasp_quality;
-
-    return standardised_grasp;
-}
-
 geometry_msgs::PoseStamped generate_pose_stamped_message(std::string reference_frame_name, Eigen::Vector3f position,
                                                          Eigen::Vector3f orientation)
 {

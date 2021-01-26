@@ -15,7 +15,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import QFileDialog, QInputDialog, QLineEdit
+from PyQt5.QtCore import pyqtSignal
 from grip_core.utils.common_paths import CATKIN_WS
+from grip_core.utils.file_parsers import is_def_file_valid
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_api.utils.common_checks import is_pose_valid, is_topic_valid, is_moveit_planner_valid
 from plain_editor_widgets import YAMLEditorWidget
@@ -30,6 +32,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
     """
         Generic widget allowing to add components to the framework
     """
+    contentUpdated = pyqtSignal()
 
     def __init__(self, name, enabled=False, margin_marker=True, parent=None):
         """
@@ -47,7 +50,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         # Dictionary gathering all required information to run and call the component
         self.components = OrderedDict()
         # Fields a components must contain to be integrated to the framework
-        self.mandatory_fields = ["file", "action/service", "server_name", "node_type"]
+        self.mandatory_fields = ["file", "action/service", "server_name", "node_type", "number_outcomes"]
 
     def create_editor(self):
         """
@@ -66,13 +69,14 @@ class ComponentEditorWidget(YAMLEditorWidget):
                                  state of the editor
         """
         filtered_input = OrderedDict()
+        self.components = OrderedDict()
         for component_name, component_args in self.code_editor.parsed_content.items():
             is_dict = isinstance(component_args, OrderedDict)
             # If the argument is not a dict or does not contain the mandatory fields when mark it as wrong
             if not is_dict or not set(self.mandatory_fields).issubset(set(component_args)):
                 self.code_editor.mark_component(component_name)
             # If every mandatory field has a non empty and valid value add it to the filtered_input
-            elif all(isinstance(component_args[x], str) for x in self.mandatory_fields):
+            elif self.check_fields_format(component_args):
                 filtered_input[component_name] = component_args
                 # Make sure the dictionary exists (not the case when loading a saved config)
                 if component_name not in self.components:
@@ -94,9 +98,21 @@ class ComponentEditorWidget(YAMLEditorWidget):
                 # Update the information of the component
                 self.components[component_name]["node_type"] = component_args["node_type"]
                 self.components[component_name]["server_name"] = component_args["server_name"]
+                self.components[component_name]["number_outcomes"] = component_args["number_outcomes"]
             else:
                 self.code_editor.mark_component(component_name)
         self.handle_valid_input_change(filtered_input, is_different)
+
+    def check_fields_format(self, arguments):
+        """
+            Make sure the arguments of a component has a non empty value and valid format
+
+            @param arguments: Dictionary with name of the fields as keys and input values as values
+            @return: True if the fields of arguments are correct, fasle otherwise
+        """
+        are_all_but_one_valid_string = all(isinstance(arguments[x], str) for x in self.mandatory_fields[:-1])
+        is_last_one_integer = isinstance(arguments[self.mandatory_fields[-1]], int)
+        return are_all_but_one_valid_string and is_last_one_integer
 
     def handle_valid_input_change(self, new_input, is_different):
         """
@@ -122,9 +138,10 @@ class ComponentEditorWidget(YAMLEditorWidget):
             display_star = is_different
         # Update the title of the widget
         self.title.setText(self.name + "*" if display_star and self.file_path else self.name)
-        # If needs be then update the initial state of the widget
+        # If needs be then update the initial state of the widget (i.e. when loading a new file)
         if self.update_init_state:
             self.update_init_widget()
+            self.contentUpdated.emit()
 
     def on_margin_click(self, margin_index, line_index, state):
         """
@@ -147,28 +164,34 @@ class ComponentEditorWidget(YAMLEditorWidget):
         self.components[component_name]["run_node"] = True
         returned_server_path, _ = QFileDialog.getOpenFileName(self, "Select the action/service server",
                                                               filter="python(*.py);;C++(*.cpp)", directory=CATKIN_WS)
-        # If no input is provided then exit
+        # If no input is provided then exit and remove the component from the class' atribute
         if not returned_server_path:
             error_message("Error message", "A server file must be provided", parent=self)
+            del self.components[component_name]
             return
         # Fill in the component attribute if the input is valid
         is_valid = self.fill_component(component_name, returned_server_path)
         if not is_valid:
+            del self.components[component_name]
             return
         returned_path, _ = QFileDialog.getOpenFileName(self, "Select the action/service file",
                                                        filter="action(*.action);;service(*.srv)",
                                                        directory=CATKIN_WS)
         if not returned_path:
             error_message("Error message", "An action or service file must be provided", parent=self)
+            del self.components[component_name]
             return
 
         # Fill in the component attribute if the input is valid
         is_valid = self.fill_component(component_name, returned_path, False)
         if not is_valid:
+            del self.components[component_name]
             return
 
         text_to_display = "{}:\n  file: {}\n  action/service: {}\n  "\
-                          "server_name: \n  node_type: ".format(component_name, returned_server_path, returned_path)
+                          "server_name: \n  node_type: \n  number_outcomes: ".format(component_name,
+                                                                                     returned_server_path,
+                                                                                     returned_path)
 
         self.append_template(text_to_display)
 
@@ -211,8 +234,15 @@ class ComponentEditorWidget(YAMLEditorWidget):
         # Fill the component attribute
         if is_server:
             self.components[component_name]["server_package"] = ros_pkg_name
+        # If we have a srv or action file, make sure it has the expected fields!
         else:
-            self.components[component_name]["action_package"] = ros_pkg_name
+            is_good_format = is_def_file_valid(file_path)
+            if not is_good_format:
+                filename = os.path.basename(file_path)
+                error_message("Error message", "The file {} does not contain the expected fields".format(filename),
+                              parent=self)
+                return False
+            self.components[component_name]["def_file_package"] = ros_pkg_name
         return True
 
     def load_file(self):
@@ -220,8 +250,6 @@ class ComponentEditorWidget(YAMLEditorWidget):
             Loads a configuration file integrating components to the framework
         """
         super(ComponentEditorWidget, self).load_file()
-        # Get the number of components contained in the file
-        self.number_components = len(self.valid_input)
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
 
@@ -233,6 +261,26 @@ class ComponentEditorWidget(YAMLEditorWidget):
         self.number_components = 0
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
+
+    def save_file(self):
+        """
+            Save the content of the editor to the linked file and emit a signal stating that the content of the file has
+            been modified
+        """
+        super(ComponentEditorWidget, self).save_file()
+        # Emit the signal
+        self.contentUpdated.emit()
+
+    def close_file(self):
+        """
+            Reset the editor, unlinks the editor to any file and emit a signal stating that the content of the file has
+            been modified
+        """
+        super(ComponentEditorWidget, self).close_file()
+        # Make sure valid_input is set to None
+        self.valid_input = None
+        # Emit the signal
+        self.contentUpdated.emit()
 
 
 class MoveItPlannerEditorWidget(ComponentEditorWidget):
