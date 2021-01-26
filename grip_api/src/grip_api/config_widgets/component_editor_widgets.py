@@ -50,7 +50,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         # Dictionary gathering all required information to run and call the component
         self.components = OrderedDict()
         # Fields a components must contain to be integrated to the framework
-        self.mandatory_fields = ["file", "action/service", "server_name", "node_type"]
+        self.mandatory_fields = ["file", "action/service", "server_name", "node_type", "number_outcomes"]
 
     def create_editor(self):
         """
@@ -76,7 +76,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
             if not is_dict or not set(self.mandatory_fields).issubset(set(component_args)):
                 self.code_editor.mark_component(component_name)
             # If every mandatory field has a non empty and valid value add it to the filtered_input
-            elif all(isinstance(component_args[x], str) for x in self.mandatory_fields):
+            elif self.check_fields_format(component_args):
                 filtered_input[component_name] = component_args
                 # Make sure the dictionary exists (not the case when loading a saved config)
                 if component_name not in self.components:
@@ -98,9 +98,21 @@ class ComponentEditorWidget(YAMLEditorWidget):
                 # Update the information of the component
                 self.components[component_name]["node_type"] = component_args["node_type"]
                 self.components[component_name]["server_name"] = component_args["server_name"]
+                self.components[component_name]["number_outcomes"] = component_args["number_outcomes"]
             else:
                 self.code_editor.mark_component(component_name)
         self.handle_valid_input_change(filtered_input, is_different)
+
+    def check_fields_format(self, arguments):
+        """
+            Make sure the arguments of a component has a non empty value and valid format
+
+            @param arguments: Dictionary with name of the fields as keys and input values as values
+            @return: True if the fields of arguments are correct, fasle otherwise
+        """
+        are_all_but_one_valid_string = all(isinstance(arguments[x], str) for x in self.mandatory_fields[:-1])
+        is_last_one_integer = isinstance(arguments[self.mandatory_fields[-1]], int)
+        return are_all_but_one_valid_string and is_last_one_integer
 
     def handle_valid_input_change(self, new_input, is_different):
         """
@@ -177,7 +189,9 @@ class ComponentEditorWidget(YAMLEditorWidget):
             return
 
         text_to_display = "{}:\n  file: {}\n  action/service: {}\n  "\
-                          "server_name: \n  node_type: ".format(component_name, returned_server_path, returned_path)
+                          "server_name: \n  node_type: \n  number_outcomes: ".format(component_name,
+                                                                                     returned_server_path,
+                                                                                     returned_path)
 
         self.append_template(text_to_display)
 
