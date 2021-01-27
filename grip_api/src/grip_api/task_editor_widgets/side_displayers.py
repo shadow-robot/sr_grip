@@ -145,6 +145,8 @@ class StatesDisplayer(CommonSideDisplayer):
         hand_config.external_motion_planner.contentUpdated.connect(self.update_generated_states)
         # Editor in which high level methods are integrated
         integration_area.settings_config_widget.external_methods.contentUpdated.connect(self.update_generated_states)
+        # Editor in which sensors are integrated
+        integration_area.settings_config_widget.sensor_configs.contentUpdated.connect(self.update_generated_states)
 
     def update_commander_states(self):
         """

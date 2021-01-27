@@ -708,8 +708,8 @@ class SensorEditorWidget(ComponentEditorWidget):
             @return: String corresponding to the input of a sensor
         """
         template = "{}:\n\tdata_topics:\n\tframe_id: \n\tinitial_pose: \n\t\t"\
-                   "# You can simplify this part by defining a pose in the pose editor\n\t\tframe_id: \n\t\t"\
-                   "reference_frame: \n\t\tposition: {{x: , y: , z: }}\n\t\t# You can use z,y,z,w for quaternion\n\t\t"\
+                   "# You can simplify this part by defining a pose in the pose editor\n\t\t"\
+                   "reference_frame: \n\t\tposition: {{x: , y: , z: }}\n\t\t# You can use x,y,z,w for quaternion\n\t\t"\
                    "orientation: {{r: , p: , y: }}"
         # Replace the "\t" by spaces so they don't appear in red in the editor
         template = template.replace("\t", "  ")
@@ -719,7 +719,7 @@ class SensorEditorWidget(ComponentEditorWidget):
         """
             Update the known poses defined in other editors and rerun a check on the current editor's content
 
-            @param checkpoints: List of valid named poses defined in the corresponding editor
+            @param poses: List of valid named poses defined in the corresponding editor
         """
         self.known_poses = poses[:]
         self.code_editor.parse_and_format_editor()

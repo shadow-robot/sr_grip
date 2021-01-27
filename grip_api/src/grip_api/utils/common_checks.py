@@ -41,7 +41,7 @@ def is_pose_valid(dictionary, add_frame_id=False, add_reference_frame=True):
     # If the position does not have the proper keys
     if set(dictionary["position"].keys()) != set(["x", "y", "z"]):
         return False
-    # If the orientation doen't have appropriate keys
+    # If the orientation doesn't have appropriate keys
     is_quaternion_orientation = set(dictionary["orientation"].keys()) == set(["x", "y", "z", "w"])
     is_rpy_orientation = set(dictionary["orientation"].keys()) == set(["r", "p", "y"])
     if not (is_quaternion_orientation or is_rpy_orientation):
