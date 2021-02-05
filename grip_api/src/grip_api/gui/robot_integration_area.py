@@ -39,6 +39,8 @@ class RobotIntegrationArea(QTabWidget):
     robotCanBeStopped = pyqtSignal(bool)
     # Signal stating whether the task editor can be accessible or not
     enableTaskEditor = pyqtSignal(bool)
+    # Signal sent when the configuration of commanders have changed
+    commanderUpdated = pyqtSignal()
 
     def __init__(self, parent=None):
         """
@@ -52,6 +54,7 @@ class RobotIntegrationArea(QTabWidget):
         self.config_changed = dict()
         self.can_be_saved = False
         self.launch_parameters = dict()
+        self.commander_config = dict()
         self.launch_process = None
         self.launch_templater = LaunchFileTemplater()
         self.init_ui()
@@ -183,6 +186,7 @@ class RobotIntegrationArea(QTabWidget):
             return
 
         # If everything is good then enable the button
+        self.send_commanders_config()
         self.launch_button.setEnabled(True)
         self.robotCanBeLaunched.emit(True)
         self.enableTaskEditor.emit(True)
@@ -462,6 +466,25 @@ class RobotIntegrationArea(QTabWidget):
         create_yaml_file(fused_hardware_connection, fused_ros_connection_file_path)
         # Return the path to the file
         return fused_ros_connection_file_path
+
+    def send_commanders_config(self):
+        """
+
+        """
+        if not self.robot_interface.moveit_config.moveit_package_entry_widget.valid_input:
+            updated_commander_config = dict()
+        else:
+            updated_commander_config = dict()
+            arm_config = self.arm_config_widget.configuration
+            hand_config = self.hand_config_widget.configuration
+            for hw_config in (arm_config, hand_config):
+                planner_config = hw_config["Editor MoveIt! planners"]
+                if not not planner_config:
+                    for group_name, commander_config in planner_config.items():
+                        updated_commander_config[group_name] = commander_config
+        if updated_commander_config != self.commander_config:
+            self.commander_config = updated_commander_config
+            self.commanderUpdated.emit()
 
     def save_config(self, settings):
         """

@@ -18,7 +18,7 @@ import smach
 from moveit_msgs.msg import RobotState
 from sensor_msgs.msg import JointState
 import rospy
-from grip_core.srv import GetJointState, GetStandardisedGrasp, GetPoseStamped, AddMoveitPlan
+from grip_core.srv import GetJointState, GetPoseStamped, AddMoveitPlan
 
 
 class Plan(smach.State):
@@ -27,19 +27,18 @@ class Plan(smach.State):
         State performing motion planning from a starting to a target state
     """
 
-    def __init__(self, target_state_type, target_state_name="", plan_name="", starting_state_type="",
+    def __init__(self, group_name, target_state_type, target_state_name="", plan_name="", starting_state_type="",
                  starting_state_name="", outcomes=["success", "failure"], input_keys=[], output_keys=[],
-                 io_keys=["arm_commander"]):
+                 io_keys=["commanders"]):
         """
             Initialise the attributes of the class
 
-            @param target_state_type: Target state's type. Can be any of {"pose", "joint_state", "grasp",
-                                                                          "pregrasp", "postgrasp"}
+            @param target_state_type: Target state's type. Can be any of {"pose", "joint_state"}
             @param target_state_name: Optional target state's name. Used to retrieve it using the corresponding manager.
                                       If set to "userdata" then try to load the field "selected_<target_state_type>"
                                       from the userdata. Default is "", meaning that it will retrieve
                                       the latest corresponding anonymous message.
-            @param plan_name: Name that will be given to the computed plan. Can be empy to make it anonymous.
+            @param plan_name: Name that will be given to the computed plan. Can be empty to make it anonymous.
             @param starting_state_type: Starting state's type. Can be any of {"pose", "joint_state", "grasp",
                                                                               "pregrasp", "postgrasp"}
             @param starting_state_name: Optional starting state's name. Used to retrieve it using the
@@ -49,9 +48,11 @@ class Plan(smach.State):
             @param outcomes: Possible outcomes of the state. Default "success" and "fail"
             @param input_keys: List enumerating all the inputs that a state needs to run
             @param output_keys: List enumerating all the outputs that a state provides
-            @param io_keys: List enumarting all objects to be used as input and output data
+            @param io_keys: List enumerating all objects to be used as input and output data
         """
         smach.State.__init__(self, outcomes=outcomes, io_keys=io_keys, input_keys=input_keys, output_keys=output_keys)
+        # Get the proper commander
+        self.commander_name = group_name
         # Optional name provided to the output plan
         self.plan_name = plan_name
         # Type of the target state
@@ -68,34 +69,34 @@ class Plan(smach.State):
         self.get_starting_state_message = None
         self.get_target_state_message = None
         self.add_computed_plan = None
-        # Initialise the proper services
-        self._initialise_correct_services()
+
+        if target_state_type or starting_state_type:
+            # Initialise the proper services
+            self._initialise_correct_services()
+
+        # Get the service to send the computed plan to the manager
+        if plan_name:
+            self.add_computed_plan = rospy.ServiceProxy("add_plan", AddMoveitPlan)
 
     def _initialise_correct_services(self):
         """
             Initialise the proper services to get the target and starting state required to plan
         """
         # If we need to lookup a joint state in the manager (meaning that it is not in userdata), initialise the service
-        if self.target_state_type == "joint_state" and self.target_state_name != "userdata":
+        if self.target_state_type == "joint_state":
             self.get_target_state_message = rospy.ServiceProxy("get_joint_state", GetJointState)
         # Same thing for the pose
-        elif self.target_state_type == "pose" and self.target_state_name != "userdata":
+        elif self.target_state_type == "pose":
             self.get_target_state_message = rospy.ServiceProxy("get_pose", GetPoseStamped)
-        # And for grasps
-        elif "grasp" in self.target_state_type and self.target_state_name != "userdata":
-            self.get_target_state_message = rospy.ServiceProxy("get_grasp", GetStandardisedGrasp)
 
         # Same idea for the starting state
-        if self.starting_state_type == "joint_state" and self.starting_state_name != "userdata":
+        if self.starting_state_type == "joint_state":
             self.get_starting_state_message = rospy.ServiceProxy("get_joint_state", GetJointState)
         elif self.starting_state_type == "pose" and self.starting_state_name != "userdata":
             self.get_starting_state_message = rospy.ServiceProxy("get_pose", GetPoseStamped)
-        elif "grasp" in self.starting_state_type and self.starting_state_name != "userdata":
-            self.get_starting_state_message = rospy.ServiceProxy("get_grasp", GetStandardisedGrasp)
-        # Anyway get the service to add the computed plan
-        self.add_computed_plan = rospy.ServiceProxy("add_plan", AddMoveitPlan)
 
-    def joint_state_to_robot_state(self, joint_state):
+    @staticmethod
+    def joint_state_to_robot_state(joint_state):
         """
             Create a RobotState message from a JointState message or a dictionary mapping joint names to their values
 
@@ -120,6 +121,9 @@ class Plan(smach.State):
             @return: - outcomes[-1] ("fail" by default) if an error occurs when computing the plan or retrieving a state
                      - outcomes[0] ("success" by default) otherwise
         """
+        print(userdata)
+        print(userdata["commanders"])
+        commander = userdata.commanders[self.commander_name]
         # Depending on the starting state type and the value of the attribute storing the client of the proper service,
         # determines the starting message (either to be retrieved from the manager or from the userdata)
         if self.get_starting_state_message is None and "grasp" in self.starting_state_type:
@@ -143,19 +147,16 @@ class Plan(smach.State):
         # Store the starting robot state with respect to the starting state meaning that we get the joint state and
         # transform it to a RobotState message
         if self.starting_state_type == "pregrasp":
-            starting_robot_state = self.joint_state_to_robot_state(userdata.arm_commander.get_ik(
-                                                                   starting_message.pregrasp.pose))
+            starting_robot_state = self.joint_state_to_robot_state(commander.get_ik(starting_message.pregrasp.pose))
         elif self.starting_state_type == "grasp":
-            starting_robot_state = self.joint_state_to_robot_state(userdata.arm_commander.get_ik(
-                                                                   starting_message.grasp.pose))
+            starting_robot_state = self.joint_state_to_robot_state(commander.get_ik(starting_message.grasp.pose))
         elif self.starting_state_type == "postgrasp":
-            starting_robot_state = self.joint_state_to_robot_state(userdata.arm_commander.get_ik(
-                                                                   starting_message.postgrasp.pose))
+            starting_robot_state = self.joint_state_to_robot_state(commander.get_ik(starting_message.postgrasp.pose))
         elif self.starting_state_type == "joint_state":
             starting_robot_state = self.joint_state_to_robot_state(starting_message)
 
         elif self.starting_state_type == "pose":
-            starting_robot_state = self.joint_state_to_robot_state(userdata.arm_commander.get_ik(starting_message))
+            starting_robot_state = self.joint_state_to_robot_state(commander.get_ik(starting_message))
         else:
             # In that particular case, the starting robot state is the current robot state during execution
             starting_robot_state = None
@@ -180,20 +181,15 @@ class Plan(smach.State):
 
         # Compute the plan
         if self.target_state_type == "pregrasp":
-            plan = userdata.arm_commander.plan_to_pose_target(target_message.pregrasp.pose,
-                                                              custom_start_state=starting_robot_state)
+            plan = commander.plan_to_pose_target(target_message.pregrasp.pose, custom_start_state=starting_robot_state)
         elif self.target_state_type == "grasp":
-            plan = userdata.arm_commander.plan_to_pose_target(target_message.grasp.pose,
-                                                              custom_start_state=starting_robot_state)
+            plan = commander.plan_to_pose_target(target_message.grasp.pose, custom_start_state=starting_robot_state)
         elif self.target_state_type == "postgrasp":
-            plan = userdata.arm_commander.plan_to_pose_target(target_message.postgrasp.pose,
-                                                              custom_start_state=starting_robot_state)
+            plan = commander.plan_to_pose_target(target_message.postgrasp.pose, custom_start_state=starting_robot_state)
         elif self.target_state_type == "joint_state":
-            plan = userdata.arm_commander.plan_to_joint_value_target(target_message,
-                                                                     custom_start_state=starting_robot_state)
+            plan = commander.plan_to_joint_value_target(target_message, custom_start_state=starting_robot_state)
         elif self.target_state_type == "pose":
-            plan = userdata.arm_commander.plan_to_joint_value_target(target_message,
-                                                                     custom_start_state=starting_robot_state)
+            plan = commander.plan_to_joint_value_target(target_message, custom_start_state=starting_robot_state)
 
         # This condition checks whether a plan has been found
         if plan.joint_trajectory.joint_names == list():

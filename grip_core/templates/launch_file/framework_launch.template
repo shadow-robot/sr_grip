@@ -7,7 +7,6 @@
   <param name="robot_description" command="xacro --inorder '$(arg robot_urdf_file_path)' {{ launch_parameters.urdf_args }}"/>
 
   <node pkg="grip_core" type="joint_state_manager_server" name="joint_state_manager_server" args="{{ launch_parameters.recorded_joint_state_path }}" output="screen"/>
-  <node pkg="grip_core" type="standardised_grasp_manager_server" name="standardised_grasp_manager_server" output="screen"/>
   <node pkg="grip_core" type="moveit_plan_manager_server" name="moveit_plan_manager_server" output="screen"/>
   <node pkg="grip_core" type="pose_stamped_manager_server" name="pose_stamped_manager_server" output="screen" args="{{ launch_parameters.recorded_poses }}"/>
   <node pkg="grip_core" type="robot_pose_manager_server" name="robot_pose_manager_server" output="screen" args="{{ launch_parameters.recorded_poses }}"/>

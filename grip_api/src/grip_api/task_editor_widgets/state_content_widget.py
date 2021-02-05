@@ -16,8 +16,9 @@
 
 import re
 from graphical_editor_base import Serializable
-from PyQt5.QtWidgets import QWidget, QGridLayout, QScrollArea, QLineEdit, QGroupBox, QLabel
+from PyQt5.QtWidgets import QWidget, QGridLayout, QScrollArea, QLineEdit, QGroupBox, QLabel, QComboBox
 from grip_core.utils.file_parsers import AVAILABLE_STATES
+from grip_api.utils.files_specifics import DATA_TYPE_CHOICE
 from PyQt5.QtCore import QEvent
 
 
@@ -49,9 +50,14 @@ class StateContentWidget(QWidget, Serializable):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
         # Extract information from the state
-        self.state_info = AVAILABLE_STATES[self.state.type]
+        if self.state.type in AVAILABLE_STATES:
+            self.state_info = AVAILABLE_STATES[self.state.type]
+            config_box = StateConfigBox
+        elif self.state.type in AVAILABLE_STATES["Commander"]:
+            self.state_info = AVAILABLE_STATES["Commander"][self.state.type]
+            config_box = CommanderStateConfigBox
         # Create the configuration area
-        self.config_state = StateConfigBox(self.state.type, self.state_info["parameters"], parent=self)
+        self.config_state = config_box(self.state.type, self.state_info["parameters"], parent=self)
         # Wrap it into a scrolling area to limit the state size
         self.scroll_area = StateScrollingArea(self.config_state)
         # Add the scrolling area in here
@@ -232,14 +238,116 @@ class StateConfigBox(GenericConfigBoxWidget):
             # Ignore outcomes since changing it would require changing the actual implementation of the state
             if key == "outcomes":
                 continue
-            # Get any default value
-            default_value = re.findall("\"(.*?)\"", value)
-            if len(default_value) > 1:
-                default_value = ", ".join(default_value)
             else:
-                default_value = value
-            # Add the configuration slot
-            self.add_configuration_slot(key, placeholder_text=default_value)
+                # Get any default value
+                default_value = re.findall("\"(.*?)\"", value)
+                if len(default_value) > 1:
+                    default_value = ", ".join(default_value)
+                else:
+                    default_value = value
+                # Add the configuration slot
+                self.add_configuration_slot(key, placeholder_text=default_value)
+
+
+class CommanderStateConfigBox(GenericConfigBoxWidget):
+    """
+
+    """
+    def __init__(self, source, state_parameters, parent=None):
+        """
+            Intialize the widget
+
+            @param source: String corresponding to the type of the state
+            @param state_parameters: Dictionary containing the parameters of the given state type
+            @param parent: Parent (QWidget) of this widget
+        """
+        super(CommanderStateConfigBox, self).__init__("type: {}".format(source), parent=parent)
+        task_editor_area = self.parent().state.container.editor_widget.parent().parent().parent().parent()
+        robot_integration_area = task_editor_area.framework_gui.robot_integration_area
+        settings_config = robot_integration_area.settings_config_widget
+        # Initialize the choice for commander
+        self.commander_choice = [""] + sorted(robot_integration_area.commander_config.keys())
+        # Initialize the list of registered poses and joint states
+        self.known_states = {"pose": settings_config.named_poses.poses.keys(),
+                             "joint state": settings_config.named_joint_states.valid_input.keys()}
+        # Connect the signal coming from the robot integration area re. the commander configs
+        robot_integration_area.commanderUpdated.connect(self.update_commander_choice)
+        # Initialize the content
+        self.initialize_content(state_parameters)
+
+    def update_commander_choice(self):
+        """
+        """
+        self.commander_choice = [""] + sorted(self.sender().commander_config)
+        combo_box = self.findChild(QComboBox, "choice {}".format("group_name"))
+        if combo_box is not None:
+            combo_box.clear()
+            combo_box.addItems(self.commander_choice)
+
+    def add_choice_slot(self, slot_name, choices, is_editable=False):
+        """
+            Add a line to the layout containing both a label and a QComboBox
+
+            @param slot_name: Name of the parameter to configure
+            @param choices: List of strings the user can select
+            @param is_editable: Boolean stating whether the user can edit its content or not. Default is False
+        """
+        # Create the label
+        slot_title = QLabel(slot_name + ":", objectName="slot {}".format(slot_name))
+        # Configure the QComboBox
+        list_choice = QComboBox(objectName="choice {}".format(slot_name))
+        # Set the different choices
+        list_choice.addItems(choices)
+        list_choice.setEditable(is_editable)
+        if "type" in slot_name:
+            list_choice.currentTextChanged.connect(self.update_choice_content)
+        # Add both widgets in the layout
+        self.layout.addWidget(slot_title, self.number_rows, 0)
+        self.layout.addWidget(list_choice, self.number_rows, 1)
+        # Update the class' attributes
+        self.number_rows += 1
+        self.registered_keys.append(slot_name)
+        return list_choice
+
+    def update_choice_content(self, current_text):
+        """
+
+        """
+        widget = self.findChild(QComboBox, "{}".format(self.sender().objectName().replace("type", "name")))
+        widget.clear()
+        if not current_text:
+            widget.addItem("")
+        else:
+            widget.addItems([""] + self.known_states[current_text])
+
+    def initialize_content(self, state_parameters):
+        """
+            Add configuration slots for every parameters parsed from the state source (except outcomes)
+
+            @param state_parameters: Dictionary containing all the parameters to display
+        """
+        # For each parameter coming from the state
+        for key, value in state_parameters.items():
+            # Ignore outcomes since changing it would require changing the actual implementation of the state
+            if key == "outcomes" or key == "group_name" and len(self.commander_choice) == 2:
+                continue
+            elif "type" in key:
+                self.add_choice_slot(key, DATA_TYPE_CHOICE)
+            elif key == "group_name":
+                self.add_choice_slot(key, self.commander_choice)
+            elif "state_name" in key:
+                self.add_choice_slot(key, [""], True)
+            else:
+                # Get any default value
+                default_value = re.findall("\"(.*?)\"", value)
+                if len(default_value) > 1:
+                    default_value = ", ".join(default_value)
+                elif key != "plan_name":
+                    default_value = value
+                else:
+                    default_value = None
+                # Add the configuration slot
+                self.add_configuration_slot(key, placeholder_text=default_value)
 
 
 class StateMachineConfigBox(GenericConfigBoxWidget):
@@ -305,7 +413,7 @@ class StateScrollingArea(QScrollArea):
 
             @param q_object: QObject associated with the event
             @param q_event: Nature of the event (QEvent)
-            @return: True of the event is fitlered, otherwise False
+            @return: True of the event is filtered, otherwise False
         """
         event_type = q_event.type()
         if event_type == QEvent.Wheel:

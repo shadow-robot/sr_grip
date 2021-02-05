@@ -18,7 +18,7 @@
 from {{ state_to_import[0] }}.{{ state_to_import[1] }} import {{ state_to_import[2] }}
 {% endfor %}
 import smach
-from sr_robot_commander.sr_arm_commander import SrArmCommander
+from sr_robot_commander.sr_robot_commander import SrRobotCommander
 from moveit_commander.exception import MoveItCommanderException
 from moveit_msgs.msg import PlanningSceneComponents, PlanningScene
 from moveit_msgs.srv import GetPlanningScene
@@ -62,8 +62,8 @@ class {{ state_machine.type }}(smach.StateMachine):
         self.userdata.selected_plan = None
         # Get and store the original ACM that should correspond to the one provided indirectly by the SRDF file
         self.get_initial_acm()
-        # Initialise the arm commander
-        self.initialise_arm_commander()
+        # Initialise the configured commanders
+        self.initialise_commanders()
         # Initialise the grasp controller
         self.initialise_manipulator_controller_client()
         # Store in userdata all information store in ROS param server
@@ -104,27 +104,34 @@ class {{ state_machine.type }}(smach.StateMachine):
         if not storage_response.success:
             rospy.logwarn("Error while setting the initial ACM")
 
-    def initialise_arm_commander(self):
+    def initialise_commanders(self):
         """
-            Initialise the arm commander that will take care of controlling the robot arm
+            Initialise the different commanders according to GRIP's configuration
         """
-        # Get the name of the group that will be used in Moveit!
-        arm_moveit_group = rospy.get_param("arm_group_name")
-        rospy.loginfo("Initialising arm commander for move group: {}".format(arm_moveit_group))
-        # Create the SrArmCommander corresponding to the aforementioned group
-        arm_commander = SrArmCommander(name=arm_moveit_group, set_ground=False)
-        # If it fails, raises an exception
-        if arm_commander is None:
-            raise MoveItCommanderException("Failed to initialise arm commander!")
-        # Otherwise set the options of the arm commander coming from the user
-        else:
-            arm_commander.set_max_velocity_scaling_factor(rospy.get_param("robot_speed_factor"))
-            arm_commander.set_planner_id(rospy.get_param("planner_name"))
-            arm_commander.set_num_planning_attempts(rospy.get_param("number_plan_attempt"))
-            arm_commander.set_planning_time(rospy.get_param("planning_max_time"))
+        {% if commanders.configured_groups%}
+        configured_groups = {{commanders.configured_groups}}
+        commanders = dict()
+        for group_name, group_params in configured_groups.items():
+            # Get the name of the group that will be used in Moveit!
+            moveit_group = group_name
+            # Create the SrRobotCommander corresponding to the aforementioned group
+            commander = SrRobotCommander(name=moveit_group)
+            # If it fails, raises an exception
+            if commander is None:
+                raise MoveItCommanderException("Failed to initialise the commander for {}".format(moveit_group))
+            # Otherwise set the options of the commander
+            else:
+                commander.set_max_velocity_scaling_factor(group_params["robot_speed_factor"])
+                commander.set_planner_id(group_params["planner_name"])
+                commander.set_num_planning_attempts(group_params["number_plan_attempt"])
+                commander.set_planning_time(group_params["planning_max_time"])
 
-            # Store the arm controller in userdata
-            self.userdata.arm_commander = arm_commander
+                # Store the arm controller in userdata
+                commanders[moveit_group] = commander
+        self.userdata.commanders = commanders
+        {% else %}
+        pass
+        {% endif %}
 
     def initialise_manipulator_controller_client(self):
         """
