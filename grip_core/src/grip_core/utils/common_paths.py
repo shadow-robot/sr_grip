@@ -27,6 +27,7 @@ FOLDER_TEMPLATE_LAUNCH_FILE = os.path.join(BUILT_IN_TEMPLATES_FOLDER, "launch_fi
 STATE_MACHINES_TEMPLATES_FOLDER = os.path.join(BUILT_IN_TEMPLATES_FOLDER, "state_machines")
 BASE_STATE_MACHINE_FOLDER = os.path.join(BUILT_IN_TEMPLATES_FOLDER, "base")
 TASK_EDITOR_ROOT_TEMPLATE = os.path.join(BASE_STATE_MACHINE_FOLDER, "base_state_machine.template")
+STATE_TEMPLATES_FOLDER = os.path.join(BUILT_IN_TEMPLATES_FOLDER, "states")
 
 # GUI configuration
 GUI_CONFIGS_FOLDER = os.path.join(API_PATH, "gui_configs")
@@ -52,3 +53,6 @@ COMMANDER_FOLDER = os.path.join(STATES_FOLDER, "commander")
 
 # Generated state machines
 GENERATED_STATE_MACHINE_FOLDER = os.path.join(CORE_PATH, "src", "grip_core", "generated_state_machines")
+GENERATED_STATES_FOLDER = os.path.join(CORE_PATH, "src", "grip_core", "generated_states")
+
+EXTERNAL_COMPONENT_TEMPLATE = os.path.join(STATE_TEMPLATES_FOLDER, "external_component.template")

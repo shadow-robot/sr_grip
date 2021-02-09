@@ -52,4 +52,6 @@ EDITOR_TO_DESCRIPTION = {"Editor External controllers": "Run an external control
                          "Editor High level methods": "Run an external high level component",
                          "Editor Sensors config": "Capture data from a configured sensor"}
 
-DATA_TYPE_CHOICE = ["", "joint state", "pose"]
+COMMANDER_DATA_TYPE_CHOICE = ["", "joint state", "pose"]
+
+ALL_MANAGER_TYPE_CHOICE = ["", "joint state", "plan", "pose", "trajectory"]

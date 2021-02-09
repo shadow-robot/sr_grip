@@ -52,6 +52,9 @@ class GraphicalEditorWidget(QWidget):
         self.launch_process = None
         # By default the container of this editor cannot be launched
         self.can_be_executed = False
+        # Update the above attribute according to whether the robot is launched or not
+        self.robot_integration_area = self.parent().parent().parent().framework_gui.robot_integration_area
+        self.robot_integration_area.robotCanBeStopped.connect(self.update_execution)
 
     def init_ui(self):
         """
@@ -72,6 +75,14 @@ class GraphicalEditorWidget(QWidget):
         self.layout.addWidget(self.editor_view)
         # Make sure that if the window containing the widget is deleted, this widget is properly removed as well
         self.setAttribute(Qt.WA_DeleteOnClose)
+
+    def update_execution(self, can_be_stopped):
+        """
+            Set can_be_executed to the value can_be_stopped
+
+            @param can_be_stopped: Boolean stating whether the robot can be stopped (i.e. is it launched)
+        """
+        self.can_be_executed = can_be_stopped
 
     def init_context_menu(self):
         """
@@ -178,8 +189,11 @@ class GraphicalEditorWidget(QWidget):
         # Get the state machine sources and add the folder containing the base state machine
         state_machine_sources = task_editor_mdi_area.framework_gui.state_machine_sources[:]
         state_machine_sources.append(BASE_STATE_MACHINE_FOLDER)
+        # Get the commanders configuration
+        commanders_config = self.robot_integration_area.commander_config
         # Generate the state machines
-        generate_state_machines(parsed_container, state_source, state_machine_sources, GENERATED_STATE_MACHINE_FOLDER)
+        generate_state_machines(parsed_container, state_source, state_machine_sources, GENERATED_STATE_MACHINE_FOLDER,
+                                commanders_config)
         # Get the name of the root file
         python_file_to_run = os.path.join(GENERATED_STATE_MACHINE_FOLDER, parsed_container["name"] + ".py")
         self.launch_process = subprocess.Popen(['python -B {}'.format(python_file_to_run)], shell=True)

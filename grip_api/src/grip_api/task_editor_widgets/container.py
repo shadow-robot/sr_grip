@@ -50,6 +50,8 @@ class Container(Serializable):
         self.graphics_container.set_graphics_scene(64000, 64000)
         # Store the different states present in the container
         self.states = list()
+        # Get specific list of states that need to be generated
+        self.states_to_generate = list()
         # Store the different connectors present in the container
         self.connectors = list()
         # Store the different state machines added to this container
@@ -60,6 +62,7 @@ class Container(Serializable):
         self.state_machine = None
         # Attribute tracking the current "layer" height required to be sure to have a widget overposing all the others
         self.z_tracker = 0
+        self.output_userdata = list()
 
     def get_outcomes(self):
         """
@@ -146,6 +149,8 @@ class Container(Serializable):
         state.name = updated_name
         # Register the state
         self.states.append(state)
+        if state.to_generate:
+            self.states_to_generate.append(state)
         # Adding a state will make the container not valid, so update it
         self.update_validity()
         self.z_tracker += 1
@@ -179,6 +184,8 @@ class Container(Serializable):
         # Make sure the state is still part of the container
         if state in self.states:
             self.states.remove(state)
+            if state in self.states_to_generate:
+                self.states_to_generate.remove(state)
             # Remove the state from the graphical view as well
             self.graphics_container.removeItem(state.graphics_state)
             # Removing a state can make the container valid, so update it
@@ -323,7 +330,7 @@ class Container(Serializable):
         # Get the states and state machines in "flowing" order (from start to terminal)
         ordered_components = self.get_ordered_components()
         container_components = list()
-        # Get the information of each component that bleongs to this container
+        # Get the information of each component that belongs to this container
         for component in ordered_components:
             state_dictionary = dict()
             state_dictionary[component.name] = component.get_config()

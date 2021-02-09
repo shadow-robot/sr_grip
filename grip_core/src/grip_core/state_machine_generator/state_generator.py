@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+
+# Copyright 2020 Shadow Robot Company Ltd.
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+from templater import StateTemplater
+import rospkg
+import os
+from grip_core.utils.common_paths import GENERATED_STATES_FOLDER, STATE_TEMPLATES_FOLDER
+
+
+def generate_state(state_info, target_folder_path=GENERATED_STATES_FOLDER):
+    """
+        Generate a python file corresponding to a state compatible with GRIPS's state machines
+
+        @param state_info: Dictionary containing some of the parameters required to describe the state to generate
+        @param target_folder_path: Path to the folder the generated state should be saved to
+    """
+    # Will contain all the required information
+    state_descriptor = dict()
+    # Get the path pointing to the .srv or .action file
+    server_def_file = state_info["action/service"]
+    # Get the name of the package containing the .action or .srv file
+    pkg_name = rospkg.get_package_name(server_def_file)
+    # Get the corresponding import statement depending on whether it's an action or service
+    state_descriptor["server_statement"] = pkg_name + ".srv" if server_def_file.endswith(".srv") else pkg_name + ".msg"
+
+    # Get the name of the file to import
+    if server_def_file.endswith(".srv"):
+        def_file = os.path.basename(server_def_file).replace(".srv", "")
+    else:
+        def_file = os.path.basename(server_def_file).replace(".action", "Action")
+    state_descriptor["def_file"] = def_file
+
+    # Fill in the remaining parameters already part of state_info
+    state_descriptor["name"] = state_info["name"]
+    state_descriptor["server_name"] = state_info["server_name"]
+    state_descriptor["template"] = state_info["template"]
+    state_descriptor["filename"] = state_info["filename"]
+
+    # Initialize the state templater and generate the state
+    state_templater = StateTemplater(STATE_TEMPLATES_FOLDER, target_folder_path)
+    state_templater.generate_state(state_descriptor)

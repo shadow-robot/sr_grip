@@ -76,6 +76,7 @@ class CommonSideDisplayer(QWidget):
 
 
 class StateMachinesDisplayer(CommonSideDisplayer):
+
     """
         Widget displaying the available state machines that can used to create nested behaviours
     """
@@ -117,6 +118,7 @@ class StatesDisplayer(CommonSideDisplayer):
     """
     # Signal stating that a new source for the states has been added
     stateSourceAdded = pyqtSignal(str)
+    generatedStateUpdated = pyqtSignal()
 
     def __init__(self, parent=None):
         """
@@ -172,15 +174,17 @@ class StatesDisplayer(CommonSideDisplayer):
                 del self.external_sources[self.sender()]
         # Otherwise get the name of the components to integrate
         else:
-            self.external_sources[self.sender()] = self.sender().valid_input.keys()
+            self.external_sources[self.sender()] = self.sender().valid_input
         # Create a temporary dictionary that contains all the states to display
         up_to_date_integrated = OrderedDict()
         for sender, components in self.external_sources.items():
-            for component_name in components:
+            for component_name, component_params in components.items():
                 # Set the same format as the other states
-                up_to_date_integrated[component_name] = {"description": EDITOR_TO_DESCRIPTION[sender.objectName()]}
+                up_to_date_integrated[component_name] = {"description": EDITOR_TO_DESCRIPTION[sender.objectName()],
+                                                         "info": component_params}
         # Update the generated items
         self.list_widget.update_generated_items(up_to_date_integrated)
+        self.generatedStateUpdated.emit()
 
     def on_click(self):
         """

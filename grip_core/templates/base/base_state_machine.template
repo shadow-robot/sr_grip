@@ -17,16 +17,16 @@
 {% for state_to_import in state_machine.states_source %}
 from {{ state_to_import[0] }}.{{ state_to_import[1] }} import {{ state_to_import[2] }}
 {% endfor %}
+import rospy
 import smach
+from collections import OrderedDict
+{% if commanders %}
 from sr_robot_commander.sr_robot_commander import SrRobotCommander
 from moveit_commander.exception import MoveItCommanderException
 from moveit_msgs.msg import PlanningSceneComponents, PlanningScene
 from moveit_msgs.srv import GetPlanningScene
-from grip_core.msg import GraspAction
 from grip_core.srv import SetInitACM
-import actionlib
-import rospy
-
+{% endif %}
 
 class {{ state_machine.type }}(smach.StateMachine):
 
@@ -34,7 +34,7 @@ class {{ state_machine.type }}(smach.StateMachine):
         Generic state machine allowing to create a behavior depending on the states' outcome
     """
 
-    def __init__(self, outcomes={% if "outcomes" in state_machine.parameters%}{{ state_machine.parameters.outcomes }}{% else %}["task success", "task failure"]{% endif %}):
+    def __init__(self, outcomes={% if "outcomes" in state_machine.parameters%}{{ state_machine.parameters.outcomes }}{% else %}["Task success", "Task failure"]{% endif %}):
         """
             Initialise the state machine and all information required to run it
         """
@@ -50,24 +50,10 @@ class {{ state_machine.type }}(smach.StateMachine):
         """
             Initialise all the userdata values required to run the state machine
         """
-        # Store a potentially selected grasp that can be executed
-        self.userdata.selected_grasp = None
-        # Store a potentially selected joint state that can be executed
-        self.userdata.selected_joint_state = None
-        # Store a potentially selected trajectory that can be executed
-        self.userdata.selected_trajectory = None
-        # Store a potentially selected pose that can be executed
-        self.userdata.selected_pose = None
-        # Store a potentially selected plan that can be executed
-        self.userdata.selected_plan = None
         # Get and store the original ACM that should correspond to the one provided indirectly by the SRDF file
-        self.get_initial_acm()
+        # self.get_initial_acm()
         # Initialise the configured commanders
         self.initialise_commanders()
-        # Initialise the grasp controller
-        self.initialise_manipulator_controller_client()
-        # Store in userdata all information store in ROS param server
-        self.initialise_userdata_from_param_server()
 
     def get_initial_acm(self):
         """
@@ -108,17 +94,15 @@ class {{ state_machine.type }}(smach.StateMachine):
         """
             Initialise the different commanders according to GRIP's configuration
         """
-        {% if commanders.configured_groups%}
-        configured_groups = {{commanders.configured_groups}}
+        {% if commanders %}
+        configured_groups = {{ commanders }}
         commanders = dict()
         for group_name, group_params in configured_groups.items():
-            # Get the name of the group that will be used in Moveit!
-            moveit_group = group_name
             # Create the SrRobotCommander corresponding to the aforementioned group
-            commander = SrRobotCommander(name=moveit_group)
+            commander = SrRobotCommander(name=group_name)
             # If it fails, raises an exception
             if commander is None:
-                raise MoveItCommanderException("Failed to initialise the commander for {}".format(moveit_group))
+                raise MoveItCommanderException("Failed to initialise the commander for {}".format(group_name))
             # Otherwise set the options of the commander
             else:
                 commander.set_max_velocity_scaling_factor(group_params["robot_speed_factor"])
@@ -127,27 +111,11 @@ class {{ state_machine.type }}(smach.StateMachine):
                 commander.set_planning_time(group_params["planning_max_time"])
 
                 # Store the arm controller in userdata
-                commanders[moveit_group] = commander
+                commanders[group_name] = commander
         self.userdata.commanders = commanders
         {% else %}
         pass
         {% endif %}
-
-    def initialise_manipulator_controller_client(self):
-        """
-            Initialise the grasp client allowing to control the hand
-        """
-        # Get the name of the action_server that execute grasps. Loaded from manipulator_controller_parameters.yaml
-        controller_action_name = rospy.get_param("manipulator_controller_action_server_name")
-        # Initialise the grasp client which is a SimpleActionClient from actionlib
-        self.userdata.manipulator_controller_client = actionlib.SimpleActionClient(controller_action_name, GraspAction)
-
-    def initialise_userdata_from_param_server(self):
-        """
-            Store in userdata all required information that is stored in the ROS parameter server
-        """
-        # Store the maximal torque of the manipulator to apply when grasping
-        self.userdata.max_torque = rospy.get_param("max_torque")
 
 {% if "node_name" in state_machine.parameters %}
 if __name__ == "__main__":

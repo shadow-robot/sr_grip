@@ -54,7 +54,8 @@ class RobotIntegrationArea(QTabWidget):
         self.config_changed = dict()
         self.can_be_saved = False
         self.launch_parameters = dict()
-        self.commander_config = dict()
+        # Get the configuration of the commanders
+        self.commander_config = None
         self.launch_process = None
         self.launch_templater = LaunchFileTemplater()
         self.init_ui()
@@ -383,6 +384,8 @@ class RobotIntegrationArea(QTabWidget):
             self.launch_parameters["{}_external_controller".format(hardware_part)] = controller
             self.launch_parameters["{}_external_motion_planner".format(hardware_part)] = motion_planner
             self.launch_parameters["{}_external_kinematics".format(hardware_part)] = kinematics
+        # Get the valid input of integrated external methods
+        self.launch_parameters["external_high_level_methods"] = self.settings_config_widget.external_methods.components
         # Get the path of the MoveIt! sensor plugins
         plugins_path = self.settings_config_widget.sensor_plugins.file_path
         plugins_path = "" if not plugins_path else plugins_path
@@ -469,19 +472,23 @@ class RobotIntegrationArea(QTabWidget):
 
     def send_commanders_config(self):
         """
-
+            Extract the commander configuration and emit a signal when it's done
         """
+        # If not moveit config package is provided then no commander config should be set
         if not self.robot_interface.moveit_config.moveit_package_entry_widget.valid_input:
-            updated_commander_config = dict()
+            updated_commander_config = None
         else:
             updated_commander_config = dict()
             arm_config = self.arm_config_widget.configuration
             hand_config = self.hand_config_widget.configuration
+            # For each piece of hardware get the MoveIt planner config
             for hw_config in (arm_config, hand_config):
                 planner_config = hw_config["Editor MoveIt! planners"]
+                # If it contains at least one planner, go over all of them and get the configuration
                 if not not planner_config:
                     for group_name, commander_config in planner_config.items():
-                        updated_commander_config[group_name] = commander_config
+                        updated_commander_config[str(group_name)] = commander_config
+        # Update the attribute to know if the commander has been updated or not
         if updated_commander_config != self.commander_config:
             self.commander_config = updated_commander_config
             self.commanderUpdated.emit()

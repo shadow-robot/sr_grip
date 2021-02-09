@@ -80,9 +80,9 @@
 
   {% endif %}
 
-  {% if (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics) | any %}
+  {% if (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics, launch_parameters.external_high_level_methods) | any %}
   <!-- Launch the server for all the set external components -->
-  {% for external_component in (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics) %}
+  {% for external_component in (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics, launch_parameters.external_high_level_methods) %}
   {% if external_component != None %}
   {% for component_name, component_args in external_component.items() %}
   <node name="external_{{ component_name }}" pkg="{{ component_args.server_package }}" type="{{ component_args.node_type }}" output="screen" />
