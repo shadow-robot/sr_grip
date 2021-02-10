@@ -103,6 +103,8 @@ class StateTemplater(object):
         # Render it
         if file_base_name == "external_component.template":
             rendered_template = template.render(component=state_info)
+        elif file_base_name == "sensor.template":
+            rendered_template = template.render(sensor=state_info)
         # Build the path of the created python file
         state_filename = self.target_directory_path + "/{}.py".format(state_info["filename"])
         # Save it

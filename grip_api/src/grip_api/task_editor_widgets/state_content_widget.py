@@ -20,7 +20,7 @@ from collections import OrderedDict
 from graphical_editor_base import Serializable
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from grip_core.utils.file_parsers import AVAILABLE_STATES, get_import_statement
-from grip_core.utils.common_paths import EXTERNAL_COMPONENT_TEMPLATE, GENERATED_STATES_FOLDER
+from grip_core.utils.common_paths import EXTERNAL_COMPONENT_TEMPLATE, GENERATED_STATES_FOLDER, SENSOR_TEMPLATE
 from state_config_widgets import StateConfigBox, CommanderStateConfigBox, GeneratedStateConfigBox, StateMachineConfigBox
 
 
@@ -90,11 +90,15 @@ class StateContentWidget(QWidget, Serializable):
                                                          ("output", None), ("outcomes", outcomes)])
             self.state_info["action/service"] = state_info["action/service"]
             self.state_info["server_name"] = state_info["server_name"]
-        else:
-            pass
-        # Get common values regardless of which kinf of state is generated
+        elif "data_topics" in state_info:
+            self.state_info["template"] = SENSOR_TEMPLATE
+            outcomes = ["success", "failure"]
+            self.state_info["parameters"] = OrderedDict([("sensor_topic", None), ("output", None),
+                                                         ("outcomes", outcomes)])
+            self.state_info["data_topics"] = state_info["data_topics"]
+        # Get common values regardless of what kind of state is generated
         self.state_info["filename"] = inflection.underscore(self.state.type)
-        self.state_info["name"] = self.state.type
+        self.state_info["name"] = inflection.camelize(self.state.type)
         self.state_info["source"] = self.state_info["filename"] + ".py"
         final_path = os.path.join(GENERATED_STATES_FOLDER, self.state_info["source"])
         self.state_info["import_statement"] = get_import_statement(final_path)

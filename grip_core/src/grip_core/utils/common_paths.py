@@ -56,3 +56,4 @@ GENERATED_STATE_MACHINE_FOLDER = os.path.join(CORE_PATH, "src", "grip_core", "ge
 GENERATED_STATES_FOLDER = os.path.join(CORE_PATH, "src", "grip_core", "generated_states")
 
 EXTERNAL_COMPONENT_TEMPLATE = os.path.join(STATE_TEMPLATES_FOLDER, "external_component.template")
+SENSOR_TEMPLATE = os.path.join(STATE_TEMPLATES_FOLDER, "sensor.template")

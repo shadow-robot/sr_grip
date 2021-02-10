@@ -337,6 +337,7 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
 
     """
         Class derived from GenericConfigBoxWidget that creates the configuration area for a state running external code
+        or a sensor
     """
 
     def __init__(self, source, state_parameters, parent=None):
@@ -348,6 +349,9 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
             @param parent: Parent (QWidget) of this widget
         """
         super(GeneratedStateConfigBox, self).__init__("type: {}".format(source), parent=parent)
+        # If the state correponds to a sensor, then create an attribute to the class that must be linked to the sensor
+        if "sensor_topic" in state_parameters:
+            self.topic_mapping = self.parent().state_info["data_topics"]
         # Initialize the content
         self.initialize_content(state_parameters)
 
@@ -365,9 +369,26 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
             # For two particular slots provide choices corresponding to all the managers types
             elif key == "output_type" or key == "input_type":
                 self.add_choice_slot(key, ALL_MANAGER_TYPE_CHOICE)
+            elif key == "sensor_topic":
+                self.add_choice_slot(key, self.topic_mapping.keys())
             else:
                 # Add the configuration slot
                 self.add_configuration_slot(key, None)
+
+    def get_slot_config(self, slot_name):
+        """
+            Get the current config of a given slot
+
+            @param slot_name: String specifying from which slot we want to extract the config from
+            @return: String, list, int or float corresponding to the current config
+        """
+        slot_config = super(GeneratedStateConfigBox, self).get_slot_config(slot_name)
+
+        # For the sensor_topic slot we must send the real topic name
+        if slot_name == "sensor_topic":
+            return self.topic_mapping[slot_config]
+        else:
+            return slot_config
 
 
 class StateMachineConfigBox(GenericConfigBoxWidget):

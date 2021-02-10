@@ -121,7 +121,13 @@ class State(Serializable):
         """
         # Generate the state if required
         if self.to_generate:
+            # When generating a state related to a sensor, we need to know the topic we are listening to
+            if "data_topics" in self.content.state_info:
+                # Fill in the parameters slot with the topic name provided by the user
+                user_topic_name = self.content.config_state.get_slot_config("sensor_topic")
+                self.content.state_info["parameters"]["sensor_topic"] = user_topic_name
             generate_state(self.content.state_info)
+
         # Will contain the configuration of the state (i.e. source, outcomes, parameters and transitions)
         state_config = {}
         # Extract the different information from the state's content
@@ -135,10 +141,12 @@ class State(Serializable):
                 if user_config in self.container.output_userdata:
                     state_config["input_keys"] = [user_config]
 
-        # Make sure to register all the potential output keys for external states
-        if self.to_generate and state_config["output"] and not state_config["output_type"]:
-            self.container.output_userdata.append(state_config["output"])
-            state_config["output_keys"] = [state_config["output"]]
+        # Make sure to register all the potential output keys for external states and sensors
+        if self.to_generate:
+            output_value = state_config["output"]
+            if (output_value and "sensor_topic" in state_config) or (output_value and not state_config["output_type"]):
+                self.container.output_userdata.append(output_value)
+                state_config["output_keys"] = [output_value]
 
         # Get the source of the state
         state_config["source"] = os.path.basename(self.content.state_info["source"]).split(".")[0]

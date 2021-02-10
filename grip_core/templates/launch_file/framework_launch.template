@@ -92,7 +92,7 @@
   {% endif %}
 
   {% if launch_parameters.sensors_config_path %}
-  <!-- Loading a node that adds the kinect frame and carries out some transform so that we have a nice point cloud display in Rviz -->
+  <!-- Loading a node that adds the frame of all configured sensors -->
   <node pkg="grip_core" type="sensors_tf2_broadcaster" args="{{ launch_parameters.sensors_config_path }}" name="sensors_tf2_broadcaster" output="screen"/>
   {% endif %}
 

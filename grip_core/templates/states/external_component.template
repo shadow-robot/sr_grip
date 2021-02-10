@@ -25,6 +25,7 @@ import actionlib
 class {{ component.name }}(smach.State):
 
     """
+      Class initializing and running a client to send a request to a server running external code
     """
 
     def __init__(self, input, input_type, output, output_type, outcomes, input_keys=[], output_keys=[], io_keys=[]):

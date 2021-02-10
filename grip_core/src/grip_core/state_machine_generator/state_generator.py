@@ -16,6 +16,7 @@
 
 from templater import StateTemplater
 import rospkg
+import rostopic
 import os
 from grip_core.utils.common_paths import GENERATED_STATES_FOLDER, STATE_TEMPLATES_FOLDER
 
@@ -29,23 +30,34 @@ def generate_state(state_info, target_folder_path=GENERATED_STATES_FOLDER):
     """
     # Will contain all the required information
     state_descriptor = dict()
-    # Get the path pointing to the .srv or .action file
-    server_def_file = state_info["action/service"]
-    # Get the name of the package containing the .action or .srv file
-    pkg_name = rospkg.get_package_name(server_def_file)
-    # Get the corresponding import statement depending on whether it's an action or service
-    state_descriptor["server_statement"] = pkg_name + ".srv" if server_def_file.endswith(".srv") else pkg_name + ".msg"
-
-    # Get the name of the file to import
-    if server_def_file.endswith(".srv"):
-        def_file = os.path.basename(server_def_file).replace(".srv", "")
+    # If the state to generate corresponds to a sensor
+    if "data_topics" in state_info:
+        # Get the type of message
+        message_type = rostopic.get_topic_type(state_info["parameters"]["sensor_topic"])[0]
+        # The above function returns package_name/msg_name, so split by / and get the import statement and message name
+        split_msg_type = message_type.split("/")
+        state_descriptor["msg_import_statement"] = split_msg_type[0] + ".msg"
+        state_descriptor["msg_name"] = split_msg_type[1]
+    # Otherwise it must be a state to run external components
     else:
-        def_file = os.path.basename(server_def_file).replace(".action", "Action")
-    state_descriptor["def_file"] = def_file
+        # Get the path pointing to the .srv or .action file
+        server_file = state_info["action/service"]
+        # Get the name of the package containing the .action or .srv file
+        pkg_name = rospkg.get_package_name(server_file)
+        # Get the corresponding import statement depending on whether it's an action or service
+        state_descriptor["server_statement"] = pkg_name + ".srv" if server_file.endswith(".srv") else pkg_name + ".msg"
+
+        # Get the name of the file to import
+        if server_file.endswith(".srv"):
+            def_file = os.path.basename(server_file).replace(".srv", "")
+        else:
+            def_file = os.path.basename(server_file).replace(".action", "Action")
+        state_descriptor["def_file"] = def_file
+        # Get the name of the server from state_info
+        state_descriptor["server_name"] = state_info["server_name"]
 
     # Fill in the remaining parameters already part of state_info
     state_descriptor["name"] = state_info["name"]
-    state_descriptor["server_name"] = state_info["server_name"]
     state_descriptor["template"] = state_info["template"]
     state_descriptor["filename"] = state_info["filename"]
 
