@@ -323,7 +323,7 @@ class TaskEditorView(QGraphicsView):
 
             @param event: QKeyEvent sent by PyQt5
         """
-        # Do nothing special, but if not overriden, then the event realted to the keyboard does not worf properly
+        # Do nothing special, but if not overriden, then the event related to the keyboard does not worf properly
         super(TaskEditorView, self).keyPressEvent(event)
 
     def dragEnterEvent(self, event):

@@ -20,6 +20,7 @@ from grip_core.utils.common_paths import CATKIN_WS
 from grip_core.utils.file_parsers import is_def_file_valid
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_api.utils.common_checks import is_pose_valid, is_topic_valid, is_moveit_planner_valid, is_launchfile_valid
+from grip_api.utils.files_specifics import SOCKET_COLORS
 from plain_editor_widgets import YAMLEditorWidget
 from collections import OrderedDict
 import os
@@ -51,6 +52,8 @@ class ComponentEditorWidget(YAMLEditorWidget):
         self.components = OrderedDict()
         # Fields a components must contain to be integrated to the framework
         self.mandatory_fields = ["file", "action/service", "server_name", "node_type", "number_outcomes"]
+        # Get the maximum number of outcomes supported
+        self.max_number_outcomes = len(SOCKET_COLORS)
 
     def create_editor(self):
         """
@@ -98,7 +101,17 @@ class ComponentEditorWidget(YAMLEditorWidget):
                 # Update the information of the component
                 self.components[component_name]["node_type"] = component_args["node_type"]
                 self.components[component_name]["server_name"] = component_args["server_name"]
-                self.components[component_name]["number_outcomes"] = component_args["number_outcomes"]
+                # Make sure the number of outcomes is not larger that the supported number of sockets
+                number_outcomes = component_args["number_outcomes"]
+                # If there are too many then display an error message and mark the component as wrong
+                if number_outcomes > self.max_number_outcomes:
+                    error_message("Error message",
+                                  "A component can have a maximum of {} outcomes".format(self.max_number_outcomes),
+                                  parent=self)
+                    self.code_editor.mark_component(component_name)
+                # Otherwise store the information
+                else:
+                    self.components[component_name]["number_outcomes"] = number_outcomes
             else:
                 self.code_editor.mark_component(component_name)
         self.handle_valid_input_change(filtered_input, is_different)
