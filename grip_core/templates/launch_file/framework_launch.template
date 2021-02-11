@@ -1,4 +1,10 @@
 <launch>
+  {% if launch_parameters.sensor_launch_files %}
+  <!-- Run the integrated sensors -->
+  {% for file in launch_parameters.sensor_launch_files %}
+  <include file="{{ file }}" />
+  {% endfor %}
+  {% endif %}
 
   <!-- Get the path of the urdf file -->
   <arg name="robot_urdf_file_path" value="{{ launch_parameters.urdf_file }}"/>

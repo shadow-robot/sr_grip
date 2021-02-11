@@ -19,7 +19,7 @@ from PyQt5.QtCore import pyqtSignal
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_core.utils.file_parsers import is_def_file_valid
 from grip_api.utils.common_dialog_boxes import error_message
-from grip_api.utils.common_checks import is_pose_valid, is_topic_valid, is_moveit_planner_valid
+from grip_api.utils.common_checks import is_pose_valid, is_topic_valid, is_moveit_planner_valid, is_launchfile_valid
 from plain_editor_widgets import YAMLEditorWidget
 from collections import OrderedDict
 import os
@@ -683,6 +683,9 @@ class SensorEditorWidget(ComponentEditorWidget):
                     self.code_editor.mark_component(component_name)
             elif not is_pose_valid(component_args["initial_pose"]):
                 self.code_editor.mark_component(component_name)
+            # If a launchfile starting the data collection is provided, make sure it is valid
+            elif "launch_file" in component_args and not is_launchfile_valid(component_args["launch_file"]):
+                self.code_editor.mark_component(component_name)
             else:
                 filtered_input[component_name] = component_args
 
@@ -696,24 +699,32 @@ class SensorEditorWidget(ComponentEditorWidget):
         # If no input is provided then exit
         if not (component_name and ok):
             return
-
-        text_to_display = self.get_sensor_template(component_name)
+        # Ask for a potential file that GRIP must run to start the sensor note that if no launch file is provided,
+        # we assume that the sensor will be run externally
+        returned_sensor_launch, _ = QFileDialog.getOpenFileName(self, "Select the launchfile running the sensor",
+                                                                filter="launchfile(*.launch)", directory=CATKIN_WS)
+        # Display the sensor template according to the user's input
+        text_to_display = self.get_sensor_template(component_name, returned_sensor_launch)
         self.append_template(text_to_display)
 
-    def get_sensor_template(self, sensor_name):
+    def get_sensor_template(self, sensor_name, sensor_launchfile):
         """
             Returns the text to display that provides the different inputs required to add a sensor to the framework
 
-            @param controller_name: Name of the controller to add
+            @param sensor_name: Name of the sensor to add
+            @param sensor_launchfile: Path to the launchfile that would start the sensor (can be None)
             @return: String corresponding to the input of a sensor
         """
-        template = "{}:\n\tdata_topics:\n\tframe_id: \n\tinitial_pose: \n\t\t"\
+        template = "{}:\n\tlaunch_file: {}\n\tdata_topics:\n\tframe_id: \n\tinitial_pose: \n\t\t"\
                    "# You can simplify this part by defining a pose in the pose editor\n\t\t"\
                    "reference_frame: \n\t\tposition: {{x: , y: , z: }}\n\t\t# You can use x,y,z,w for quaternion\n\t\t"\
                    "orientation: {{r: , p: , y: }}"
+        # If no sensor file is given then remove the launch_file field
+        if not sensor_launchfile:
+            template = template.replace("launch_file: {}\n\t", "")
         # Replace the "\t" by spaces so they don't appear in red in the editor
         template = template.replace("\t", "  ")
-        return template.format(sensor_name)
+        return template.format(sensor_name, sensor_launchfile) if sensor_launchfile else template.format(sensor_name)
 
     def set_known_poses(self, poses):
         """

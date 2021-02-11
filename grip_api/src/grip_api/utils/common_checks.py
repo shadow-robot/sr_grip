@@ -15,6 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
+import rospkg
 import ruamel.yaml
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
@@ -132,3 +133,24 @@ def to_ruamel_format(element):
         return DoubleQuotedScalarString('')
     # Otherwise just return the element as it is
     return element
+
+
+def is_launchfile_valid(file_path):
+    """
+        Check whether a provided path to a launch file is valid
+
+        @param file_path: Path to a given file (that should correspond to a launch file)
+        @return: True if the launch file is valid, False otherwise
+    """
+    # If the input is not a string return False
+    if not isinstance(file_path, str):
+        return False
+    # If the path does not end with .launch return False
+    if not file_path.endswith(".launch"):
+        return False
+    # If it is not part of a ros package return False as well
+    ros_pkg = rospkg.get_package_name(file_path)
+    if not ros_pkg:
+        return False
+    # Otherwise retrun True
+    return True

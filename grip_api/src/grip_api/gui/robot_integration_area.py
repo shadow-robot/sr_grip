@@ -365,6 +365,7 @@ class RobotIntegrationArea(QTabWidget):
         self.launch_parameters["rviz_configuration"] = rviz_config
         self.launch_parameters["ros_controllers"] = self.get_fused_ros_controllers()
         self.launch_parameters["sensors_config_path"] = self.settings_config_widget.sensor_configs.file_path
+        self.launch_parameters["sensor_launch_files"] = self.extract_sensor_launch_files()
         # Get the paths of pre-recoded elements
         recorded_joint_states_file_path = self.settings_config_widget.named_joint_states.file_path
         recorded_joint_states = "" if not recorded_joint_states_file_path else recorded_joint_states_file_path
@@ -404,6 +405,24 @@ class RobotIntegrationArea(QTabWidget):
             # Get parameters related to non simulated robots
             self.launch_parameters["hardware_connection"] = self.get_fused_hardware_connection()
             self.launch_parameters["scene"] = self.robot_interface.robot_config.configuration["UE Collision scene"]
+
+    def extract_sensor_launch_files(self):
+        """
+            Get the path of the launch files to include in the generated launch file to run the configured sensors
+        """
+        # Initialize the list that is going to be returned
+        sensor_launch_files = list()
+        # Get the configuration
+        configured_sensors = self.settings_config_widget.sensor_configs.valid_input
+        # If at least a sensor has been configured
+        if configured_sensors:
+            # Go over all the configured sensors
+            for sensor_params in configured_sensors.values():
+                # Store the "launch_file" field if present
+                if "launch_file" in sensor_params:
+                    sensor_launch_files.append(os.path.abspath(sensor_params["launch_file"]))
+        # Return the list
+        return sensor_launch_files
 
     def get_fused_ros_controllers(self):
         """
