@@ -262,7 +262,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "joint_trajectory_manager_server");
     ros::NodeHandle node_handle;
     std::string constructor_argument = "";
-    // Get the potential YAML file path passed as arguent
+    // Get the potential YAML file path passed as argument
     if (argc >= 2)
     {
         constructor_argument = argv[1];

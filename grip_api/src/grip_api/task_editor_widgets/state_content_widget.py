@@ -43,7 +43,9 @@ class StateContentWidget(QWidget, Serializable):
         # State displayer in which the state is displayed
         state_displayer = self.state.container.editor_widget.parent().parent().parent().parent().state_displayer
         # Get the name of the states to be generated (i.e. corresponding to integrated components)
-        self.states_to_generate = state_displayer.list_widget.states_to_display["Generated"]
+        self.states_to_generate = list()
+        if "Generated" in state_displayer.list_widget.states_to_display:
+            self.states_to_generate = state_displayer.list_widget.states_to_display["Generated"]
         # Initialize the UI
         self.init_ui()
 
