@@ -352,12 +352,28 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         # If the state correponds to a sensor, then create an attribute to the class that must be linked to the sensor
         if "sensor_topic" in state_parameters:
             self.topic_mapping = self.parent().state_info["data_topics"]
+        else:
+            # Get a pointer to the task editor area
+            task_editor_area = self.parent().state.container.editor_widget.parent().parent().parent().parent()
+            # To get access to the robot integration area
+            robot_integration_area = task_editor_area.framework_gui.robot_integration_area
+            # Get access to the settings configuration
+            settings_config = robot_integration_area.settings_config_widget
+            # Initialize the list of registered msgs in GRIP's editors
+            self.known_msgs = {"pose": settings_config.named_poses.poses.keys(),
+                               "joint state": settings_config.named_joint_states.valid_input.keys(),
+                               "trajectory": settings_config.named_trajectories.valid_input.keys(),
+                               "plan": list()}
+            # Connect the signals coming from the different editors
+            settings_config.named_poses.canBeSaved.connect(self.update_known_poses)
+            settings_config.named_joint_states.canBeSaved.connect(self.update_known_joint_states)
+            settings_config.named_trajectories.canBeSaved.connect(self.update_known_trajectories)
         # Initialize the content
         self.initialize_content(state_parameters)
 
     def initialize_content(self, state_parameters):
         """
-            Add configuration slots for every parameters parsed from the state source
+            Add configuration slots for all the parameters parsed from the state source
 
             @param state_parameters: Dictionary containing all the parameters to display
         """
@@ -371,9 +387,70 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
                 self.add_choice_slot(key, ALL_MANAGER_TYPE_CHOICE)
             elif key == "sensor_topic":
                 self.add_choice_slot(key, self.topic_mapping.keys())
+            elif key == "input":
+                self.add_choice_slot(key, [""], True)
             else:
                 # Add the configuration slot
                 self.add_configuration_slot(key, None)
+
+    def add_choice_slot(self, slot_name, choices, is_editable=False):
+        """
+            Add a line to the layout containing both a label and a QComboBox
+
+            @param slot_name: Name of the parameter to configure
+            @param choices: List of strings the user can select
+            @param is_editable: Boolean stating whether the user can edit its content or not. Default is False
+        """
+        # Create the label
+        slot_title = QLabel(slot_name + ":", objectName="slot {}".format(slot_name))
+        # Configure the QComboBox
+        list_choice = QComboBox(objectName="choice {}".format(slot_name))
+        # Set the different choices
+        list_choice.addItems(choices)
+        list_choice.setEditable(is_editable)
+        if slot_name == "input_type":
+            list_choice.currentTextChanged.connect(self.update_choice_content)
+        # Add both widgets in the layout
+        self.layout.addWidget(slot_title, self.number_rows, 0)
+        self.layout.addWidget(list_choice, self.number_rows, 1)
+        # Update the class' attributes
+        self.number_rows += 1
+        self.registered_keys.append(slot_name)
+
+    def update_choice_content(self, current_text):
+        """
+            Update the choices given in the combo box associated to the sender
+
+            @param current_text: New value of the text from the QCombobox emitting the signal
+        """
+        # Get the other (associated) QComboBox
+        widget = self.findChild(QComboBox, "{}".format(self.sender().objectName().replace("_type", "")))
+        widget.clear()
+        # Depending on the current text of the sender, update the possible choices
+        if not current_text:
+            widget.addItem("")
+        else:
+            widget.addItems([""] + self.known_msgs[current_text])
+
+    def update_known_poses(self):
+        """
+            Update available poses defined in the corresponding editor
+        """
+        self.known_msgs["pose"] = self.sender().poses.keys()
+
+    def update_known_joint_states(self):
+        """
+            Update the available joint states defined in the corresponding editor
+        """
+        known_js = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        self.known_msgs["joint state"] = known_js
+
+    def update_known_trajectories(self):
+        """
+            Update the available trajectories defined in the corresponding editor
+        """
+        known_traj = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        self.known_msgs["trajectory"] = known_traj
 
     def get_slot_config(self, slot_name):
         """

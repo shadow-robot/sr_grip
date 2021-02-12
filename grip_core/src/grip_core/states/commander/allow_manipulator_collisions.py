@@ -30,7 +30,7 @@ class AllowManipulatorCollisions(smach.State):
                  output_keys=[], io_keys=[]):
         """
             Initialise the attributes of the class
-            @param allow: States whether the state should allow or disallow collision check for the hand
+            @param allow: Specify whether the state should allow or disallow collision check for the hand
             @param collision_type: Kind of modification to be brought to the ACM (must be either '' i.e simple getter,
                                                                                  'self-collision' or 'object-collision')
             @param objects: Optional list of objects we want to allow the manipulator to collide with.
@@ -43,9 +43,9 @@ class AllowManipulatorCollisions(smach.State):
         smach.State.__init__(self, outcomes=outcomes, input_keys=input_keys, output_keys=output_keys, io_keys=io_keys)
         # Initialise the PlanningScene publisher
         self.planning_scene_publisher = rospy.Publisher("planning_scene", PlanningScene, queue_size=5, latch=True)
-        # Make sure the service is ready to be use
+        # Make sure the service is ready to be used
         rospy.wait_for_service("/get_modified_acm")
-        # Proxy to the ACm manager to get modified ACMs
+        # Proxy to the ACM manager to get modified ACMs
         self.get_modified_acm = rospy.ServiceProxy("get_modified_acm", GetModifiedACM)
         # Get the modification type (equivalent to a switch statement)
         self.modification_type = {"": 0, "self-collision": 1, "object-collision": 2}.get(collision_type, None)
