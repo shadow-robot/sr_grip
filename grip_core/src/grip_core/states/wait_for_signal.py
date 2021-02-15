@@ -32,10 +32,10 @@ class WaitForSignal(smach.State):
 
             @param topic_name: String stating the name of the topic containing a boolean message
             @param timeout: Optional parameter stating how long the state should block (in seconds)
-            @param outcomes: Possible outcomes of the state. Default "success" and "fail"
+            @param outcomes: Possible outcomes of the state. Default "success" and "failure"
             @param input_keys: List enumerating all the inputs that a state needs to run
             @param output_keys: List enumerating all the outputs that a state provides
-            @param io_keys: List enumarting all objects to be used as input and output data
+            @param io_keys: List enumerating all objects to be used as input and output data
         """
         smach.State.__init__(self, outcomes=outcomes, output_keys=output_keys, input_keys=input_keys, io_keys=io_keys)
         self.topic_name = topic_name

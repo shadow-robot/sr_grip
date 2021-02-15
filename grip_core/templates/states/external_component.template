@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+
+# Copyright 2020 Shadow Robot Company Ltd.
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import smach
+import rospy
+from grip_core.utils.manager_utils import get_add_service_from_type, get_retrieve_service_from_type
+from {{ component.server_statement }} import {{ component.def_file }}
+{% if "srv" not in component.server_statement %}
+import actionlib
+{% endif %}
+
+class {{ component.name }}(smach.State):
+
+    """
+      Class initializing and running a client to send a request to a server running external code
+    """
+
+    def __init__(self, input, input_type, output, output_type, outcomes, input_keys=[], output_keys=[], io_keys=[]):
+        """
+            Initialise the attributes of the class
+
+            @param input: What should be set as request for the server running the external method. It can also be the
+                          name of a message to retrieve from a manager, or the name of a variable of the state machine
+            @param input_type: If the state must retrieve a message from one manager, set this parameter to one of the
+                               valid values: joint state, plan, pose or trajectory. Otherwise set to empty (i.e. "")
+            @param output: Name under which the returned object from the server will be stored either in the userdata or
+                           in one of the managers
+            @param output_type: If the returned object must be stored in a manager, set this parameter to one of the
+                               valid values: joint state, plan, pose or trajectory. Otherwise set to empty (i.e. "")
+            @param outcomes: Possible outcomes of the state
+            @param input_keys: List enumerating all the inputs that a state needs to run
+            @param output_keys: List enumerating all the outputs that a state provides
+            @param io_keys: List enumerating all objects to be used as input and output data
+        """
+        smach.State.__init__(self, outcomes=outcomes, io_keys=io_keys, input_keys=input_keys, output_keys=output_keys)
+        self.input = input
+        self.output = output
+        # If need be initialize the services required to retrieve and send messages to the managers
+        self.message_getter = get_retrieve_service_from_type(input_type) if input_type else None
+        self.message_sender = get_add_service_from_type(output_type) if output_type else None
+        {% if "srv" in component.server_statement %}
+        # Make sure the service is ready
+        rospy.wait_for_service("{{ component.server_name }}")
+        # Connect to the service
+        self.client = rospy.ServiceProxy("{{ component.server_name }}", {{ component.def_file }})
+        {% else %}
+        # Initialize the client to the action and make sure the server is ready
+        self.client = actionlib.SimpleActionClient("{{ component.server_name }}", {{ component.def_file }})
+        self.client.wait_for_server()
+        {% endif %}
+        # Get the outcomes
+        self.outcomes = outcomes
+
+    def execute(self, userdata):
+        """
+            Call the server that runs the corresponding external component
+
+            @param userdata: Input and output data that can be communicated to other states
+
+            @return: One of the outcomes configured for the given component or the outcome named "state_failed" if
+                     anything goes wrong when dealing with the servers (e.g. communication cut, wrong message, etc.)
+        """
+        try:
+            # Get the input of the message
+            if not isinstance(self.input, str) or self.input.startswith("\"") and self.input.endswith("\""):
+                input_data = self.input
+            elif self.input in userdata:
+                input_data = userdata[self.input]
+            else:
+                input_data = self.message_getter(self.input)
+        except:
+            rospy.logerr("The input data cannot be retrieved from the current configuration")
+            return self.outcomes[-1]
+
+        try:
+            # Call the server
+            {% if "srv" in component.server_statement %}
+            response = self.client(input_data)
+            {% else %}
+            goal = {{ component.def_file }}()
+            goal.input = input_data
+            self.client.send_goal(goal)
+            self.client.wait_for_result()
+            response = self.client.get_result()
+            {% endif %}
+        except:
+            rospy.logerr("Something went wrong when sending the request to the server")
+            return self.outcomes[-1]
+
+        # If there is nothing to store then just return the associated outcome
+        returned_object = response.returned_object
+        if not returned_object or not self.output:
+            return self.outcomes[response.outcome]
+        # If the message needs to be stored in a manager, send it
+        if self.message_sender is not None:
+            manager_response = self.message_sender(returned_object, self.output)
+            # If something went wrong return the the state_failed outcome
+            if not manager_response.success:
+                rospy.logerr("Cannot store the message {}".format(returned_object))
+                return self.outcomes[-1]
+        # Otherwise store the output in the userdata
+        else:
+            userdata[self.output] = returned_object
+        # Return associated outcome
+        return self.outcomes[response.outcome]

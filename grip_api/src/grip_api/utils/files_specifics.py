@@ -15,6 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
+from PyQt5.QtGui import QColor
 
 FILE_TO_EXTENSION = {"Gazebo world file": ["gazebo world", "world", ".world"],
                      "Robot's URDF file": ["robot's urdf", "urdf", ".urdf.xacro"],
@@ -51,3 +52,13 @@ EDITOR_TO_DESCRIPTION = {"Editor External controllers": "Run an external control
                          "Editor External Motion Planners": "Run an external motion planner",
                          "Editor High level methods": "Run an external high level component",
                          "Editor Sensors config": "Capture data from a configured sensor"}
+
+COMMANDER_DATA_TYPE_CHOICE = ["", "joint state", "pose"]
+
+ALL_MANAGER_TYPE_CHOICE = ["", "joint state", "plan", "pose", "trajectory"]
+
+# Blue for input (index 0), Green for success related outcomes (index 1) and Red for failure related things (index 2)
+DEDICATED_SOCKET_COLORS = [QColor("#FF4599FF"), QColor("#FF00cb00"), QColor("#FFFF0021")]
+
+SOCKET_COLORS = [QColor("#FFFF8c00"), QColor("#FFa86db1"), QColor("#FFfc9a9a"),
+                 QColor("#FF82eda2"), QColor("#FFa8e9ff"), QColor("#FFf6fa8e")]

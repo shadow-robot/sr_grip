@@ -77,8 +77,7 @@ int main(int argc, char** argv)
         else
         {
             // Initialize a service client to access the already loaded named pose
-            ros::ServiceClient get_pose = node_handler.serviceClient<grip_core::GetPoseStamped>("get_"
-                                                                                                             "pose");
+            ros::ServiceClient get_pose = node_handler.serviceClient<grip_core::GetPoseStamped>("get_pose");
             grip_core::GetPoseStamped service;
             service.request.pose_name = parameter->second["initial_pose"].as<std::string>();
             get_pose.waitForExistence();

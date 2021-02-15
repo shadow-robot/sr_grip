@@ -157,9 +157,11 @@ def fill_available_states(path_folders):
                     name = "".join([word.capitalize() for word in file.replace(".py", "").split("_")])
                     description = extract_description_from_file(file_path)
                     parameters = extract_state_parameters_from_file(file_path)
+                    import_statement = get_import_statement(file_path)
                     # Add the state to the proper dictionary
                     if name not in dict_to_fill.keys():
-                        dict_to_fill[name] = {"source": file_path, "parameters": parameters, "description": description}
+                        dict_to_fill[name] = {"source": file_path, "parameters": parameters,
+                                              "description": description, "import_statement": import_statement}
                     else:
                         print("The state named {} already exists. Ignoring the others.".format(name))
             # If the loaded states are related to commanders, then add the associated dictionary to AVAILABLE_STATES
@@ -170,12 +172,38 @@ def fill_available_states(path_folders):
         return True
 
 
+def get_import_statement(file_path):
+    """
+        Return the correct import statement to use the python file located at file_path (/!\ Only valid for Python 2)
+
+        @param file_path: Path to the python file (string)
+        @return: String corresponding to what must be ater the from in an import statement (e.g. from xxx import yyy)
+    """
+    # Initialize the final import import_statement
+    state_import_statement = None
+    # Get the absolute path to avoid any possible mistake
+    absolute_path = os.path.abspath(file_path)
+    # Retrieve the correct python import statement by finding the correct package in which the states are stored
+    # List gathering all the folders. Discarding the first element because it is empty (absolute path starts with /)
+    split_path = os.path.dirname(absolute_path).split("/")[1:]
+    # Variable that will contain the progressive paths
+    tested_path = ""
+    # For each root of the path tree, try to find if it contains an __init__.py (i.e the diretory is a package)
+    for root_level, directory_name in enumerate(split_path):
+        tested_path += "/{}".format(directory_name)
+        # If we find the package name, we take everything after this to create the proper import path
+        if os.path.exists(tested_path + "/__init__.py"):
+            state_import_statement = ".".join(split_path[root_level:])
+            break
+
+    return state_import_statement
+
+
 def is_def_file_valid(file_path):
     """
         Check whether an input file (.action or .srv) has the expected fields to be integrated to GRIP
 
         @param file_path: Path of the file (string)
-
         @return: True if the definition file (.action or .srv) is valid, False otherwise
     """
     # Get a single string with the whole file inside

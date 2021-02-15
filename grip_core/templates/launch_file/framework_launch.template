@@ -1,4 +1,10 @@
 <launch>
+  {% if launch_parameters.sensor_launch_files %}
+  <!-- Run the integrated sensors -->
+  {% for file in launch_parameters.sensor_launch_files %}
+  <include file="{{ file }}" />
+  {% endfor %}
+  {% endif %}
 
   <!-- Get the path of the urdf file -->
   <arg name="robot_urdf_file_path" value="{{ launch_parameters.urdf_file }}"/>
@@ -7,7 +13,6 @@
   <param name="robot_description" command="xacro --inorder '$(arg robot_urdf_file_path)' {{ launch_parameters.urdf_args }}"/>
 
   <node pkg="grip_core" type="joint_state_manager_server" name="joint_state_manager_server" args="{{ launch_parameters.recorded_joint_state_path }}" output="screen"/>
-  <node pkg="grip_core" type="standardised_grasp_manager_server" name="standardised_grasp_manager_server" output="screen"/>
   <node pkg="grip_core" type="moveit_plan_manager_server" name="moveit_plan_manager_server" output="screen"/>
   <node pkg="grip_core" type="pose_stamped_manager_server" name="pose_stamped_manager_server" output="screen" args="{{ launch_parameters.recorded_poses }}"/>
   <node pkg="grip_core" type="robot_pose_manager_server" name="robot_pose_manager_server" output="screen" args="{{ launch_parameters.recorded_poses }}"/>
@@ -81,9 +86,9 @@
 
   {% endif %}
 
-  {% if (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics) | any %}
+  {% if (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics, launch_parameters.external_high_level_methods) | any %}
   <!-- Launch the server for all the set external components -->
-  {% for external_component in (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics) %}
+  {% for external_component in (launch_parameters.arm_external_controller, launch_parameters.arm_external_motion_planner, launch_parameters.arm_external_kinematics, launch_parameters.hand_external_controller, launch_parameters.hand_external_motion_planner, launch_parameters.hand_external_kinematics, launch_parameters.external_high_level_methods) %}
   {% if external_component != None %}
   {% for component_name, component_args in external_component.items() %}
   <node name="external_{{ component_name }}" pkg="{{ component_args.server_package }}" type="{{ component_args.node_type }}" output="screen" />
@@ -93,7 +98,7 @@
   {% endif %}
 
   {% if launch_parameters.sensors_config_path %}
-  <!-- Loading a node that adds the kinect frame and carries out some transform so that we have a nice point cloud display in Rviz -->
+  <!-- Loading a node that adds the frame of all configured sensors -->
   <node pkg="grip_core" type="sensors_tf2_broadcaster" args="{{ launch_parameters.sensors_config_path }}" name="sensors_tf2_broadcaster" output="screen"/>
   {% endif %}
 

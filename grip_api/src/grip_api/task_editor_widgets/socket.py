@@ -21,7 +21,7 @@ from grip_api.task_editor_graphics.socket import GraphicsSocket
 class Socket(Serializable):
 
     """
-        Object gathering all the logic realted to sockets that are directlt linked to a State
+        Object gathering all the logic related to sockets that are directlt linked to a State
     """
 
     def __init__(self, state, socket_name, index=0, multi_connections=True, count_on_this_side=1):
@@ -41,7 +41,7 @@ class Socket(Serializable):
         self.name = socket_name
         self.is_multi_connected = multi_connections
         self.count_on_this_side = count_on_this_side
-        # Compute the position of the state
+        # Compute the position of the socket wrt the state dimensions
         self.position = self.get_position()
         # Create the graphical representation of the socket
         self.graphics_socket = GraphicsSocket(self)
@@ -74,8 +74,14 @@ class Socket(Serializable):
             y = self.state.graphics_state.boundingRect().height()
             node_width = self.state.graphics_state.boundingRect().width()
             total_number_of_spaces = self.count_on_this_side - 1
-            scaled_socket_space = self.state.socket_spacing * compensation_factor
-            # Uniformely spread the sockets on the width of the state
+            # Make sure to adapt the value of the socket spacing so it does not go over the node width
+            if total_number_of_spaces * self.state.socket_spacing * compensation_factor >= node_width:
+                socket_space = (node_width * 1./compensation_factor - 32) / total_number_of_spaces
+            else:
+                socket_space = self.state.socket_spacing
+            # Scale it
+            scaled_socket_space = socket_space * compensation_factor
+            # Uniformly spread the sockets on the width of the state
             x = node_width / 2. + self.index * scaled_socket_space - total_number_of_spaces / 2. * scaled_socket_space
 
         return [x, y]

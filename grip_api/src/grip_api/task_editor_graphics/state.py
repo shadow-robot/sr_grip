@@ -58,9 +58,9 @@ class GraphicsState(QGraphicsItem):
         self.edge_padding = 10.0
         # Roundness of the outline
         self.edge_roundness = 10.0
-        # Get the content size. The 15 comes from the display size of the scroll bar.
-        self.content_initial_width = self.state.content.scroll_area.width() + 15
-        self.content_initial_height = self.state.content.scroll_area.height()
+        # Get the content size
+        self.content_initial_width = self.state.content.width()
+        self.content_initial_height = self.state.content.height()
         # Compute the initial width and height of the widget. The 1 comes from half the outline width
         self.width = self.content_initial_width + 2 * (self.edge_padding + 1)
         self.height = self.content_initial_height + 2 * (self.edge_padding + 1) + self.title_height

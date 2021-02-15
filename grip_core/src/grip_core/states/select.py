@@ -34,10 +34,10 @@ class Select(smach.State):
             @param message_type: Type of message to select. Legal values are {"joint_state", "trajectory", "plan",
                                                                               "pose", "grasp", "pregrasp", "postgrasp"}
             @param message_names: Optional names of the messages you want to retrieve and select one after the other
-            @param outcomes: Possible outcomes of the state. Default "success" and "fail"
+            @param outcomes: Possible outcomes of the state. Default "success" and "failure"
             @param input_keys: List enumerating all the inputs that a state needs to run
             @param output_keys: List enumerating all the outputs that a state provides
-            @param io_keys: List enumarting all objects to be used as input and output data
+            @param io_keys: List enumerating all objects to be used as input and output data
         """
         # Initialise the state
         smach.State.__init__(self, outcomes=outcomes, io_keys=io_keys, input_keys=input_keys, output_keys=output_keys)

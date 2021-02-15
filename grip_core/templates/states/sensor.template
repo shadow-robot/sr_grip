@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+# Copyright 2020 Shadow Robot Company Ltd.
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import smach
+import rospy
+from {{ sensor.msg_import_statement }} import {{ sensor.msg_name }}
+
+
+class {{ sensor.name }}(smach.State):
+
+    """
+      Class getting a message from a sensor that publishes data on a ROS topics
+    """
+
+    def __init__(self, sensor_topic, output, outcomes=["success", "failure"], input_keys=[], output_keys=[], io_keys=[]):
+        """
+            Initialise the attributes of the class
+
+            @param sensor_topic: Name of the topic from which the data will be extracted
+            @param output: Name under which the message extracted from the topic will be saved in the userdata
+            @param output: Name under which the returned object from the server will be stored either in the userdata or
+            @param outcomes: Possible outcomes of the state. Can either be success of failure
+            @param input_keys: List enumerating all the inputs that a state needs to run
+            @param output_keys: List enumerating all the outputs that a state provides
+            @param io_keys: List enumerating all objects to be used as input and output data
+        """
+        smach.State.__init__(self, outcomes=outcomes, io_keys=io_keys, input_keys=input_keys, output_keys=output_keys)
+        # Initialize the subscriber
+        self.output = output
+        # Get the topic name
+        self.topic = sensor_topic
+        # Get the outcomes
+        self.outcomes = outcomes
+
+    def execute(self, userdata):
+        """
+            Wait for a message coming from the configured sensor
+
+            @param userdata: Input and output data that can be communicated to other states
+
+            @return: The outcome "success" if a message has been received, and properly stored, "failure" otherwise.
+        """
+        try:
+            # Wait for the message for a specific amount of time (2 seconds)
+            extracted_message = rospy.wait_for_message(self.topic, {{ sensor.msg_name }}, timeout=2)
+        except rospy.ROSException as ros_exception:
+            rospy.logerr("Cannot retrieve message from {}, meeting error: {}".format(self.topic, ros_exception))
+            return self.outcomes[-1]
+
+        userdata[self.output] = extracted_message
+        return self.outcomes[0]

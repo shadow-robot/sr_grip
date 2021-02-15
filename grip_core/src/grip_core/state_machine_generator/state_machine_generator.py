@@ -18,7 +18,8 @@ from config_parser import StateMachineConfigParser
 from templater import StateMachineTemplater
 
 
-def generate_state_machines(state_machine_dictionary, state_source, state_machine_sources, target_folder_path):
+def generate_state_machines(state_machine_dictionary, state_source, state_machine_sources, target_folder_path,
+                            commander_descriptor):
     """
         Generate all the python files corresponding to the state machines required to run a described state machine
 
@@ -26,10 +27,11 @@ def generate_state_machines(state_machine_dictionary, state_source, state_machin
         @param state_source: Path to the folder containing the states
         @param state_machine_sources: List of pathes poitning to folders containing the state machine templates
         @param target_folder_path: Path to the folder the generated state machines should be saved to
+        @param commander_descriptor: Dictionary containing the parameters of the configured commanders
     """
     # Initialise the parser and templater
     parser = StateMachineConfigParser(state_machine_dictionary, state_source)
-    templater = StateMachineTemplater(state_machine_sources, target_folder_path)
+    templater = StateMachineTemplater(state_machine_sources, target_folder_path, commander_descriptor)
 
     # For each state machine (starting with nested one) generate the corresponding file
     for state_machine in reversed(parser.state_machines):

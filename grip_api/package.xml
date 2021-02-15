@@ -2,7 +2,7 @@
 <package format="2">
   <name>grip_api</name>
   <version>0.0.1</version>
-  <description>Package containing the API and config files required to run the Modular Benchmarking Framework</description>
+  <description>Package containing the Graphical User Interface of the GRIP framework</description>
 
   <maintainer email="software@shadowrobot.com">Shadow Software Team</maintainer>
   <license>GPLv2</license>

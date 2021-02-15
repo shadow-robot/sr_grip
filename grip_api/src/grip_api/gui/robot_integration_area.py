@@ -39,6 +39,8 @@ class RobotIntegrationArea(QTabWidget):
     robotCanBeStopped = pyqtSignal(bool)
     # Signal stating whether the task editor can be accessible or not
     enableTaskEditor = pyqtSignal(bool)
+    # Signal sent when the configuration of commanders have changed
+    commanderUpdated = pyqtSignal()
 
     def __init__(self, parent=None):
         """
@@ -52,6 +54,8 @@ class RobotIntegrationArea(QTabWidget):
         self.config_changed = dict()
         self.can_be_saved = False
         self.launch_parameters = dict()
+        # Get the configuration of the commanders
+        self.commander_config = None
         self.launch_process = None
         self.launch_templater = LaunchFileTemplater()
         self.init_ui()
@@ -183,6 +187,7 @@ class RobotIntegrationArea(QTabWidget):
             return
 
         # If everything is good then enable the button
+        self.send_commanders_config()
         self.launch_button.setEnabled(True)
         self.robotCanBeLaunched.emit(True)
         self.enableTaskEditor.emit(True)
@@ -360,6 +365,7 @@ class RobotIntegrationArea(QTabWidget):
         self.launch_parameters["rviz_configuration"] = rviz_config
         self.launch_parameters["ros_controllers"] = self.get_fused_ros_controllers()
         self.launch_parameters["sensors_config_path"] = self.settings_config_widget.sensor_configs.file_path
+        self.launch_parameters["sensor_launch_files"] = self.extract_sensor_launch_files()
         # Get the paths of pre-recoded elements
         recorded_joint_states_file_path = self.settings_config_widget.named_joint_states.file_path
         recorded_joint_states = "" if not recorded_joint_states_file_path else recorded_joint_states_file_path
@@ -379,6 +385,8 @@ class RobotIntegrationArea(QTabWidget):
             self.launch_parameters["{}_external_controller".format(hardware_part)] = controller
             self.launch_parameters["{}_external_motion_planner".format(hardware_part)] = motion_planner
             self.launch_parameters["{}_external_kinematics".format(hardware_part)] = kinematics
+        # Get the valid input of integrated external methods
+        self.launch_parameters["external_high_level_methods"] = self.settings_config_widget.external_methods.components
         # Get the path of the MoveIt! sensor plugins
         plugins_path = self.settings_config_widget.sensor_plugins.file_path
         plugins_path = "" if not plugins_path else plugins_path
@@ -397,6 +405,24 @@ class RobotIntegrationArea(QTabWidget):
             # Get parameters related to non simulated robots
             self.launch_parameters["hardware_connection"] = self.get_fused_hardware_connection()
             self.launch_parameters["scene"] = self.robot_interface.robot_config.configuration["UE Collision scene"]
+
+    def extract_sensor_launch_files(self):
+        """
+            Get the path of the launch files to include in the generated launch file to run the configured sensors
+        """
+        # Initialize the list that is going to be returned
+        sensor_launch_files = list()
+        # Get the configuration
+        configured_sensors = self.settings_config_widget.sensor_configs.valid_input
+        # If at least a sensor has been configured
+        if configured_sensors:
+            # Go over all the configured sensors
+            for sensor_params in configured_sensors.values():
+                # Store the "launch_file" field if present
+                if "launch_file" in sensor_params:
+                    sensor_launch_files.append(os.path.abspath(sensor_params["launch_file"]))
+        # Return the list
+        return sensor_launch_files
 
     def get_fused_ros_controllers(self):
         """
@@ -462,6 +488,29 @@ class RobotIntegrationArea(QTabWidget):
         create_yaml_file(fused_hardware_connection, fused_ros_connection_file_path)
         # Return the path to the file
         return fused_ros_connection_file_path
+
+    def send_commanders_config(self):
+        """
+            Extract the commander configuration and emit a signal when it's done
+        """
+        # If not moveit config package is provided then no commander config should be set
+        if not self.robot_interface.moveit_config.moveit_package_entry_widget.valid_input:
+            updated_commander_config = None
+        else:
+            updated_commander_config = dict()
+            arm_config = self.arm_config_widget.configuration
+            hand_config = self.hand_config_widget.configuration
+            # For each piece of hardware get the MoveIt planner config
+            for hw_config in (arm_config, hand_config):
+                planner_config = hw_config["Editor MoveIt! planners"]
+                # If it contains at least one planner, go over all of them and get the configuration
+                if not not planner_config:
+                    for group_name, commander_config in planner_config.items():
+                        updated_commander_config[str(group_name)] = commander_config
+        # Update the attribute to know if the commander has been updated or not
+        if updated_commander_config != self.commander_config:
+            self.commander_config = updated_commander_config
+            self.commanderUpdated.emit()
 
     def save_config(self, settings):
         """

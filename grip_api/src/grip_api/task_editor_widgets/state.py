@@ -17,6 +17,7 @@
 from grip_api.task_editor_graphics.state import GraphicsState
 from graphical_editor_base import Serializable
 from state_content_widget import StateContentWidget
+from grip_core.state_machine_generator.state_generator import generate_state
 from socket import Socket
 import os
 
@@ -39,6 +40,8 @@ class State(Serializable):
         # When added, by default the name of the state is its type
         self.type = type
         self.name = type
+        # By default, should be False and will potentially be set to True when filling its content
+        self.to_generate = False
         # Create the widget displayed inside the state to configure it
         self.content = StateContentWidget(self)
         # Create the graphical representation of the state
@@ -116,20 +119,41 @@ class State(Serializable):
 
             @return: Dictionary containing at least the keys "source", "outcomes" and "transitions"
         """
+        # Generate the state if required
+        if self.to_generate:
+            # When generating a state related to a sensor, we need to know the topic we are listening to
+            if "data_topics" in self.content.state_info:
+                # Fill in the parameters slot with the topic name provided by the user
+                user_topic_name = self.content.config_state.get_slot_config("sensor_topic")
+                self.content.state_info["parameters"]["sensor_topic"] = user_topic_name
+            generate_state(self.content.state_info)
+
         # Will contain the configuration of the state (i.e. source, outcomes, parameters and transitions)
         state_config = {}
         # Extract the different information from the state's content
         for parameter_name in self.content.state_info["parameters"].keys():
-            # Outcomes are not displayed so don't extract it
-            if parameter_name != "outcomes":
+            # Make sure to only extract displayed parameters
+            if parameter_name not in ["outcomes", "input_keys", "output_keys", "io_keys"]:
                 # If the user has specified a value for the given parameter, store it
                 user_config = self.content.config_state.get_slot_config(parameter_name)
-                if user_config:
-                    state_config[parameter_name] = user_config
+                state_config[parameter_name] = user_config
+                # If the value needs to be set as an input key of the state
+                if user_config in self.container.output_userdata:
+                    state_config["input_keys"] = [user_config]
+
+        # Make sure to register all the potential output keys for external states and sensors
+        if self.to_generate:
+            output_value = state_config["output"]
+            if (output_value and "sensor_topic" in state_config) or (output_value and not state_config["output_type"]):
+                self.container.output_userdata.append(output_value)
+                state_config["output_keys"] = [output_value]
+
         # Get the source of the state
         state_config["source"] = os.path.basename(self.content.state_info["source"]).split(".")[0]
         # Get the outcomes
         state_config["outcomes"] = self.content.get_outcomes()
+        # Get the import statement
+        state_config["import_statement"] = self.content.state_info["import_statement"]
         # Extract the transitions
         transitions = dict()
         # For each output socket, extract the transition between this state and the following element

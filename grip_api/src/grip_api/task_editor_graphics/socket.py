@@ -17,6 +17,7 @@
 from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5.QtGui import QColor, QPen, QBrush
 from PyQt5.QtCore import QRectF
+from grip_api.utils.files_specifics import DEDICATED_SOCKET_COLORS, SOCKET_COLORS
 
 
 class GraphicsSocket(QGraphicsItem):
@@ -33,7 +34,7 @@ class GraphicsSocket(QGraphicsItem):
         """
         # Store the socket
         self.socket = socket
-        # Set the parent as the state's graphcial state
+        # Set the parent as the state's graphical state
         super(GraphicsSocket, self).__init__(socket.state.graphics_state)
         # Depending on the current view, update the transform applied to this object
         self.socket.state.container.get_view().viewScaled.connect(self.update_transform)
@@ -51,21 +52,17 @@ class GraphicsSocket(QGraphicsItem):
         self.radius = 8
         # Outline width of the socket
         self.outline_width = 1.0
-        # For now, 6 different colours are set. Ifa state has more than 6 outcomes, would need to add some colors here
-        self.colors = [
-            QColor("#FF00cb00"),
-            QColor("#FFFF0021"),
-            QColor("#FF0056a6"),
-            QColor("#FFFF7700"),
-            QColor("#FFa86db1"),
-            QColor("#FFb54747"),
-        ]
         # Input sockets always have the same colour
         if self.socket.index == 0 and self.socket.count_on_this_side == 1:
-            self.color_background = QColor("#FF4599FF")
+            self.color_background = DEDICATED_SOCKET_COLORS[0]
+        # We keep two specific colors for socket whose name contain success and failure
+        elif "success" in self.socket.name:
+            self.color_background = DEDICATED_SOCKET_COLORS[1]
+        elif "failure" in self.socket.name:
+            self.color_background = DEDICATED_SOCKET_COLORS[2]
         # Output sockets have their color set depending on their index
         else:
-            self.color_background = self.colors[self.socket.index]
+            self.color_background = SOCKET_COLORS[self.socket.index]
         # Outline will be painted in black
         self.color_outline = QColor("#FF000000")
         # Create a pen to draw the outline

@@ -21,17 +21,14 @@ class StateDescriptor(object):
         Class used to store all required information to describe a state
     """
 
-    def __init__(self, state_description, parent_params):
+    def __init__(self, state_description):
         """
             Initialise the attributes of the class and load the state description
 
             @param state_description: Dictionary containing the names and values of the parameters of the state
-            @param parent_params: Dictionary containing the parameters of the state's parent
         """
         # Initialise the parameters of the state
         self.parameters = {}
-        # Contains the parent's parameters
-        self.parent_parameters = parent_params.copy()
         # Will contain the name of the file in which the state is defined
         self.source_name = None
         # Will contain the type of state (StatePlan, StateMove, StateGrasp or custom made....)
@@ -58,14 +55,9 @@ class StateDescriptor(object):
             # Store the transitions
             elif parameter_name == "transitions":
                 self.transitions = parameter
-            # filters what we want to store in the parameters attribute
+            # Filter what we want to store in the parameters attribute
             elif parameter_name not in ["params", "states", "outcome_map", "default_outcome"]:
-                # If we have "params.something", it means that we are using the parent's parameter named something
-                # add str() to make the parameter iterable (can be int) without changing the outcome of the test
-                if "params." in str(parameter):
-                    self.parameters[parameter_name] = self.parent_parameters[parameter.replace("params.", "")]
-                else:
-                    self.parameters[parameter_name] = parameter
+                self.parameters[parameter_name] = parameter
 
     def set_source(self, source):
         """

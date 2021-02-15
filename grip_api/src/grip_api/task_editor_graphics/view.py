@@ -17,12 +17,11 @@
 from PyQt5.QtWidgets import QGraphicsView
 from PyQt5.QtCore import Qt, QEvent, pyqtSignal
 from PyQt5.QtGui import QPainter, QMouseEvent
-from state_content import GraphicsStateContent
 from socket import GraphicsSocket
 from terminal_socket import TerminalGraphicsSocket
 from grip_api.task_editor_widgets.connector import Connector
 from connector import GraphicsConnector
-from state import GraphicsState
+from state import GraphicsState, GraphicsStateContent
 from state_machine import GraphicsStateMachine
 
 
@@ -324,7 +323,7 @@ class TaskEditorView(QGraphicsView):
 
             @param event: QKeyEvent sent by PyQt5
         """
-        # Do nothing special, but if not overriden, then the event realted to the keyboard does not worf properly
+        # Do nothing special, but if not overriden, then the event related to the keyboard does not worf properly
         super(TaskEditorView, self).keyPressEvent(event)
 
     def dragEnterEvent(self, event):
@@ -357,7 +356,6 @@ class TaskEditorView(QGraphicsView):
         if isinstance(pointed_item, GraphicsStateContent):
             super(TaskEditorView, self).wheelEvent(event)
             return
-
         # Calculate zoom
         if event.angleDelta().y() > 0:
             zoom_to_apply = self.zoom_in_multiplier
