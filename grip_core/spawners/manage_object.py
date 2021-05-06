@@ -27,7 +27,7 @@ import argparse
 class ManageObject(object):
 
     """
-        Class allowing users to either add or remove objects in gazebo and in the collision matrix.
+        Class allowing users to either add or remove objects in Gazebo and in the collision matrix.
     """
 
     def __init__(self, object_type, mode, object_name, object_pose, reference_frame, file_path):
@@ -49,7 +49,7 @@ class ManageObject(object):
         self.reference_frame = reference_frame
         # Get the pose
         self.object_pose = object_pose
-        # Store the path of the default enviironment in which we can find objects (description_package/models)
+        # Store the path of the default environment in which we can find objects (description_package/models)
         self.default_env = rospy.get_param("gazebo_model_path")
         # Store the object type
         self.object_type = object_type
@@ -98,7 +98,7 @@ class ManageObject(object):
         spawn_sdf_model_client(self.object_name, model_sdf_file, rospy.get_namespace(), self.object_pose,
                                self.reference_frame, "gazebo")
         # And update the ACM
-        response = self.update_acm(0, self.object_name)
+        response = self.update_acm(0, self.object_name, True)
 
     def _delete_object(self):
         """
@@ -115,7 +115,7 @@ class ManageObject(object):
                 return
             # If everything is right then delete the object and update the ACM
             delete_model(model_name=self.object_name)
-            response = self.update_acm(1, self.object_name)
+            response = self.update_acm(1, self.object_name, True)
             if not response.success:
                 rospy.logwarn("The object has been removed from gazebo but not from the ACM")
         except rospy.ServiceException as exception:
