@@ -3,5 +3,6 @@ uint8 DELETE_ENTRY=1
 uint8 REINIT=2
 uint8 action
 string entry_name
+bool publish
 ---
 bool success
