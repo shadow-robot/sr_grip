@@ -66,7 +66,7 @@ add_message_files(
 add_service_files(
   FILES
   SetInitACM.srv
-  GetModifiedACM.srv
+  ModifyACM.srv
   UpdateACMEntry.srv
   AddMoveitPlan.srv
   GetMoveitPlan.srv

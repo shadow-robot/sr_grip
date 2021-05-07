@@ -181,6 +181,9 @@ class GraphicalEditorWidget(QWidget):
         # generated file
         if self.container.type == "base" and self.container.name == "root":
             self.rename()
+            # If the container has not been renamed then quit
+            if self.container.name == "root":
+                return
         # Parse the container
         parsed_container = self.container.get_parsed_container()
         task_editor_mdi_area = self.parent().mdiArea().parent()

@@ -1,5 +1,5 @@
 /*
-* Copyright 2019 Shadow Robot Company Ltd.
+* Copyright 2019, 2021 Shadow Robot Company Ltd.
 *
 * This program is free software: you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the Free
@@ -27,32 +27,27 @@ ACMManager::ACMManager(ros::NodeHandle* nodehandler) : node_handler_(*nodehandle
     // Set the attributes of the class
     is_updated_ = false;
     number_entries_ = 0;
-    initial_number_entries_ = 0;
     // Initialize services
     set_init_acm_service_ = node_handler_.advertiseService("set_init_acm", &ACMManager::_set_init_acm, this);
     update_acm_entry_service_ =
         node_handler_.advertiseService("update_acm_entry", &ACMManager::_update_acm_entry, this);
-    get_modified_acm_service_ =
-        node_handler_.advertiseService("get_modified_acm", &ACMManager::_get_modified_acm, this);
+    modify_acm_service_ =
+        node_handler_.advertiseService("modify_acm", &ACMManager::_modify_acm, this);
+    // Initialize the publisher
+    publish_current_acm_ = node_handler_.advertise<moveit_msgs::PlanningScene>("planning_scene", 5);
     // Display a message stating that initialisation was a success
-    ROS_INFO_STREAM("The ACM plan manager is ready");
+    ROS_INFO_STREAM("The ACM manager is ready");
 }
 
 /**
- Set the initial acm attribute of the class
+ Set the initial ACM, that can be used to reinitialize the system at its original state
  * @param  request  Object containing a field "acm" (moveit_msgs::AllowedCollisionMatrix) that must correspond to the
                     initial state
  * @param  response Object containing a field "success" (boolean) stating whether the storing was successfull
  * @return          Boolean that should be always true in order to avoid having runtime errors on the client side
  */
-bool ACMManager::_set_init_acm(grip_core::SetInitACMRequest& request,
-                               grip_core::SetInitACMResponse& response)
+bool ACMManager::_set_init_acm(grip_core::SetInitACMRequest& request, grip_core::SetInitACMResponse& response)
 {
-    // Get the indices of the manipulator's links from the ROS parameter server and store it in the class attribute
-    if (manipulator_links_indices_.empty())
-    {
-        node_handler_.getParam("manipulator_links_indices", manipulator_links_indices_);
-    }
     // If an initial ACM has already been set, display a warning message
     if (!initial_acm_.entry_names.empty())
     {
@@ -63,11 +58,14 @@ bool ACMManager::_set_init_acm(grip_core::SetInitACMRequest& request,
     try
     {
         initial_acm_ = request.acm;
-        initial_number_entries_ = initial_acm_.entry_names.size();
+        // Make sure we know which robot's links correspond to which entry in the ACM
+        _set_robot_links_mapping(initial_acm_.entry_names);
+        // We assume that no objects are part of the ACM at first (i.e. collisions will be checked)
+        object_links_map_.clear();
         is_updated_ = false;
         response.success = true;
     }
-    // if anything goes wrong, catch the exception and set success to false
+    // If anything goes wrong, catch the exception and set success to false
     catch (const ros::Exception& exception)
     {
         ROS_ERROR_STREAM("An error occurred when storing the provided ACM: " << exception.what());
@@ -79,35 +77,43 @@ bool ACMManager::_set_init_acm(grip_core::SetInitACMRequest& request,
 /**
  Update the entries of the current ACM
  * @param  request  Object containing a field "action" (uint8) respresenting the kind of modification we want to bring
-                    to the ACM entries. It can be adding, deleting an entry or reinitialise the current ACM. The other
-                    field "entry_name" provided the name of the entry to modify.
+                    to the ACM entries. It can be adding or deleting an entry, or reinitialise the current ACM.
+                    The field "entry_name" provides the name of the entry to modify.
  * @param  response Object containing a field "success" (boolean) stating whether the modification has been successfull
  * @return          Boolean that should be always true in order to avoid having runtime errors on the client side
  */
 bool ACMManager::_update_acm_entry(grip_core::UpdateACMEntryRequest& request,
                                    grip_core::UpdateACMEntryResponse& response)
 {
-    // Sanity check, to make sure an initial ACM has bee nset
+    // Set the response success to False by default
+    response.success = false;
+    // Sanity check, to make sure an initial ACM has been set
     if (initial_acm_.entry_names.empty())
     {
-        ROS_ERROR_STREAM("An initial ACM needs to be set using the 'set_init_acm' service before using "
-                         "this one");
-        response.success = false;
-        return true;
+        ROS_INFO_STREAM("No initial ACM has been set using the 'set_init_acm' service. Creating the initial one from "
+                        "the current scene.");
+        // Initialize the ACM from the current state of the scene (before adding/removing any entry)
+        bool res = initialize_acm_from_scene();
+        object_links_map_.clear();
+        // If the initialization failed, stop here
+        if (!res)
+        {
+            return true;
+        }
     }
     // Extract the action to perform
     uint8_t update_action = request.action;
-    // If the updated_acm_ attribute needs to be reinitialised or set to the initial ACM
+    // If the current_acm_ attribute needs to be reinitialised or set to the initial ACM
     if (!is_updated_ || update_action == request.REINIT)
     {
-        updated_acm_ = initial_acm_;
+        current_acm_ = initial_acm_;
         // Update the number of entries
-        number_entries_ = updated_acm_.entry_names.size();
+        number_entries_ = current_acm_.entry_names.size();
         is_updated_ = true;
         if (update_action == request.REINIT)
         {
             response.success = true;
-            return true;
+            object_links_map_.clear();
         }
     }
 
@@ -115,7 +121,7 @@ bool ACMManager::_update_acm_entry(grip_core::UpdateACMEntryRequest& request,
     // success to false
     if (request.entry_name.empty())
     {
-        ROS_ERROR_STREAM("No target link provided for updating the ACM, cannot proceed");
+        ROS_ERROR_STREAM("No target link(s) provided for updating the ACM, cannot proceed");
         response.success = false;
         return true;
     }
@@ -128,9 +134,9 @@ bool ACMManager::_update_acm_entry(grip_core::UpdateACMEntryRequest& request,
     {
         // For each existing entry, add at the end a boolean setting whether we should skip the collision checking
         // Since we set it to false, the new object can't be in collision with any links of the robot
-        for (int entry_index = 0; entry_index < updated_acm_.entry_values.size(); entry_index++)
+        for (int entry_index = 0; entry_index < current_acm_.entry_values.size(); entry_index++)
         {
-            updated_acm_.entry_values[entry_index].enabled.push_back(false);
+            current_acm_.entry_values[entry_index].enabled.push_back(false);
         }
         // Create a new collision entry for the object to add
         moveit_msgs::AllowedCollisionEntry allowed_collision_entry;
@@ -142,14 +148,14 @@ bool ACMManager::_update_acm_entry(grip_core::UpdateACMEntryRequest& request,
         // Disallow the collision checking between the object and itself
         allowed_collision_entry.enabled.push_back(true);
         // Add the collision entry to the updated ACM
-        updated_acm_.entry_values.push_back(allowed_collision_entry);
+        current_acm_.entry_values.push_back(allowed_collision_entry);
         // Add the name of the object to the entry names
-        updated_acm_.entry_names.push_back(object_name);
+        current_acm_.entry_names.push_back(object_name);
+        object_links_map_[request.entry_name] = number_entries_;
         // Update the number of entries
         number_entries_ += 1;
 
         response.success = true;
-        return true;
     }
 
     // When an entry must be deleted
@@ -157,27 +163,28 @@ bool ACMManager::_update_acm_entry(grip_core::UpdateACMEntryRequest& request,
     {
         // Get an iterator containing the index of the name of the object to delete in the entry names
         std::vector<std::string>::iterator query_name_position =
-            std::find(updated_acm_.entry_names.begin(), updated_acm_.entry_names.end(), object_name);
+            std::find(current_acm_.entry_names.begin(), current_acm_.entry_names.end(), object_name);
         // If the object cannot be found then display a warning message and set success to true since technically the
         // object is not in the ACM anymore
-        if (query_name_position == updated_acm_.entry_names.end())
+        if (query_name_position == current_acm_.entry_names.end())
         {
             ROS_WARN_STREAM("The entry name " << object_name << " cannot be found in the ACM");
             response.success = true;
-            return true;
+            // return true;
         }
         // Get index of element from the iterator
-        int index = std::distance(updated_acm_.entry_names.begin(), query_name_position);
+        int index = std::distance(current_acm_.entry_names.begin(), query_name_position);
         // Remove the entry corresponding to the object
-        updated_acm_.entry_values.erase(updated_acm_.entry_values.begin() + index);
+        current_acm_.entry_values.erase(current_acm_.entry_values.begin() + index);
         // For all the other entries, remove the boolean corresponding to the deleted obejct
-        for (int entry_index = 0; entry_index < updated_acm_.entry_values.size(); entry_index++)
+        for (int entry_index = 0; entry_index < current_acm_.entry_values.size(); entry_index++)
         {
-            updated_acm_.entry_values[entry_index].enabled.erase(
-                updated_acm_.entry_values[entry_index].enabled.begin() + index);
+            current_acm_.entry_values[entry_index].enabled.erase(
+                current_acm_.entry_values[entry_index].enabled.begin() + index);
         }
         // Remove the name of the object from the entries
-        updated_acm_.entry_names.erase(updated_acm_.entry_names.begin() + index);
+        current_acm_.entry_names.erase(current_acm_.entry_names.begin() + index);
+        object_links_map_.erase(request.entry_name);
         // Update the number of entries
         number_entries_ -= 1;
 
@@ -185,125 +192,201 @@ bool ACMManager::_update_acm_entry(grip_core::UpdateACMEntryRequest& request,
         return true;
     }
 
-    // If we are here it means that the action set in the request in not valid
-    ROS_ERROR_STREAM("The action provided in the request is not supported");
-    response.success = false;
+    // If the ACM is successfully updated and that the users wishes to publish it to MoveIt!
+    if (request.publish && response.success)
+    {
+        moveit_msgs::PlanningScene new_scene;
+        new_scene.is_diff = true;
+        new_scene.allowed_collision_matrix = current_acm_;
+        publish_current_acm_.publish(new_scene);
+    }
+    // If everything worked well then just return true
+    else if (!response.success)
+    {
+      ROS_ERROR_STREAM("The action provided in the request is not supported");
+    }
+
+    // In any case, return True
     return true;
 }
 
 /**
- Update the allowed collision of updated_acm_ with respect to the modification requested
+ Update the allowed collisions with respect to the modification requested
  * @param  request  Object containing a field "modification" (uint8) respresenting the kind of modification we want to
-                    bring to the ACM. It can be nothing (simple getter), allowing self collision for the manipulator or
-                    allowing collision between a list of objects and the manipulator.
- * @param  response Object containing a field "acm" (moveit_msgs::AllowedCollisionMatrix) containing the updated ACM
-                    after modification and a field "success" (boolean) stating whether the modification has been
-                    successfull
- * @return          Boolean that should be always true in order to avoid having runtime errors on the client side
+                    bring to the ACM. It can either allow self collision for a given set of robot links or
+                    allow collision between a list of objects and a set of robot links.
+ * @param  response Object containing a field "success" (boolean) stating if the modification has been successfull
+ * @return          Boolean that should always be true in order to avoid having runtime errors on the client side
  */
-bool ACMManager::_get_modified_acm(grip_core::GetModifiedACMRequest& request,
-                                   grip_core::GetModifiedACMResponse& response)
+bool ACMManager::_modify_acm(grip_core::ModifyACMRequest& request, grip_core::ModifyACMResponse& response)
 {
-    // Sanity check, to make sure an initial ACM has bee nset
+    // Set the response success field as False by default
+    response.success = false;
+    // Sanity check, to make sure an initial ACM has been set
     if (initial_acm_.entry_names.empty())
     {
-        ROS_ERROR_STREAM("An initial ACM needs to be set using the 'set_init_acm' service before using this one");
-        response.success = false;
-        return true;
+      ROS_INFO_STREAM("No initial ACM has been set using the 'set_init_acm' service. Creating the initial one from "
+                      "the current scene.");
+
+      bool res = initialize_acm_from_scene();
+      // If the initialization fails, then stops here
+      if (!res)
+      {
+          return true;
+      }
     }
     // Extract the boolean to set in the ACM to allow or disallow collisions
     bool is_allowed = request.allow_collision;
     // Extract the kind of modification to bring to the ACM
     uint8_t modification = request.modification;
+    // Extract the links of the robot for which we should allow/disallow collisions
+    std::vector<std::string> robot_links = request.robot_links;
+    // Vector of indices that are going to be used to modify the ACM
+    std::vector<int> indices_to_modify;
+    // Iterator allowing to find elements in configured maps
+    std::map<std::string, int>::iterator it;
+    // Out of all the links part of the initial ACM, extract only hte one part of the request
+    for (size_t index_link_request = 0; index_link_request < robot_links.size(); index_link_request++)
+    {
+      it = robot_links_map_.find(robot_links[index_link_request]);
+      // If a given link is not found, display an error message and stops here
+      if (it == robot_links_map_.end())
+      {
+        ROS_ERROR_STREAM("Could not find the robot's link named " << robot_links[index_link_request]);
+        return true;
+      }
+      // Otherwise get its index
+      else
+      {
+        indices_to_modify.push_back(it->second);
+      }
+    }
 
-    // If the ACM must be modified to allow collision between an object and
-    if (modification == request.MANIPULATOR_OBJECT_COLLISION)
+    // If the ACM must be modified to allow collision between a given list of objects and the configured links
+    if (modification == request.ROBOT_OBJECT_COLLISION)
     {
         // Extract the objects for which we should allow collision
         std::vector<std::string> objects = request.objects;
-        // If nothing is specified then allow the collision with all the objects added from the initial ACM
+        // If nothing is specified then allow the collision with all the objects added since the initial ACM
         if (objects.empty())
         {
-            ROS_DEBUG_STREAM("No argument provided, will allow collision between the manipulator and all the external "
-                             "objects added after the initial ACM");
+            ROS_DEBUG_STREAM("No argument provided, hence allowing collisions between the robot and all the objects "
+                             "added to the scene since the initial ACM");
 
+            uint16_t number_robot_links = robot_links_map_.size();
             // Get the number of objects added interactively
-            uint16_t number_objects_added = number_entries_ - initial_number_entries_;
+            uint16_t number_objects_added = object_links_map_.size();
             // Add the indices corresponding to these objects
-            for (size_t index_added_object = 0; index_added_object < number_objects_added; index_added_object++)
+            for (it = object_links_map_.begin(); it != object_links_map_.end(); ++it)
             {
-                manipulator_links_indices_.push_back(initial_number_entries_ + index_added_object);
+                indices_to_modify.push_back(it->second);
             }
         }
-        // If objects has been specified
+        // If the field objects is specified
         else
         {
-            // vector containing the indices of the specific objects
-            std::vector<int> index_objects;
-            // Iterator providing the position of the name of the object in the entries
-            std::vector<std::string>::iterator position;
-            // Name of the object mapping the content of the ACM
-            std::string acm_object_name;
-            for (int index_object = 0; index_object < objects.size(); index_object++)
+          // Get the indices of the objects specified by the user
+          for (size_t index_link_request = 0; index_link_request < objects.size(); index_link_request++)
+          {
+            it = object_links_map_.find(objects[index_link_request]);
+            // If a given object cannot be found then returns an error
+            if (it == object_links_map_.end())
             {
-                acm_object_name = objects[index_object] + "__link";
-                position = std::find(updated_acm_.entry_names.begin(), updated_acm_.entry_names.end(), acm_object_name);
-                // Check whether the object has been found. If not, display a warning message
-                if (position == updated_acm_.entry_names.end())
-                {
-                    ROS_WARN_STREAM("The object " << acm_object_name << " cannot be found in the entries of the ACM");
-                }
-                // Otherwise add the index of the object
-                else
-                {
-                    index_objects.push_back(std::distance(updated_acm_.entry_names.begin(), position));
-                }
+              ROS_ERROR_STREAM("Could not find the object named " << objects[index_link_request]);
+              response.success = false;
+              return true;
             }
-            // Extend the manipulator_links_indices_ attribute in order to allow collisions
-            manipulator_links_indices_.insert(manipulator_links_indices_.end(), index_objects.begin(),
-                                              index_objects.end());
+            else
+            {
+              indices_to_modify.push_back(it->second);
+            }
+          }
         }
     }
 
-    // Now that the manipulator_links_indices_ have been updated with respect to what was requested, change the entry
-    // values of the ACM
-    if (modification == request.MANIPULATOR_SELF_COLLISION || modification == request.MANIPULATOR_OBJECT_COLLISION)
+    // Now that the manipulator_links_indices_ have been updated with respect to what was requested, change the values
+    // of the ACM
+    if (modification == request.ROBOT_SELF_COLLISION || modification == request.ROBOT_OBJECT_COLLISION)
     {
-        // Nested for loops allowing to change the collision checking between all links stored in
-        // manipulator_links_indices_
-        for (int index = 0; index < manipulator_links_indices_.size(); index++)
+        // Nested for loops allowing to change the collision checking between all links stored in indices_to_modify
+        for (int index = 0; index < indices_to_modify.size(); index++)
         {
-            int row = manipulator_links_indices_[index];
-            for (int manip_index = 0; manip_index < manipulator_links_indices_.size(); manip_index++)
+            int row = indices_to_modify[index];
+            for (int manip_index = 0; manip_index < indices_to_modify.size(); manip_index++)
             {
-                int col = manipulator_links_indices_[manip_index];
+                int col = indices_to_modify[manip_index];
                 // Avoid to check collision between the object and itself
                 if (index != manip_index)
                 {
-                    updated_acm_.entry_values[row].enabled[col] = is_allowed;
+                    current_acm_.entry_values[row].enabled[col] = is_allowed;
                 }
             }
         }
-        response.acm = updated_acm_;
         response.success = true;
-        return true;
-    }
-    // If the request is about just getting the current ACM
-    if (modification == request.NOTHING)
-    {
-        if (!is_updated_)
+        if (request.publish && response.success)
         {
-            updated_acm_ = initial_acm_;
+            moveit_msgs::PlanningScene new_scene;
+            new_scene.is_diff = true;
+            new_scene.allowed_collision_matrix = current_acm_;
+            publish_current_acm_.publish(new_scene);
         }
-        response.acm = updated_acm_;
-        response.success = true;
         return true;
     }
 
     // If we are here it means that the modification set in the request in not valid
     ROS_ERROR_STREAM("The modification provided in the request is not supported");
-    response.success = false;
     return true;
+}
+
+/**
+ Set the initial acm attribute of the class from the current scene
+ * @return  Boolean stating whether the initialization worked properly or not
+ */
+bool ACMManager::initialize_acm_from_scene()
+{
+    ros::ServiceClient get_planning_scene_service =
+        node_handler_.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
+    // Make sure we can access the service
+    get_planning_scene_service.waitForExistence();
+    // Create a request for the service that contains the ACM
+    moveit_msgs::GetPlanningScene service;
+    service.request.components.components = moveit_msgs::PlanningSceneComponents::ALLOWED_COLLISION_MATRIX |
+                                            moveit_msgs::PlanningSceneComponents::SCENE_SETTINGS;
+
+    // If the current ACM can't be retrieved return false
+    if (!get_planning_scene_service.call(service))
+    {
+      ROS_ERROR_STREAM("Failed to retrieve the current ACM");
+      return false;
+    }
+
+    // Store the ACM returned by the service and set the boolean specifying whether we should set the updated ACM to the
+    // initial one
+    try
+    {
+        initial_acm_ = service.response.scene.allowed_collision_matrix;
+        _set_robot_links_mapping(initial_acm_.entry_names);
+        is_updated_ = false;
+    }
+    // If anything goes wrong, catch the exception and return false
+    catch (const ros::Exception& exception)
+    {
+        ROS_ERROR_STREAM("An error occurred when storing the retrieved ACM: " << exception.what());
+        return false;
+    }
+    return true;
+}
+
+/**
+ Update the robot_links_map_ attribute from a vector of strings
+ */
+void ACMManager::_set_robot_links_mapping(std::vector<std::string> entry_names)
+{
+  robot_links_map_.clear();
+  for (int entry_index = 0; entry_index < entry_names.size(); entry_index++)
+  {
+    robot_links_map_[entry_names[entry_index]] = entry_index;
+  }
 }
 
 // If this file is called as a main, then create a node and launches the server

@@ -9,7 +9,7 @@
     <arg name="object_position" default="0 0 0"/>
     <!-- Orientation of the object when spawned. Format should be r p y (in radians) -->
     <arg name="object_rpy_orientation" default="0 0 0"/>
-    <!-- Name of the reference frame. It's according to this frame that the position and orientation is being set -->
+    <!-- Name of the reference frame. It's according to this frame that the position and orientation are being set -->
     <arg name="reference_frame" default="world"/>
     <!-- Path to a sdf file describing the object to spawn (use that if the object is not in the description package) -->
     <arg name="file_path" default=""/>

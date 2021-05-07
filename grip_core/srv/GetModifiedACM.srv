@@ -1,9 +1,0 @@
-uint8 NOTHING=0
-uint8 MANIPULATOR_SELF_COLLISION=1
-uint8 MANIPULATOR_OBJECT_COLLISION=2
-uint8 modification
-string[] objects
-bool allow_collision
----
-moveit_msgs/AllowedCollisionMatrix acm
-bool success

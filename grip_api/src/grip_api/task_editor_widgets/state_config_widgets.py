@@ -110,7 +110,7 @@ class GenericConfigBoxWidget(QGroupBox):
             return raw_text
 
         # If the text does not correspond to a list or tuple
-        if "[" not in raw_text and "[" not in raw_text:
+        if "[" not in raw_text and "]" not in raw_text:
             return self.to_format(raw_text)
 
         # If the config is a list or tuple, remove the corresponding brackets.
@@ -204,7 +204,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         super(CommanderStateConfigBox, self).__init__("type: {}".format(source), parent=parent)
         # Get a pointer to the task editor area
         task_editor_area = self.parent().state.container.editor_widget.parent().parent().parent().parent()
-        # To get access to the robot integration area
+        # To access the robot integration area
         robot_integration_area = task_editor_area.framework_gui.robot_integration_area
         # Get access to the settings configuration
         settings_config = robot_integration_area.settings_config_widget
@@ -301,12 +301,24 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             # If the slot contains "type" add choices between pose and joint states
             elif "type" in key:
                 self.add_choice_slot(key, COMMANDER_DATA_TYPE_CHOICE)
-            # If we have at least two planner configured, provide a choice
+            # If we have at least two planners configured, provide a choice
             elif key == "group_name":
-                self.add_choice_slot(key, self.commander_choice)
+                choices = self.commander_choice[:]
+                editable = False
+                if "Collisions" in self.title():
+                    editable = True
+                # For the AllowCollisions state, make the field editable, so the user can add other groups, even if not
+                # configured in GRIP
+                self.add_choice_slot(key, choices, editable)
             # Initialise a choice slot providing the joint states and poses already configured in GRIP
             elif key in ("target_name", "starting_name"):
                 self.add_choice_slot(key, [""], True)
+            # Only two kind of collisions can be changed
+            elif key == "collision":
+                self.add_choice_slot(key, ["self collision", "object collision"])
+            # Can only allow (True) or disallow (False) a specific collision
+            elif key == "allow":
+                self.add_choice_slot(key, ["True", "False"])
             else:
                 # Get any default value
                 default_value = re.findall("\"(.*?)\"", value)

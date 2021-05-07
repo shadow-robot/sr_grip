@@ -1,0 +1,9 @@
+uint8 ROBOT_SELF_COLLISION=0
+uint8 ROBOT_OBJECT_COLLISION=1
+uint8 modification
+string[] robot_links
+string[] objects
+bool allow_collision
+bool publish
+---
+bool success
