@@ -19,9 +19,8 @@ import rospy
 import signal
 from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QTabWidget, QFileDialog
 from PyQt5.QtCore import QFileInfo, QSettings
-from grip_core.utils.common_paths import (GUI_CONFIGS_FOLDER, ROBOT_INTEGRATION_MAIN_CONFIG_FILE,
-                                          ROBOT_INTEGRATION_DEFAULT_CONFIG_FILE, STATES_FOLDER,
-                                          STATE_MACHINES_TEMPLATES_FOLDER)
+from grip_core.utils.common_paths import (GUI_CONFIGS_FOLDER, MAIN_CONFIG_FILE, DEFAULT_TASK_CONFIG_FILE,
+                                          DEFAULT_ROBOT_CONFIG_FILE, STATES_FOLDER, STATE_MACHINES_TEMPLATES_FOLDER)
 from grip_core.utils.file_parsers import fill_available_states, fill_available_state_machines
 from robot_integration_area import RobotIntegrationArea
 from task_editor_area import TaskEditorArea
@@ -35,7 +34,7 @@ class FrameworkGui(QMainWindow):
     """
 
     # Main settings of the UI
-    settings = QSettings(ROBOT_INTEGRATION_MAIN_CONFIG_FILE, QSettings.IniFormat)
+    settings = QSettings(MAIN_CONFIG_FILE, QSettings.IniFormat)
 
     def __init__(self):
         """
@@ -48,8 +47,9 @@ class FrameworkGui(QMainWindow):
         self.load_states()
         # Initialise the UI
         self.init_ui()
-        # Contains the widget configurations required to load previous robot integration config
-        self.config_file_path = ROBOT_INTEGRATION_DEFAULT_CONFIG_FILE
+        # Contains the widget configurations required to load previous robot configurations
+        self.robot_config_path = DEFAULT_ROBOT_CONFIG_FILE
+        self.task_config_path = DEFAULT_TASK_CONFIG_FILE
         # Configure the GUI
         self.init_config()
 
@@ -106,9 +106,9 @@ class FrameworkGui(QMainWindow):
         """
             Create the different actions composing menus
         """
-        # Allows to open a robot integration config
+        # Allows to open a robot config
         self.action_open = QAction('&Open', self, shortcut='Ctrl+O', statusTip="Open file", triggered=self.open_file)
-        # Save the current robot integration config
+        # Save the current robot config
         self.action_save = QAction('&Save', self, shortcut='Ctrl+S', statusTip="Save file", triggered=self.save_file)
         # Save the current robot integration as
         self.action_save_as = QAction('Save &As...', self, shortcut='Ctrl+Shift+S', statusTip="Save file as...",
@@ -215,17 +215,18 @@ class FrameworkGui(QMainWindow):
                                                            filter="ini(*.ini)",
                                                            directory=GUI_CONFIGS_FOLDER)
         if robot_config_path:
-            self.config_file_path = robot_config_path
-            self.settings.setValue("latest_config", robot_config_path)
+            self.robot_config_path = robot_config_path
+            self.settings.setValue("latest_robot_config", robot_config_path)
             self.init_config()
 
     def save_file(self):
         """
             Save the current robot integration config file
         """
-        current_widget = self.robot_integration_area
-        current_widget.save_config(self.latest_config)
-        self.settings.setValue("latest_config", self.config_file_path)
+        current_widget = self.tab_container.currentWidget()
+        # current_widget = self.robot_integration_area
+        current_widget.save_config(self.latest_robot_config)
+        self.settings.setValue("latest_robot_config", self.robot_config_path)
 
     def save_file_as(self):
         """
@@ -238,8 +239,8 @@ class FrameworkGui(QMainWindow):
         if not robot_config_path.endswith(".ini"):
             robot_config_path += ".ini"
 
-        self.config_file_path = robot_config_path
-        self.latest_config = QSettings(self.config_file_path, QSettings.IniFormat)
+        self.robot_config_path = robot_config_path
+        self.latest_robot_config = QSettings(self.robot_config_path, QSettings.IniFormat)
         self.save_file()
 
     def check_if_save(self):
@@ -258,7 +259,7 @@ class FrameworkGui(QMainWindow):
                 self.save_file()
                 # Must call sync to force Qt to remain open, otherwise close without generating the files
                 self.settings.sync()
-                self.latest_config.sync()
+                self.latest_robot_config.sync()
         return should_save
 
     def exit(self):
@@ -315,19 +316,19 @@ class FrameworkGui(QMainWindow):
             Restore if possible all the widgets to their state saved into a given configuration
         """
         # If a configuration has already been saved in a file, get its path
-        if self.settings.contains("latest_config"):
-            self.config_file_path = self.settings.value("latest_config")
+        if self.settings.contains("latest_robot_config"):
+            self.robot_config_path = self.settings.value("latest_robot_config")
 
         # Create a Qt info file required to save the state of each widget
-        info_file = QFileInfo(self.config_file_path)
+        info_file = QFileInfo(self.robot_config_path)
         # Initialize the Qt settings file
-        self.latest_config = QSettings(self.config_file_path, QSettings.IniFormat)
+        self.latest_robot_config = QSettings(self.robot_config_path, QSettings.IniFormat)
         # Introspect all the children widgets and call their restore_config() function
         if info_file.exists() and info_file.isFile():
-            widget_names = self.latest_config.childGroups()
+            widget_names = self.latest_robot_config.childGroups()
             for widget_name in widget_names:
                 widget = self.findChild(self.str_to_class(widget_name + "/type"), widget_name)
-                widget.restore_config(self.latest_config)
+                widget.restore_config(self.latest_robot_config)
 
     def str_to_class(self, class_name):
         """
@@ -336,7 +337,7 @@ class FrameworkGui(QMainWindow):
             @param class_name: String corresponding to the name of a class
             @return: Type of class
         """
-        return getattr(sys.modules[__name__], self.latest_config.value(class_name))
+        return getattr(sys.modules[__name__], self.latest_robot_config.value(class_name))
 
     def closeEvent(self, event):
         """
