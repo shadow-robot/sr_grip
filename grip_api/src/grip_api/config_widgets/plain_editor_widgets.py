@@ -77,7 +77,7 @@ class GenericEditorWidget(QWidget):
         # Make sure the editor is lexed before setting any text
         if not self.code_editor.is_lexed:
             self.code_editor.set_lexer()
-        self.code_editor.setText(content)
+        self.code_editor.set_text_and_trigger_checks(content)
         self.code_editor.setReadOnly(False)
         self.setEnabled(True)
 

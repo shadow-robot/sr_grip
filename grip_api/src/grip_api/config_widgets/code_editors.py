@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -45,12 +45,12 @@ class GenericCodeEditor(Qsci.QsciScintilla):
         self.wrong_format_lines = list()
         # Timer used to check content format and that will be handled by a different thread
         self.timer = QTimer()
-        # Set it to single shot (basically can be run only one at a time)
+        # Set it to single shot (i.e. does not run continuously)
         self.timer.setSingleShot(True)
         # Once the timer is timing out then starts the check
         # We do this to avoid having stuff signaled as wrong while editing
         self.timer.timeout.connect(self.parse_and_format_editor)
-        # Each time a character is typed in the editor starts again the timer
+        # Each time a new character is inserted in the editor, restart the timer
         self.textChanged.connect(self.start_timer)
 
     def init_ui(self):
@@ -76,7 +76,7 @@ class GenericCodeEditor(Qsci.QsciScintilla):
 
     def init_backround_markers(self):
         """
-            Define markers to make lines not properly formatted into a red-ish colour
+            Define markers to highlight lines not properly formatted using a red-ish colour
         """
         self.markerDefine(Qsci.QsciScintilla.Background, 0)
         self.setMarkerBackgroundColor(QColor("#40FF0000"), 0)
@@ -94,8 +94,29 @@ class GenericCodeEditor(Qsci.QsciScintilla):
         """
             Start the timer that triggers the content's format checking
         """
-        # The timer would timeout after 750ms meaning that the check would happend 750ms after the last text edit
+        # The timer would timeout after 600 ms meaning that the check would happend 600ms after the last text edit
         self.timer.start(600)
+
+    def stop_timer(self):
+        """
+            Stop the timer that triggers the content's format checking. After running this function, the content that
+            will be set to the editor WON'T be automatically parsed and checked.
+        """
+        self.timer.stop()
+
+    def set_text_and_trigger_checks(self, content):
+        """
+            Set the content of the editor and immedialty trigger checks about its validity
+
+            @param content: String to be displayed in the editor
+        """
+        # Stop the timer (so we can trigger checks without having to wait for 600 ms)
+        self.stop_timer()
+        # Set the text and immediately trigger the checks
+        self.setText(content)
+        self.parse_and_format_editor()
+        # Restart the timer so that when the users interact with the editor, things don't turn red too quickly
+        self.start_timer()
 
     def update_background(self):
         """
