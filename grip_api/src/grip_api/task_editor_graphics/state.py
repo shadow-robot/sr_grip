@@ -110,7 +110,7 @@ class GraphicsState(QGraphicsItem):
             # When the content is set to be not visible, update the height of the box
             self.height = self.min_height
         if self.zoom == self.zoom_threshold + 1 and previous_zoom < current_zoom:
-            # When the content is et to be visible, update the height of the box
+            # When the content is set to be visible, update the height of the box
             self.graphics_content.set_visible(True)
             self.height = self.content_initial_height + 2 * (self.edge_padding + 1) + self.title_height
         # Clamp the zooming factor that can be applied to this widget

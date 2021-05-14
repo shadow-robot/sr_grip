@@ -223,3 +223,33 @@ class GraphicalEditorWidget(QWidget):
             self.rename()
         elif action == self.execute_action:
             self.execute_container()
+
+    def save_config(self, settings):
+        """
+            Store the configuration of this widget into settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        settings.beginGroup("root")
+        # Get the name of the window so that we can restore that
+        settings.setValue("name", self.windowTitle())
+        # Get all information relared to the container as a dictionary and saves it
+        settings.setValue("container", self.container.save())
+        # Save the view
+        self.editor_view.save_config(settings)
+        settings.endGroup()
+
+    def restore_config(self, settings):
+        """
+            Restore the configuration of this widget from the parameters saved in settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        settings.beginGroup("root")
+        # Set the name of the window and container
+        self.set_name(settings.value("name"))
+        # Restore the container
+        self.container.restore(settings.value("container"))
+        # Restore the view
+        self.editor_view.restore_config(settings)
+        settings.endGroup()

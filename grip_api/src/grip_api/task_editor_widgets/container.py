@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from graphical_editor_base import Serializable
 from terminal_socket import TerminalSocket
 from socket import Socket
 from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_file,
@@ -23,9 +22,11 @@ from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
 from connector import Connector
 import os
+from state import State
+from collections import OrderedDict
 
 
-class Container(Serializable):
+class Container(object):
 
     """
         Object keeping record of which widgets are currently composing a state machine.
@@ -38,7 +39,6 @@ class Container(Serializable):
             @param editor_widget: GraphicalEditorWidget for which the state machine is the container
             @param container_type: Type of the container (string)
         """
-        super(Container, self).__init__()
         # Store the graphical editor widget
         self.editor_widget = editor_widget
         # Set the type of the container
@@ -365,6 +365,59 @@ class Container(Serializable):
                         connected_states.append(state)
             starting_components = starting_components + connected_states
         return ordered_components
+
+    def save(self):
+        """
+            Save the current properties of the object so it can be restored later on
+
+            @return: Dictionary containing the configuration of the terminal sockets, states and connectors
+        """
+        # Lists containing the required information to restore the current configuration of the terminal sockets, states
+        # and connectors.
+        terminal_sockets, states, connectors = list(), list(), list()
+        # Save their ocnfiguration
+        for socket in self.terminal_sockets:
+            terminal_sockets.append(socket.save())
+
+        for state in self.states:
+            states.append(state.save())
+
+        for connector in self.connectors:
+            connectors.append(connector.save())
+
+        return OrderedDict([
+            ('terminal_sockets', terminal_sockets),
+            ('states',  states),
+            ('connectors', connectors)
+        ])
+
+    def restore(self, properties):
+        """
+            Restore the configuration of the container according to the parameters saved in properties
+
+            @param properties: Dictionary containing the configuration of the terminal sockets, states and connectors
+        """
+        # Initialize the dictionary that records the mapping between the id of the sockets and the actual objects
+        socket_mapping = {}
+
+        # Extract the different informatio nstored in properties
+        terminal_sockets_data = properties["terminal_sockets"]
+        states_data = properties["states"]
+        connectors_data = properties["connectors"]
+
+        # For each terminal socket (already created), restore their previous configuration
+        for ind_sock, socket in enumerate(self.terminal_sockets):
+            socket.restore(terminal_sockets_data[ind_sock], socket_mapping)
+
+        # Create the different states previously used
+        for state_data in states_data:
+            created_state = State(self, state_data["type"])
+            created_state.restore(state_data, socket_mapping)
+
+        # Add the connectors
+        if connectors_data:
+            for connector_data in connectors_data:
+                Connector(self, socket_mapping[connector_data["start"]], socket_mapping[connector_data["end"]])
 
     @property
     def type(self):

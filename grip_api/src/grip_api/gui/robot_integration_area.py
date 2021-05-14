@@ -538,5 +538,7 @@ class RobotIntegrationArea(QTabWidget):
             widget_in_tab = self.widget(tab_index)
             widget_in_tab.restore_config(settings)
         settings.endGroup()
+        # Make sure to update the commanders config
+        self.send_commanders_config()
         # If removed then will always ask to save even though nothing has been modified
         self.can_be_saved = False

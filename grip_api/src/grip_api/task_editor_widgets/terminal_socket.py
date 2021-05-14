@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from graphical_editor_base import Serializable
 from grip_api.task_editor_graphics.terminal_socket import TerminalGraphicsSocket
+from collections import OrderedDict
 
 
-class TerminalSocket(Serializable):
+class TerminalSocket(object):
 
     """
         Object gathering the logic and graphical representation of a socket
@@ -33,7 +33,8 @@ class TerminalSocket(Serializable):
             @param index: Index of the socket
             @param multi_connections: Indicate whether the socket can host several connectors. Default to True
         """
-        super(TerminalSocket, self).__init__()
+        # Set the id of the object
+        self.id = id(self)
         # Store the Container the socket is added to
         self.container = container
         # Name of the outcome corresponding to the socket
@@ -99,3 +100,30 @@ class TerminalSocket(Serializable):
         while self.connectors:
             connector = self.connectors.pop(0)
             connector.remove()
+
+    def save(self):
+        """
+            Save the current properties of the object so it can be restored later on
+
+            @return: Dictionary containing the id, the name and position of the object
+        """
+        # Get the current position of the terminal socket
+        current_position = self.graphics_socket.pos()
+        return OrderedDict([
+            ("id", self.id),
+            ("name", self.name),
+            ("position_x", current_position.x()),
+            ("position_y", current_position.y())
+        ])
+
+    def restore(self, properties, socket_mapping={}):
+        """
+            Restore the object to a previously saved configuration
+
+            @param properties: Dictionary containing the id, the name and position of the terminal socket
+            @param socket_mapping: Dictionary mapping the id of sockets to the actual objects
+        """
+        self.id = properties["id"]
+        self.name = properties["name"]
+        self.graphics_socket.setPos(properties["position_x"], properties["position_y"])
+        socket_mapping[properties["id"]] = self

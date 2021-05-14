@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import QGraphicsView
-from PyQt5.QtCore import Qt, QEvent, pyqtSignal
+from PyQt5.QtCore import Qt, QEvent, pyqtSignal, QPoint
 from PyQt5.QtGui import QPainter, QMouseEvent
 from socket import GraphicsSocket
 from terminal_socket import TerminalGraphicsSocket
@@ -165,6 +165,64 @@ class TaskEditorView(QGraphicsView):
                 item.state.remove()
             elif isinstance(item, GraphicsStateMachine):
                 item.state_machine.remove()
+
+    def perform_unit_zoom(self, is_incremental):
+        """
+            Scale the view in order to either zoom in or out
+
+            @param is_incremental: Boolean stating whether we should zoom in or out
+        """
+        # Select which factor to use when scaling the view, and update the current_zoom attribute
+        if is_incremental:
+            zoom_to_apply = self.zoom_in_multiplier
+            self.current_zoom += 1
+        else:
+            zoom_to_apply = self.zoom_out_multiplier
+            self.current_zoom -= 1
+
+        # Clamp the zoom if required
+        clamped = False
+        if self.current_zoom < self.zoom_range[0]:
+            self.current_zoom, clamped = self.zoom_range[0], True
+        if self.current_zoom > self.zoom_range[1]:
+            self.current_zoom, clamped = self.zoom_range[1], True
+
+        # Set view scale
+        if not clamped:
+            # Emit the signal giving the current zoom
+            self.viewScaled.emit(self.current_zoom)
+            self.scale(zoom_to_apply, zoom_to_apply)
+
+    def save_config(self, settings):
+        """
+            Store the configuration of the view into settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        # Get the current center of the view once fitted to the display area
+        view_center = QPoint(self.size().width()/2, self.size().height()/2)
+        settings.beginGroup("view")
+        # Get the curretn zoom
+        settings.setValue("current_zoom", self.current_zoom)
+        # Get the current translation
+        settings.setValue("view_center", self.mapToScene(view_center))
+        settings.endGroup()
+
+    def restore_config(self, settings):
+        """
+            Restore the view from the parameters saved in settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        settings.beginGroup("view")
+        # Get the current zoom
+        zoom = settings.value("current_zoom", type=int)
+        # Apply each step to fake a wheel event (allows to be 100% certain that the QGraphicsItem are properly scaled)
+        for zoom_index in range(abs(zoom)):
+            self.perform_unit_zoom(zoom > 0)
+        # Translate the view
+        self.centerOn(settings.value("view_center"))
+        settings.endGroup()
 
     def mousePressEvent(self, event):
         """
@@ -356,23 +414,5 @@ class TaskEditorView(QGraphicsView):
         if isinstance(pointed_item, GraphicsStateContent):
             super(TaskEditorView, self).wheelEvent(event)
             return
-        # Calculate zoom
-        if event.angleDelta().y() > 0:
-            zoom_to_apply = self.zoom_in_multiplier
-            self.current_zoom += 1
-        else:
-            zoom_to_apply = self.zoom_out_multiplier
-            self.current_zoom -= 1
-
-        # Clamp the zoom if required
-        clamped = False
-        if self.current_zoom < self.zoom_range[0]:
-            self.current_zoom, clamped = self.zoom_range[0], True
-        if self.current_zoom > self.zoom_range[1]:
-            self.current_zoom, clamped = self.zoom_range[1], True
-
-        # Set view scale
-        if not clamped:
-            # Emit the signal giving the current zoom
-            self.viewScaled.emit(self.current_zoom)
-            self.scale(zoom_to_apply, zoom_to_apply)
+        # Perform the zoom
+        self.perform_unit_zoom(event.angleDelta().y() > 0)

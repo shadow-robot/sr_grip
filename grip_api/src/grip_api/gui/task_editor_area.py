@@ -32,6 +32,8 @@ class TaskEditorArea(QWidget):
             @param parent: Parent of the widget
         """
         super(TaskEditorArea, self).__init__(parent=parent)
+        # Set the object name to be able to look it up and restore it
+        self.setObjectName("Task editor area")
         self.framework_gui = parent
         self.init_ui()
 
@@ -58,3 +60,33 @@ class TaskEditorArea(QWidget):
         displayers.setMaximumWidth(displayers.sizeHint().width())
         layout.addWidget(displayers)
         self.setLayout(layout)
+
+    def save_config(self, settings):
+        """
+            Store the state of this widget and its children into settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        settings.beginGroup(self.objectName())
+        class_name = self.metaObject().className()
+        settings.setValue("type", class_name)
+        # Get the subwindow corresponding to the root of the task
+        root_subwindow = self.mdi_area.subWindowList()[0]
+        # Get the associated graphical editor
+        root_graphical_editor = root_subwindow.widget()
+        # Save its configuration
+        root_graphical_editor.save_config(settings)
+        settings.endGroup()
+
+    def restore_config(self, settings):
+        """
+            Restore the widget's children from the configuration saved in settings
+
+            @param settings: QSettings object that contains information of the widgets to restore
+        """
+        settings.beginGroup(self.objectName())
+        # Restore the configuration of the GraphicalEditorWidget corresponding to the main subwindow
+        root_subwindow = self.mdi_area.subWindowList()[0]
+        root_graphical_editor = root_subwindow.widget()
+        root_graphical_editor.restore_config(settings)
+        settings.endGroup()

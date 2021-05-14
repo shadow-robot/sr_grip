@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -122,6 +122,43 @@ class GenericConfigBoxWidget(QGroupBox):
         for text in split_text:
             final_list.append(self.to_format(text))
         return final_list
+
+    def set_slot_value(self, slot_name, value):
+        """
+            Set the current config of a given slot
+
+            @param slot_name: String specifying for which slot we want to set the content
+            @param value: String to be displayed in the given slot
+        """
+        # Check if the slot corresponds to a QComboBox
+        combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
+        # If that's the case
+        if combo_widget:
+            # And the widget is editable, set the current text
+            if combo_widget.isEditable():
+                combo_widget.setCurrentText(value)
+            # Otherwise, it means that we can only select pre-determined options.
+            else:
+                # Get all registered choices for the specific QComboBox
+                all_items = [combo_widget.itemText(i) for i in range(combo_widget.count())]
+                try:
+                    index_choice = all_items.index(value)
+                    combo_widget.setCurrentIndex(index_choice)
+                except ValueError:
+                    # TODO: Create proper QT way to signal this OR custom made logs (with specific colours
+                    print("========== WARNING ==========")
+                    print("For slot {}, the provided value {} is not valid.".format(slot_name, value))
+        # Otherwise it should be a QLineEdit
+        else:
+            widget = self.findChild(QLineEdit, "line {}".format(slot_name))
+            # If it is indeed a QLineEdit then we just need to set the provided input
+            if widget:
+                widget.setText(value)
+            # TODO: Create proper QT way to signal this OR custom made logs (with specific colours
+            else:
+                # TODO: Create proper QT way to signal this OR custom made logs (with specific colours
+                print("========== WARNING ==========")
+                print("Could not find parameter {} in state type {}".format(slot_name, self.title()))
 
     @staticmethod
     def to_format(input):
@@ -464,17 +501,19 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         known_traj = list() if not self.sender().valid_input else self.sender().valid_input.keys()
         self.known_msgs["trajectory"] = known_traj
 
-    def get_slot_config(self, slot_name):
+    def get_slot_config(self, slot_name, return_mapped=True):
         """
             Get the current config of a given slot
 
             @param slot_name: String specifying from which slot we want to extract the config from
+            @param return_mapped: Boolean stating whether the returned parameter should be the renamed topic or not.
+                                  This parameter matters only for states generated for sensors
             @return: String, list, int or float corresponding to the current config
         """
         slot_config = super(GeneratedStateConfigBox, self).get_slot_config(slot_name)
 
-        # For the sensor_topic slot we must send the real topic name
-        if slot_name == "sensor_topic":
+        # For the sensor_topic slot we must send the real topic name if requested, otherwise send the remapped one
+        if slot_name == "sensor_topic" and return_mapped:
             return self.topic_mapping[slot_config]
         else:
             return slot_config
