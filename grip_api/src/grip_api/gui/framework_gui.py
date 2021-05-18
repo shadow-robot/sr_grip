@@ -341,13 +341,29 @@ class FrameworkGui(QMainWindow):
         info_file = QFileInfo(self.task_config_path)
         # Initialize the Qt settings file
         self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
-        # Restore the configuration of the task editor
+        # Restore the configuration of the task editor if one is found
         if info_file.exists() and info_file.isFile():
             self.task_editor_area.restore_config(self.latest_task_config)
+            # Make sure to restore the saved views for each subwindow
+            self.tab_container.currentChanged.connect(self.restore_task_editor_views)
+
+    def restore_task_editor_views(self, index):
+        """
+            Function called only once when the user clicks on the Task Editor tab and that the latter must restore a
+            previously saved config
+
+            @param index: Index of the tab that is being clicked on (0 for Robot Integration Area and I for Task Editor)
+        """
+        # If the Task Editor is clicked
+        if index:
+            # Restore the view of all the GraphicalEditorWidgets
+            self.task_editor_area.mdi_area.restore_views()
+            # Make sure to restore the views only once
+            self.tab_container.currentChanged.disconnect()
 
     def str_to_class(self, class_name):
         """
-            Turns a string (name of a class) into into its class type
+            Turns a string (name of a class) into its class type
 
             @param class_name: String corresponding to the name of a class
             @return: Type of class

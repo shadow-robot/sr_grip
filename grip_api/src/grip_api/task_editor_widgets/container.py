@@ -23,6 +23,7 @@ from grip_api.task_editor_graphics.container import GraphicsContainer
 from connector import Connector
 import os
 from state import State
+from state_machine import StateMachine
 from collections import OrderedDict
 
 
@@ -372,22 +373,26 @@ class Container(object):
 
             @return: Dictionary containing the configuration of the terminal sockets, states and connectors
         """
-        # Lists containing the required information to restore the current configuration of the terminal sockets, states
-        # and connectors.
-        terminal_sockets, states, connectors = list(), list(), list()
-        # Save their ocnfiguration
+        # Lists containing required information to restore the current configuration of the terminal sockets, states,
+        # state machines and connectors.
+        terminal_sockets, states, state_machines, connectors = list(), list(), list(), list()
+        # Save their configuration
         for socket in self.terminal_sockets:
             terminal_sockets.append(socket.save())
 
         for state in self.states:
             states.append(state.save())
 
+        for state_machine in self.state_machines:
+            state_machines.append(state_machine.save())
+
         for connector in self.connectors:
             connectors.append(connector.save())
 
         return OrderedDict([
             ('terminal_sockets', terminal_sockets),
-            ('states',  states),
+            ('states', states),
+            ('state_machines', state_machines),
             ('connectors', connectors)
         ])
 
@@ -400,9 +405,10 @@ class Container(object):
         # Initialize the dictionary that records the mapping between the id of the sockets and the actual objects
         socket_mapping = {}
 
-        # Extract the different informatio nstored in properties
+        # Extract the different information stored in properties
         terminal_sockets_data = properties["terminal_sockets"]
         states_data = properties["states"]
+        state_machines_data = properties["state_machines"]
         connectors_data = properties["connectors"]
 
         # For each terminal socket (already created), restore their previous configuration
@@ -413,6 +419,15 @@ class Container(object):
         for state_data in states_data:
             created_state = State(self, state_data["type"])
             created_state.restore(state_data, socket_mapping)
+
+        # Create subwindows for each state machine added
+        for state_machine_data in state_machines_data:
+            self.editor_widget.parent().mdiArea().add_subwindow(state_machine_data["name"], state_machine_data["type"])
+            container = self.editor_widget.parent().mdiArea().focused_subwindow.widget().container
+            # Create a state like representation to be displayed in the current widget
+            dropped_state_machine = StateMachine(self, container)
+            # Restore the state machine
+            dropped_state_machine.restore(state_machine_data, socket_mapping)
 
         # Add the connectors
         if connectors_data:

@@ -55,6 +55,8 @@ class GraphicalEditorWidget(QWidget):
         # Update the above attribute according to whether the robot is launched or not
         self.robot_integration_area = self.parent().parent().parent().framework_gui.robot_integration_area
         self.robot_integration_area.robotCanBeStopped.connect(self.update_execution)
+        # Boolean specifying if the widget hosts the root of the task
+        self.is_root = container_type == "base"
 
     def init_ui(self):
         """
@@ -230,10 +232,11 @@ class GraphicalEditorWidget(QWidget):
 
             @param settings: QSettings object in which widgets' information are stored
         """
-        settings.beginGroup("root")
-        # Get the name of the window so that we can restore that
-        settings.setValue("name", self.windowTitle())
-        # Get all information relared to the container as a dictionary and saves it
+        settings.beginGroup("root" if self.is_root else self.windowTitle())
+        # Get the name of the window so that we can restore it (only for root widget)
+        if self.is_root:
+            settings.setValue("name", self.windowTitle())
+        # Get all information related to the container as a dictionary and save it
         settings.setValue("container", self.container.save())
         # Save the view
         self.editor_view.save_config(settings)
@@ -245,11 +248,12 @@ class GraphicalEditorWidget(QWidget):
 
             @param settings: QSettings object in which widgets' information are stored
         """
-        settings.beginGroup("root")
-        # Set the name of the window and container
-        self.set_name(settings.value("name"))
+        settings.beginGroup("root" if self.is_root else self.windowTitle())
+        # Set the name of the window and container (only for root widget)
+        if self.is_root:
+            self.set_name(settings.value("name"))
         # Restore the container
         self.container.restore(settings.value("container"))
-        # Restore the view
-        self.editor_view.restore_config(settings)
+        # Store the saved configuration, but won't restore them as it must be done at execution time
+        self.editor_view.store_config(settings)
         settings.endGroup()

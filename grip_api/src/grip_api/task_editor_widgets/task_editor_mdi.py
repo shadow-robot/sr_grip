@@ -79,6 +79,27 @@ class TaskEditorMDIArea(QMdiArea):
         # Make sure to get a nice visualization
         subwindow.showMaximized()
 
+    def restore_views(self):
+        """
+            Restore the view configuration of all the subwindows part of this widget
+        """
+        for subwindow in self.subWindowList():
+            subwindow.widget().editor_view.restore_view()
+
+    def get_current_subwindow_index(self):
+        """
+            Get the index of the subwindow that is currently activated
+
+            @return: Integer between 0 and number of subwindows - 1
+        """
+        return self.subWindowList().index(self.focused_subwindow)
+
+    def set_current_subwindow_from_index(self, subwindow_index):
+        """
+            Activate the subwindow_index-th subwindow
+        """
+        self.setActiveSubWindow(self.subWindowList()[subwindow_index])
+
 
 class TaskEditorSubWindow(QMdiSubWindow):
 

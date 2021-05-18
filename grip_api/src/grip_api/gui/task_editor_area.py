@@ -70,12 +70,11 @@ class TaskEditorArea(QWidget):
         settings.beginGroup(self.objectName())
         class_name = self.metaObject().className()
         settings.setValue("type", class_name)
-        # Get the subwindow corresponding to the root of the task
-        root_subwindow = self.mdi_area.subWindowList()[0]
-        # Get the associated graphical editor
-        root_graphical_editor = root_subwindow.widget()
-        # Save its configuration
-        root_graphical_editor.save_config(settings)
+        # For each subwindow part of the task editor, save its configuration
+        for subwindow in self.mdi_area.subWindowList():
+            subwindow.widget().save_config(settings)
+        # Save the index of the current subwindow being active
+        settings.setValue("current_subwindow", self.mdi_area.get_current_subwindow_index())
         settings.endGroup()
 
     def restore_config(self, settings):
@@ -85,8 +84,10 @@ class TaskEditorArea(QWidget):
             @param settings: QSettings object that contains information of the widgets to restore
         """
         settings.beginGroup(self.objectName())
-        # Restore the configuration of the GraphicalEditorWidget corresponding to the main subwindow
-        root_subwindow = self.mdi_area.subWindowList()[0]
-        root_graphical_editor = root_subwindow.widget()
-        root_graphical_editor.restore_config(settings)
+        # For each subwindow that has been previously stored
+        for subwindow_index in range(len(settings.childGroups())):
+            # Restore the corresponding GraphicalEditorWidget
+            self.mdi_area.subWindowList()[subwindow_index].widget().restore_config(settings)
+        # Activate the same subwindow as when the config was saved
+        self.mdi_area.set_current_subwindow_from_index(settings.value("current_subwindow", type=int))
         settings.endGroup()

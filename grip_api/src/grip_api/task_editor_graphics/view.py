@@ -56,6 +56,9 @@ class TaskEditorView(QGraphicsView):
         self.zoom_range = [-15, 15]
         # Indicates whether the user is dragging an edge
         self.is_dragging = False
+        # Variables set when the view should be restored
+        self.zoom_to_apply = None
+        self.center_to_set = None
 
     def init_ui(self):
         """
@@ -208,21 +211,31 @@ class TaskEditorView(QGraphicsView):
         settings.setValue("view_center", self.mapToScene(view_center))
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def store_config(self, settings):
         """
-            Restore the view from the parameters saved in settings
+            Store the parameters related to the view, saved in settings
 
             @param settings: QSettings object in which widgets' information are stored
         """
         settings.beginGroup("view")
         # Get the current zoom
-        zoom = settings.value("current_zoom", type=int)
-        # Apply each step to fake a wheel event (allows to be 100% certain that the QGraphicsItem are properly scaled)
-        for zoom_index in range(abs(zoom)):
-            self.perform_unit_zoom(zoom > 0)
-        # Translate the view
-        self.centerOn(settings.value("view_center"))
+        self.zoom_to_apply = settings.value("current_zoom", type=int)
+        # Get the center of the view
+        self.center_to_set = settings.value("view_center")
         settings.endGroup()
+
+    def restore_view(self):
+        """
+            Restore the view based on the settings previously extracted from the settings
+        """
+        # Make sure both components of the view are set
+        if self.zoom_to_apply is None or self.center_to_set is None:
+            return
+        # Apply each step to fake a wheel event (allows to be 100% certain that the QGraphicsItem are properly scaled)
+        for zoom_index in range(abs(self.zoom_to_apply)):
+            self.perform_unit_zoom(self.zoom_to_apply > 0)
+        # Make sure the view is properly centered
+        self.centerOn(self.center_to_set)
 
     def mousePressEvent(self, event):
         """
@@ -302,7 +315,7 @@ class TaskEditorView(QGraphicsView):
                 self.is_dragging = True
                 self.connector_drag_start(item)
                 return
-        # If we are already dragging, make sure to update teh end of the dummy connector so the user can see it
+        # If we are already dragging, make sure to update the end of the dummy connector so the user can see it
         if self.is_dragging:
             is_connector_created = self.connector_drag_end(item)
             # If the connector is created then don't go through the normal left click behaviour
