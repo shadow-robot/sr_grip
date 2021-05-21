@@ -124,7 +124,7 @@ class RobotInterfaceWidget(QWidget):
             Update the whole simulation section according to the custom launch file provided
         """
         is_launch_file_empty = not self.sender().entry_edit_line.text() or self.sender().valid_input is None
-        self.isCustomLaunchProvided.emit(is_launch_file_empty)
+        self.isCustomLaunchProvided.emit(not is_launch_file_empty)
 
     def save_config(self, settings):
         """

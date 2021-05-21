@@ -17,9 +17,11 @@
 import smach
 import rospy
 from grip_core.utils.manager_utils import get_add_service_from_type, get_retrieve_service_from_type
-from {{ component.server_statement }} import {{ component.def_file }}
 {% if "srv" not in component.server_statement %}
+from {{ component.server_statement }} import {{ component.def_file }}, {{ component.def_file.replace("Action", "Goal") }}
 import actionlib
+{% else %}
+from {{ component.server_statement }} import {{ component.def_file }}
 {% endif %}
 
 class {{ component.name }}(smach.State):
@@ -75,14 +77,16 @@ class {{ component.name }}(smach.State):
         """
         try:
             # Get the input of the message
-            if not isinstance(self.input, str) or self.input.startswith("\"") and self.input.endswith("\""):
+            if not isinstance(self.input, str) or (self.input.startswith("\"") and self.input.endswith("\"")):
                 input_data = self.input
             elif self.input in userdata:
                 input_data = userdata[self.input]
             else:
-                input_data = self.message_getter(self.input)
-        except:
-            rospy.logerr("The input data cannot be retrieved from the current configuration")
+                message_response = self.message_getter(self.input)
+                # Make sure to only extract the proper field out of the response of the manager
+                input_data = message_response.__getattribute__(message_response.__slots__[0])
+        except Exception as e:
+            rospy.logerr("The input data cannot be retrieved from the current configuration: {}".format(e))
             return self.outcomes[-1]
 
         try:
@@ -90,14 +94,14 @@ class {{ component.name }}(smach.State):
             {% if "srv" in component.server_statement %}
             response = self.client(input_data)
             {% else %}
-            goal = {{ component.def_file }}()
+            goal = {{ component.def_file.replace("Action", "Goal") }}()
             goal.input = input_data
             self.client.send_goal(goal)
             self.client.wait_for_result()
             response = self.client.get_result()
             {% endif %}
-        except:
-            rospy.logerr("Something went wrong when sending the request to the server")
+        except Exception as exception:
+            rospy.logerr("Something went wrong when sending the request to the server: {}".format(exception))
             return self.outcomes[-1]
 
         # If there is nothing to store then just return the associated outcome

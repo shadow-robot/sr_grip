@@ -282,35 +282,38 @@ class RobotIntegrationArea(QTabWidget):
     def update_custom_display(self, should_enable):
         """
             Update the widget displayed when a custom launch file is provided
+
+            @param should_enable: Boolean stating if a valid launch file has been set by the user
         """
         # Enable/disable the user entries related to simulation
-        self.sender().simulation_config.gazebo_file_entry_widget.setEnabled(should_enable)
-        self.sender().simulation_config.gazebo_folder_entry_widget.setEnabled(should_enable)
-        self.sender().simulation_config.starting_pose_entry_widget.setEnabled(should_enable)
-        self.sender().simulation_config.check_box.setEnabled(should_enable)
+        self.sender().simulation_config.gazebo_file_entry_widget.setEnabled(not should_enable)
+        self.sender().simulation_config.gazebo_folder_entry_widget.setEnabled(not should_enable)
+        self.sender().simulation_config.starting_pose_entry_widget.setEnabled(not should_enable)
+        self.sender().simulation_config.check_box.setEnabled(not should_enable)
         # Update the validity of the simulation section
         self.sender().simulation_config.update_validity()
-        # If we don't have a custom launch file anymore
+        # If a launch file is provided
         if should_enable:
+            # Enable all the widgets that can be edited in this mode
+            self.arm_config_widget.hardware_connection_config.setEnabled(should_enable)
+            self.hand_config_widget.hardware_connection_config.setEnabled(should_enable)
+            self.arm_config_widget.moveit_planners_config.setEnabled(should_enable)
+            self.hand_config_widget.moveit_planners_config.setEnabled(should_enable)
+            self.sender().robot_config.collision_scene_entry_widget.setEnabled(should_enable)
+            self.settings_config_widget.sensor_plugins.setEnabled(should_enable)
+        # If the launch file has been removed
+        else:
+            # Get the current configurations
             simulation_on = self.sender().simulation_config.check_box.isChecked()
             moveit_off = not self.sender().moveit_config.configuration["UE Moveit package"]
             sensor_on = self.sender().robot_config.sensor_spin_box.get_value() > 0
             # Depending on the current configuration update the proper state of the different widgets
-            self.arm_config_widget.hardware_connection_config.setEnabled(should_enable and not simulation_on)
-            self.hand_config_widget.hardware_connection_config.setEnabled(should_enable and not simulation_on)
-            self.sender().robot_config.collision_scene_entry_widget.setEnabled(not(should_enable and simulation_on))
-            self.settings_config_widget.sensor_plugins.setEnabled(should_enable and not moveit_off and sensor_on)
-            self.arm_config_widget.moveit_planners_config.setEnabled(should_enable and not moveit_off)
-            self.hand_config_widget.moveit_planners_config.setEnabled(should_enable and not moveit_off)
-        # If a custom launch file is just provided
-        else:
-            # Enable/disable the widgets that can/cannot be edited in this mode
-            self.arm_config_widget.hardware_connection_config.setEnabled(should_enable)
-            self.hand_config_widget.hardware_connection_config.setEnabled(should_enable)
-            self.arm_config_widget.moveit_planners_config.setEnabled(not should_enable)
-            self.hand_config_widget.moveit_planners_config.setEnabled(not should_enable)
-            self.sender().robot_config.collision_scene_entry_widget.setEnabled(not should_enable)
-            self.settings_config_widget.sensor_plugins.setEnabled(not should_enable)
+            self.arm_config_widget.hardware_connection_config.setEnabled(not simulation_on)
+            self.hand_config_widget.hardware_connection_config.setEnabled(not simulation_on)
+            self.sender().robot_config.collision_scene_entry_widget.setEnabled(not simulation_on)
+            self.settings_config_widget.sensor_plugins.setEnabled(not moveit_off and sensor_on)
+            self.arm_config_widget.moveit_planners_config.setEnabled(not moveit_off)
+            self.hand_config_widget.moveit_planners_config.setEnabled(not moveit_off)
 
     def launch_robot(self):
         """

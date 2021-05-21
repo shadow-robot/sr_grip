@@ -101,10 +101,10 @@ class GenericConfigBoxWidget(QGroupBox):
         # If the slot name corresponds to a QCombo box then return its text
         combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
         if combo_widget:
-            return combo_widget.currentText()
-
-        # Otherwise it means it comes from a QLineEdit, and get the text from it
-        raw_text = self.findChild(QLineEdit, "line {}".format(slot_name)).text()
+            raw_text = combo_widget.currentText()
+        else:
+            # Otherwise it means it comes from a QLineEdit, and get the text from it
+            raw_text = self.findChild(QLineEdit, "line {}".format(slot_name)).text()
         # If the slot is empty
         if not raw_text:
             return raw_text
@@ -130,6 +130,10 @@ class GenericConfigBoxWidget(QGroupBox):
             @param slot_name: String specifying for which slot we want to set the content
             @param value: String to be displayed in the given slot
         """
+        if isinstance(value, list):
+            # If the value to set is a list, transform it back to a string so it can be displayed
+            value = map(lambda x: str(x), value)
+            value = "[" + ", ".join(value) + "]"
         # Check if the slot corresponds to a QComboBox
         combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
         # If that's the case
@@ -145,7 +149,7 @@ class GenericConfigBoxWidget(QGroupBox):
                     index_choice = all_items.index(value)
                     combo_widget.setCurrentIndex(index_choice)
                 except ValueError:
-                    # TODO: Create proper QT way to signal this OR custom made logs (with specific colours
+                    # TODO: Create proper QT way to signal this OR custom made logs (with specific colours)
                     print("========== WARNING ==========")
                     print("For slot {}, the provided value {} is not valid.".format(slot_name, value))
         # Otherwise it should be a QLineEdit
@@ -154,11 +158,12 @@ class GenericConfigBoxWidget(QGroupBox):
             # If it is indeed a QLineEdit then we just need to set the provided input
             if widget:
                 widget.setText(value)
-            # TODO: Create proper QT way to signal this OR custom made logs (with specific colours
-            else:
+            # TODO: Create proper QT way to signal this OR custom made logs (with specific colours)
+            elif not (isinstance(self, CommanderStateConfigBox) and slot_name == "group_name" and
+                      len(self.commander_choice) == 2):
                 # TODO: Create proper QT way to signal this OR custom made logs (with specific colours
                 print("========== WARNING ==========")
-                print("Could not find parameter {} in state type {}".format(slot_name, self.title()))
+                print("Could not find parameter {} in state {}".format(slot_name, self.title()))
 
     @staticmethod
     def to_format(input):
@@ -474,12 +479,17 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         """
         # Get the other (associated) QComboBox
         widget = self.findChild(QComboBox, "{}".format(self.sender().objectName().replace("_type", "")))
+        # When restoring, allows us to get the text previously set
+        widget_text = widget.currentText()
+        # Allows for removing useless suggestions
         widget.clear()
         # Depending on the current text of the sender, update the possible choices
         if not current_text:
             widget.addItem("")
         else:
             widget.addItems([""] + self.known_msgs[current_text])
+            # Restore the previously set text
+            widget.setCurrentText(widget_text)
 
     def update_known_poses(self):
         """
