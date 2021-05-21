@@ -17,14 +17,13 @@
 import inflection
 import os
 from collections import OrderedDict
-from graphical_editor_base import Serializable
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from grip_core.utils.file_parsers import AVAILABLE_STATES, get_import_statement
 from grip_core.utils.common_paths import EXTERNAL_COMPONENT_TEMPLATE, GENERATED_STATES_FOLDER, SENSOR_TEMPLATE
 from state_config_widgets import StateConfigBox, CommanderStateConfigBox, GeneratedStateConfigBox, StateMachineConfigBox
 
 
-class StateContentWidget(QWidget, Serializable):
+class StateContentWidget(QWidget):
 
     """
         Widget that contains the area in which the user can configure a state
@@ -153,7 +152,7 @@ class StateContentWidget(QWidget, Serializable):
             self.config_state.set_slot_value(param_name, param_value)
 
 
-class StateMachineContentWidget(QWidget, Serializable):
+class StateMachineContentWidget(QWidget):
 
     """
         Widget that contains the area in which the user can configure the userdata of a state machine
