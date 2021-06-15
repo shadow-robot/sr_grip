@@ -332,7 +332,7 @@ class TaskEditorView(QGraphicsView):
         """
         # Get the item that is being clicked
         item = self.itemAt(event.pos())
-        # If we are dragging an edge and the release action is not too far from the previous click
+        # If we are dragging a connector and the release action is not too far from the previous click
         if self.is_dragging and self.is_distance_between_click_and_release_enough(event):
             # Drag the connector there
             is_connector_created = self.connector_drag_end(item)

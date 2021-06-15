@@ -16,7 +16,7 @@
 
 from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsItem
 from PyQt5.QtCore import Qt, QPointF, QLineF
-from PyQt5.QtGui import QColor, QPen, QPainterPath
+from PyQt5.QtGui import QColor, QPen, QPainterPath, QBrush, QPainterPathStroker
 
 
 class GraphicsConnector(QGraphicsPathItem):
@@ -118,9 +118,8 @@ class GraphicsConnector(QGraphicsPathItem):
             pen = self.pen_dragging
         else:
             pen = self.pen if not self.isSelected() else self.pen_selected
-        # Scale the width of teh connector if needed
+        # Scale the width of the connector if needed
         pen.setWidthF(self.pen_width * self.pen_width_compensator)
-        # pen.setWidthF(self.pen_width)
         painter.setBrush(Qt.NoBrush)
         painter.setPen(pen)
         # If we don't add this line, clicks on this object won't be detected
@@ -168,4 +167,9 @@ class GraphicsConnector(QGraphicsPathItem):
 
         # The final curve, that joins the last point
         path.quadTo(control_point_1, points[-1])
-        return path
+        # Create a PainterStorker so collision area fits the shape of the path
+        stroke = QPainterPathStroker()
+        # The fillable area is set to 0
+        stroke.setWidth(0)
+        # Return the path
+        return stroke.createStroke(path)
