@@ -16,7 +16,7 @@
 
 from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsItem
 from PyQt5.QtCore import Qt, QPointF, QLineF
-from PyQt5.QtGui import QColor, QPen, QPainterPath, QBrush, QPainterPathStroker
+from PyQt5.QtGui import QColor, QPen, QPainterPath, QPainterPathStroker
 
 
 class GraphicsConnector(QGraphicsPathItem):
