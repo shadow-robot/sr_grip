@@ -313,13 +313,15 @@ class YAMLEditorWidget(GenericEditorWidget):
 
             @param settings: PyQt5 object (QSettings) containing the information about the configuration of each widget
         """
+        # Make sure to close an already open file
+        self.close_file()
         settings.beginGroup(self.objectName())
         if settings.contains("file_path") and os.path.exists(settings.value("file_path")):
             self.should_emit_signal = False
             self.file_path = settings.value("file_path")
             self.load_file()
         else:
-            self.code_editor.clear()
+            self.code_editor.reset()
         self.setEnabled(settings.value("enabled", type=bool))
         settings.endGroup()
 

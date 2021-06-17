@@ -176,6 +176,8 @@ class GenericUserEntryWidget(QWidget):
 
             @param settings: PyQt5 object (QSettings) containing the information about the configuration of each widget
         """
+        # Make sure we don't have any overlap that can come from a previous configuration
+        self.entry_edit_line.clear()
         settings.beginGroup(self.objectName())
         stored_value = settings.value("value")
         value_to_set = stored_value[0] if isinstance(stored_value, tuple) else stored_value
@@ -183,6 +185,7 @@ class GenericUserEntryWidget(QWidget):
         self.entry_edit_line.setText(value_to_set)
         self.setEnabled(settings.value("enabled", type=bool))
         settings.endGroup()
+        self.canBeSaved.emit(False)
 
 
 class UrdfEntryWidget(GenericUserEntryWidget):

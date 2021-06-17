@@ -195,9 +195,12 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         """
             Setup the editors allowing to modify the move group and rviz launch files
         """
-        # If the provided package is valid then make the editors enabled
+        # Since the provided package is valid then make the editors enabled
         self.move_group_editor.setEnabled(True)
         self.rviz_editor.setEnabled(True)
+        # Make sure both editors are as good as new
+        self.move_group_editor.code_editor.reset()
+        self.rviz_editor.code_editor.reset()
         # Display the skeleton helping the user to change options of some of the moveit launch files
         self.move_group_editor.set_editor_content(self.get_moveit_config("move_group"))
         self.rviz_editor.set_editor_content(self.get_moveit_config("moveit_rviz"))
@@ -388,7 +391,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         """
             Setup the editor allowing to modify the provided launch file
         """
-
+        self.launch_file_editor.code_editor.reset()
         self.launch_file_editor.setEnabled(True)
         self.launch_file_editor.set_editor_content(self.get_launch_config())
 

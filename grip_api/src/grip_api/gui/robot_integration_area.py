@@ -544,4 +544,5 @@ class RobotIntegrationArea(QTabWidget):
         # Make sure to update the commanders config
         self.send_commanders_config()
         # If removed then will always ask to save even though nothing has been modified
+        self.config_changed = dict()
         self.can_be_saved = False
