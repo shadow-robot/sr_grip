@@ -53,7 +53,7 @@ class TaskEditorView(QGraphicsView):
         self.zoom_in_multiplier = 1.1
         self.zoom_out_multiplier = 1 / 1.1
         self.current_zoom = 0
-        self.zoom_range = [-15, 15]
+        self.zoom_range = [-25, 25]
         # Indicates whether the user is dragging an edge
         self.is_dragging = False
         # Variables set when the view should be restored
