@@ -15,9 +15,10 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import os
 import rospy
 import signal
-from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QTabWidget, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QTabWidget, QFileDialog, QInputDialog, QLineEdit
 from PyQt5.QtCore import QFileInfo, QSettings
 from grip_core.utils.common_paths import (ROBOT_CONFIG_FOLDER, MAIN_CONFIG_FILE, DEFAULT_TASK_CONFIG_FILE,
                                           DEFAULT_ROBOT_CONFIG_FILE, STATES_FOLDER, STATE_MACHINES_TEMPLATES_FOLDER)
@@ -106,6 +107,7 @@ class FrameworkGui(QMainWindow):
         """
             Create the different actions composing menus
         """
+        self.action_new = QAction('&New', self, shortcut='Ctrl+N', statusTip="New file", triggered=self.new_file)
         # Allows to open a robot config
         self.action_open = QAction('&Open', self, shortcut='Ctrl+O', statusTip="Open file", triggered=self.open_file)
         # Save the current robot config
@@ -160,6 +162,7 @@ class FrameworkGui(QMainWindow):
         # Add the "File" menu
         self.file_menu = menubar.addMenu('&File')
         # Add the different actions
+        self.file_menu.addAction(self.action_new)
         self.file_menu.addAction(self.action_open)
         self.file_menu.addAction(self.action_save)
         self.file_menu.addAction(self.action_save_as)
@@ -205,6 +208,32 @@ class FrameworkGui(QMainWindow):
         """
         # Activate/Deactivate the task editor
         self.tab_container.setTabEnabled(1, enable_task_editor)
+
+    def new_file(self):
+        """
+            Create a new config file, either to interface a robot or to design a task, depending on the widget the user
+            is calling this function.
+        """
+        # Get the current widget the user is on when this function is called
+        current_widget = self.tab_container.currentWidget()
+        # Ask the user what to do if the current configuration has been changed
+        user_action = self.check_if_save(current_widget)
+        if user_action is None:
+            return
+
+        config_name, ok = QInputDialog().getText(self, "New config", "Name of the new config:", QLineEdit.Normal)
+        if config_name and ok:
+            if not config_name.endswith(".ini"):
+                config_name += ".ini"
+        else:
+            return
+        config_file_path = os.path.join(ROBOT_CONFIG_FOLDER, config_name)
+        self.robot_config_path = config_file_path
+        self.settings.setValue("latest_robot_config", config_file_path)
+        # Make sure to have all the children properly collected by the garbage collector
+        del self.robot_integration_area
+        # Reinitialise the robot integration area, as well as the task editor
+        self.init_main_widget()
 
     def open_file(self):
         """
