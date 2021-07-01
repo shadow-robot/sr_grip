@@ -17,6 +17,7 @@
 #include <grip_core/acm_manager.hpp>
 #include <vector>
 #include <string>
+#include <map>
 
 /**
  Constructor of the class
