@@ -21,7 +21,8 @@ import signal
 from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QTabWidget, QFileDialog, QInputDialog, QLineEdit
 from PyQt5.QtCore import QFileInfo, QSettings
 from grip_core.utils.common_paths import (ROBOT_CONFIG_FOLDER, MAIN_CONFIG_FILE, DEFAULT_TASK_CONFIG_FILE,
-                                          DEFAULT_ROBOT_CONFIG_FILE, STATES_FOLDER, STATE_MACHINES_TEMPLATES_FOLDER)
+                                          STATES_FOLDER, DEFAULT_ROBOT_CONFIG_FILE, STATE_MACHINES_TEMPLATES_FOLDER,
+                                          TASK_CONFIG_FOLDER)
 from grip_core.utils.file_parsers import fill_available_states, fill_available_state_machines
 from robot_integration_area import RobotIntegrationArea
 from task_editor_area import TaskEditorArea
@@ -51,8 +52,10 @@ class FrameworkGui(QMainWindow):
         # Contains the widget configurations required to load previous robot configurations
         self.robot_config_path = DEFAULT_ROBOT_CONFIG_FILE
         self.task_config_path = DEFAULT_TASK_CONFIG_FILE
-        # Configure the GUI
-        self.init_from_configs()
+        # Load the robot and task configuration
+        self.init_robot_config()
+        self.init_task_config()
+        self.views_to_be_restored = True
 
     def init_ui(self):
         """
@@ -84,7 +87,7 @@ class FrameworkGui(QMainWindow):
         # Update the menu related to the robot
         self.robot_integration_area.robotCanBeLaunched.connect(self.update_robot_launch_action)
         self.robot_integration_area.robotCanBeStopped.connect(self.update_robot_stop_action)
-        # Update the task editor view corresponding to the vailidy of the robot config
+        # Update the task editor view corresponding to the validity of the robot config
         self.robot_integration_area.enableTaskEditor.connect(self.update_task_editor)
         # Update imported state machines/states if a new source is added
         self.task_editor_area.state_machine_displayer.stateMachineSourceAdded.connect(self.save_state_machine_source)
@@ -94,7 +97,26 @@ class FrameworkGui(QMainWindow):
         self.tab_container.addTab(self.task_editor_area, "Task editor")
         # By default, i.e. without any config, the task editor should not be accessible
         self.tab_container.setTabEnabled(1, False)
+        # Make sure sanity checks are carried out when users go on the task editor
+        self.tab_container.currentChanged.connect(self.on_task_editor)
         self.setCentralWidget(self.tab_container)
+
+    def on_task_editor(self, index):
+        """
+            Run sanity checks and make sure the views of each task editor is properly set
+
+            @param index: Index of the tab that is eing activated by the user. 0 is for the integration and 1 for task
+        """
+        # Do nothing when going on the Robot integration area
+        if not index:
+            return
+        # If the views need to be manually restored (it happens when loading the task in the __init__)
+        if self.views_to_be_restored:
+            self.task_editor_area.mdi_area.restore_views()
+            self.views_to_be_restored = False
+        # Make sure all the states currently used in the task editors can still be used
+        # It is important since the robot integration can be changed while the task editor is on
+        self.task_editor_area.check_state_availability()
 
     def initialize_status_bar(self):
         """
@@ -108,21 +130,30 @@ class FrameworkGui(QMainWindow):
             Create the different actions composing menus
         """
         self.action_new = QAction('&New', self, shortcut='Ctrl+N', statusTip="New file", triggered=self.new_file)
-        # Allows to open a robot config
+        # Open a config (either robot or task)
         self.action_open = QAction('&Open', self, shortcut='Ctrl+O', statusTip="Open file", triggered=self.open_file)
-        # Save the current robot config
+        # Save the current config (either robot or task)
         self.action_save = QAction('&Save', self, shortcut='Ctrl+S', statusTip="Save file", triggered=self.save_file)
-        # Save the current robot integration as
+        # Save the current configuration as
         self.action_save_as = QAction('Save &As...', self, shortcut='Ctrl+Shift+S', statusTip="Save file as...",
                                       triggered=self.save_file_as)
         # Exit the application
         self.action_exit = QAction('E&xit', self, shortcut='Ctrl+Q', statusTip="Exit application", triggered=self.exit)
 
-        # Launch the robot
+        # Launch and stop the robot
         self.launch_robot = QAction("&Launch", self, shortcut="Ctrl+L", statusTip="Launch the robot", enabled=False,
                                     triggered=self.robot_integration_area.launch_robot)
         self.stop_robot = QAction("Sto&p", self, shortcut="Ctrl+P", statusTip="Stop the robot", enabled=False,
                                   triggered=self.robot_integration_area.stop_robot)
+        # Copy the elements that are selected in the task editor
+        self.action_copy = QAction('&Copy', self, shortcut='Ctrl+C', statusTip="Copy selected items",
+                                   triggered=self.task_editor_area.mdi_area.copy_task_editor_elements)
+        # Cut the elements that are selected in the task editor
+        self.action_cut = QAction('C&ut', self, shortcut='Ctrl+X', statusTip="Cut selected items",
+                                  triggered=self.task_editor_area.mdi_area.copy_task_editor_elements)
+        # Paste the elements that were previously copied in the task editor
+        self.action_paste = QAction('&Paste', self, shortcut='Ctrl+V', statusTip="Paste previously copied items",
+                                    triggered=self.task_editor_area.mdi_area.paste)
         # Delete the selection in the task editor
         self.delete_selection = QAction('&Delete', self, shortcut='Del', statusTip="Delete selected items",
                                         triggered=self.delete)
@@ -174,15 +205,24 @@ class FrameworkGui(QMainWindow):
         self.robot_menu.addAction(self.stop_robot)
         # Add the "Edit" menu
         self.edit_menu = menubar.addMenu("&Edit")
+        self.edit_menu.addAction(self.action_copy)
+        self.edit_menu.addAction(self.action_cut)
+        self.edit_menu.addAction(self.action_paste)
+        self.edit_menu.addSeparator()
         self.edit_menu.addAction(self.delete_selection)
         # Make sure the content of the edit menu is only made available when the focus is on the task editor
         self.edit_menu.aboutToShow.connect(self.update_edit_menu)
 
     def update_edit_menu(self):
         """
-            Enable/Disable the action allowing to delete the items part of the task editor
+            Enable/Disable the actions only related to the task editor
         """
-        self.delete_selection.setEnabled(self.tab_container.currentWidget() is self.task_editor_area)
+        # Are we on the task editor area
+        is_task_editor = self.tab_container.currentWidget() is self.task_editor_area
+        self.action_copy.setEnabled(is_task_editor)
+        self.action_cut.setEnabled(is_task_editor)
+        self.action_paste.setEnabled(is_task_editor)
+        self.delete_selection.setEnabled(is_task_editor)
 
     def update_robot_launch_action(self, is_robot_launchable):
         """
@@ -211,8 +251,7 @@ class FrameworkGui(QMainWindow):
 
     def new_file(self):
         """
-            Create a new config file, either to interface a robot or to design a task, depending on the widget the user
-            is calling this function.
+            Create a new config file, either to interface a robot or to design a task, depending on where the user is
         """
         # Get the current widget the user is on when this function is called
         current_widget = self.tab_container.currentWidget()
@@ -221,24 +260,32 @@ class FrameworkGui(QMainWindow):
         if user_action is None:
             return
 
-        config_name, ok = QInputDialog().getText(self, "New config", "Name of the new config:", QLineEdit.Normal)
+        # Requests the name of the new configuration
+        config_name, ok = QInputDialog().getText(self, "New config", "Name of the new configuration:", QLineEdit.Normal)
+        config_filename = config_name
+        # If a name has been given and OK has been pressed
         if config_name and ok:
+            # Make sure the config filename ends with .ini
             if not config_name.endswith(".ini"):
-                config_name += ".ini"
+                config_filename += ".ini"
+        # Otherwise, stop there
         else:
             return
-        config_file_path = os.path.join(ROBOT_CONFIG_FOLDER, config_name)
-        self.robot_config_path = config_file_path
-        self.settings.setValue("latest_robot_config", config_file_path)
-        # Make sure to have all the children properly collected by the garbage collector
-        del self.robot_integration_area
-        # Reinitialise the robot integration area, as well as the task editor
-        self.init_main_widget()
+
+        if current_widget is self.robot_integration_area:
+            # Get the path to the config file
+            config_file_path = os.path.join(ROBOT_CONFIG_FOLDER, config_filename)
+            # Load a new configuration file
+            self.load_robot_config(config_file_path, new=True)
+        else:
+            # Get the path to the config file for task edition
+            config_file_path = os.path.join(TASK_CONFIG_FOLDER, config_filename)
+            # Load a new configuration file
+            self.load_task_config(config_file_path, new=True)
 
     def open_file(self):
         """
-            Open an already created config file, depending on which this function is called. It can either be the robot
-            integration file or the task definition.
+            Open an already created config file (either for robot integration or for task definition).
         """
         # Get the current widget the user is on when this function is called
         current_widget = self.tab_container.currentWidget()
@@ -252,9 +299,16 @@ class FrameworkGui(QMainWindow):
                                                                filter="ini(*.ini)",
                                                                directory=ROBOT_CONFIG_FOLDER)
             if robot_config_path:
-                self.robot_config_path = robot_config_path
-                self.settings.setValue("latest_robot_config", robot_config_path)
-                self.init_robot_config()
+                # Load the configuration file that has been chosen by the user
+                self.load_robot_config(robot_config_path)
+        else:
+            task_config_path, _ = QFileDialog.getOpenFileName(self, "Open task config file", filter="ini(*.ini)",
+                                                              directory=TASK_CONFIG_FOLDER)
+            if task_config_path:
+                # Load the task configuration file
+                self.load_task_config(robot_config_path)
+                # Make sure we have the views restored
+                self.task_editor_area.mdi_area.restore_views()
 
     def save_file(self):
         """
@@ -287,13 +341,22 @@ class FrameworkGui(QMainWindow):
 
     def check_if_save(self, widget=None):
         """
-            Check whether some changes are not saved. If it is the case ask the user what to do
+            Check if some changes are not saved. If it is the case ask the user what to do
 
-            @return: True saving has been perofrmed by the user request, False changes are not to be saved and None
-                     if user clicked on Cancel
+            @param widget: Widget for which we want to know if unsaved changes have been made. If set to None, check all
+                           the tabs of the tab_container.
+            @return: True if saving has been performed by the user request, False if changes are not to be saved
+                     and None if the user clicked on Cancel
         """
+        # If no widget is provided, go over all the widgets contained in the tabs
         if widget is None:
-            widget = self.robot_integration_area
+            should_save = list()
+            for tab_index in range(self.tab_container.count()):
+                should_save.append(self.check_if_save(self.tab_container.widget(tab_index)))
+            # If the user clicked on Cancel for any of the tab, return None, otherwise return False
+            # Note that it can be True, as for now it does not matter
+            return None if any(x is None for x in should_save) else False
+
         should_save = False
         # Notifies the user that there are unsaved changes that can be lost
         if widget.can_be_saved:
@@ -305,7 +368,46 @@ class FrameworkGui(QMainWindow):
                 self.settings.sync()
                 if widget is self.robot_integration_area:
                     self.latest_robot_config.sync()
+                else:
+                    self.latest_task_config.sync()
         return should_save
+
+    def load_robot_config(self, config_file_path, new=False):
+        """
+            Load or create a robot configuration from a provided configuration file
+
+            @param config_file_path: Path to the configuration file. Should end with the extension .ini
+            @param new: Boolean stating if a new configuration file should be created
+        """
+        # Update the path to the current config file path
+        self.robot_config_path = config_file_path
+        self.settings.setValue("latest_robot_config", config_file_path)
+        if new:
+            # Create the .ini file
+            self.latest_robot_config = QSettings(self.robot_config_path, QSettings.IniFormat)
+        # Clear, i.e. reset all the widgets allowing to interface a new robot
+        self.robot_integration_area.reset()
+        # If we load an existing one, restore all the widgets
+        if not new:
+            self.init_robot_config()
+
+    def load_task_config(self, config_file_path, new=False):
+        """
+            Load or create a task configuration from a provided configuration file
+
+            @param config_file_path: Path to the configuration file. Should end with the extension .ini
+            @param new: Boolean stating if a new configuration file should be created
+        """
+        self.task_config_path = config_file_path
+        self.settings.setValue("latest_task_config", config_file_path)
+        if new:
+            # Create the .ini file
+            self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
+        # Clear, i.e. reset all the editors allowing to design a task
+        self.task_editor_area.reset()
+        # If we load an existing one, restore all the widgets
+        if not new:
+            self.init_task_config()
 
     def exit(self):
         """
@@ -356,13 +458,6 @@ class FrameworkGui(QMainWindow):
         if is_path_wrong:
             error_message("Error", "Error while processing the provided states!", parent=self)
 
-    def init_from_configs(self):
-        """
-            Restore if possible all the widgets to their state saved into the robot and task configuration widgets
-        """
-        self.init_robot_config()
-        self.init_task_config()
-
     def init_robot_config(self):
         """
             Restore (if possible) the state of the widgets allowing the user to interface a robot
@@ -386,6 +481,9 @@ class FrameworkGui(QMainWindow):
         """
             Restore (if possible) the state of the widgets allowing the user to design the task of a robot
         """
+        # Make sure we don't restore the task editor area when the user can't access it due to a non valid config
+        if not self.task_editor_area.isEnabled():
+            return
         # If a task configuration has already been saved in a file, get its path
         if self.settings.contains("latest_task_config"):
             self.task_config_path = self.settings.value("latest_task_config")
@@ -397,22 +495,6 @@ class FrameworkGui(QMainWindow):
         # Restore the configuration of the task editor if one is found
         if info_file.exists() and info_file.isFile():
             self.task_editor_area.restore_config(self.latest_task_config)
-            # Make sure to restore the saved views for each subwindow
-            self.tab_container.currentChanged.connect(self.restore_task_editor_views)
-
-    def restore_task_editor_views(self, index):
-        """
-            Function called only once when the user clicks on the Task Editor tab and that the latter must restore a
-            previously saved config
-
-            @param index: Index of the tab that is being clicked on (0 for Robot Integration Area and I for Task Editor)
-        """
-        # If the Task Editor is clicked
-        if index:
-            # Restore the view of all the GraphicalEditorWidgets
-            self.task_editor_area.mdi_area.restore_views()
-            # Make sure to restore the views only once
-            self.tab_container.currentChanged.disconnect()
 
     def str_to_class(self, class_name):
         """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -125,6 +125,15 @@ class RobotInterfaceWidget(QWidget):
         """
         is_launch_file_empty = not self.sender().entry_edit_line.text() or self.sender().valid_input is None
         self.isCustomLaunchProvided.emit(not is_launch_file_empty)
+
+    def reset(self):
+        """
+            Reset the state of this widget to its initial, i.e. empty without any field configured
+        """
+        for widget in self.children():
+            if not isinstance(widget, QHBoxLayout):
+                widget.reset()
+        self.modifiers = dict()
 
     def save_config(self, settings):
         """

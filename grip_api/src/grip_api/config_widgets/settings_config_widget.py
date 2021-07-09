@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -38,7 +38,7 @@ class SettingsConfigWidget(QWidget):
         super(SettingsConfigWidget, self).__init__(parent=parent)
         self.setObjectName("Setup config widget")
         # Configuration of the settings config
-        self.configuration = SETTINGS_CONFIG
+        self.configuration = SETTINGS_CONFIG.copy()
         # By default it is not valid
         self.is_config_valid = True
         self.init_ui()
@@ -113,7 +113,7 @@ class SettingsConfigWidget(QWidget):
 
     def connect_update(self):
         """
-            Connect signals to a slot allowing to update the settings configuration
+            Connect signals related to the update the settings configuration
         """
         self.named_joint_states.canBeSaved.connect(self.update_config)
         self.named_poses.canBeSaved.connect(self.update_config)
@@ -121,6 +121,17 @@ class SettingsConfigWidget(QWidget):
         self.sensor_configs.canBeSaved.connect(self.update_config)
         self.sensor_plugins.canBeSaved.connect(self.update_config)
         self.external_methods.canBeSaved.connect(self.update_config)
+
+    def disconnect_update(self):
+        """
+            Disconnect signals related to the settings configuration
+        """
+        self.named_joint_states.canBeSaved.disconnect()
+        self.named_poses.canBeSaved.disconnect()
+        self.named_trajectories.canBeSaved.disconnect()
+        self.sensor_configs.canBeSaved.disconnect()
+        self.sensor_plugins.canBeSaved.disconnect()
+        self.external_methods.canBeSaved.disconnect()
 
     def update_config(self, test):
         """
@@ -144,6 +155,26 @@ class SettingsConfigWidget(QWidget):
             self.is_config_valid = False
             return
         self.is_config_valid = True
+
+    def reset(self):
+        """
+            Reset the state of this widget to its initial, i.e. all editors closed
+        """
+        # Make sure we don't have signals conflict at some points
+        self.disconnect_update()
+        # By default it is valid
+        self.is_config_valid = True
+        # Reset all the editors
+        self.named_joint_states.reset()
+        self.named_poses.reset()
+        self.named_trajectories.reset()
+        self.sensor_configs.reset()
+        self.sensor_plugins.reset()
+        self.external_methods.reset()
+        # Reconnect the udpate signals
+        self.connect_update()
+        # Configuration of the settings config, set ot its initial values
+        self.configuration = SETTINGS_CONFIG.copy()
 
     def save_config(self, settings):
         """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -514,6 +514,18 @@ class RobotIntegrationArea(QTabWidget):
         if updated_commander_config != self.commander_config:
             self.commander_config = updated_commander_config
             self.commanderUpdated.emit()
+
+    def reset(self):
+        """
+            Reset the state of this widget to the initial one, i.e. empty without any field configured
+        """
+        # For each tab, reset the corresponding widget
+        for tab_index in range(self.count()):
+            self.widget(tab_index).reset()
+        # Make sure to reset the attributes of the widget
+        self.config_changed = dict()
+        # After resetting everything, make sure unsaved changes cannot be found
+        self.can_be_saved = False
 
     def save_config(self, settings):
         """

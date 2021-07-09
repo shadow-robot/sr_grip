@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -263,9 +263,17 @@ class YAMLEditorWidget(GenericEditorWidget):
 
     def close_file(self):
         """
-            Reset the editor and unlinks the editor to any file
+            Unlinks the file from the editor, but the latter reamins enabled
         """
         self.code_editor.reinitialize()
+        self.file_path = None
+        self.title.setText(self.name)
+
+    def reset(self):
+        """
+            Reset the editor and unlinks any file from the editor
+        """
+        self.code_editor.reset()
         self.file_path = None
         self.title.setText(self.name)
 
