@@ -67,6 +67,18 @@ class State(object):
         """
         self.graphics_state.setPos(x, y)
 
+    def translate(self, x, y):
+        """
+            Translate the graphical representation of the object in the view.
+
+            @param x: Value to add to the x coordinate of the graphical representation of the object
+            @param y: Value to add to the x coordinate of the graphical representation of the object
+        """
+        # Get the current position
+        current_x, current_y = self.graphics_state.x(), self.graphics_state.y()
+        # Set position when applying the offset
+        self.set_position(current_x + x, current_y + y)
+
     def init_sockets(self):
         """
             Create the sockets associated to the state
@@ -105,11 +117,13 @@ class State(object):
 
     def is_valid(self):
         """
-            Return a boolean corresponding to whether the state is fully connected or not
+            Return a boolean representing the validity of the object, i.e. if it is fully connected and compatible
+            with the current robot configuration
 
-            @return: True if all sockets of the state are connected to other objects, False otherwise
+            @return: True if the state is valid, False otherwise
         """
-        return all(socket.is_connected() for socket in (self.input_socket + self.output_sockets))
+        is_fully_connected = all(socket.is_connected() for socket in (self.input_socket + self.output_sockets))
+        return is_fully_connected and self.get_opacity() == 1.
 
     def get_config(self):
         """
@@ -162,6 +176,24 @@ class State(object):
         state_config["transitions"] = transitions
         return state_config
 
+    def get_opacity(self):
+        """
+            Return the opacity (which represents the availability of the object) of the graphical state
+
+            @return: Float value between 0 and 1
+        """
+        return self.graphics_state.opacity()
+
+    def set_opacity(self, value):
+        """
+            Set the opacity of the graphical state
+
+            @param value: Float between 0 and 1
+        """
+        # Make sure the opacity to set is between 0 and 1
+        value = 0 if value < 0 else value if value < 1 else 1
+        self.graphics_state.setOpacity(value)
+
     def save(self):
         """
             Gather and return all the parameters required to recreate the exact same state
@@ -171,9 +203,11 @@ class State(object):
         # Get lists containing the serialized input and outputs sockets
         serialized_input_socket, serialized_output_sockets = list(), list()
         for socket in self.input_socket:
-            serialized_input_socket.append(socket.get_id())
+            socket_id = socket.get_id()
+            serialized_input_socket.append(socket_id)
         for socket in self.output_sockets:
-            serialized_output_sockets.append(socket.get_id())
+            socket_id = socket.get_id()
+            serialized_output_sockets.append(socket_id)
 
         return OrderedDict([
             ('name', self.name),
@@ -185,20 +219,33 @@ class State(object):
             ('content', self.content.get_config(True)),
         ])
 
-    def restore(self, data, socket_mapping={}):
+    def restore(self, data, socket_mapping={}, new_sockets=None):
         """
             Set all the parameters of the state to restore it to a previously saved state
 
             @param data: Dictionary containing the id, name, type, position, sockets and content of the state
             @param socket_mapping: Dictionary mapping the id of the sockets to the pointer of the actual object
+            @param new_sockets: Dictionary that will contain the mapping between the old and new socket IDs. If set to
+                                None, new socket IDs won't be generated.
         """
         # Set the position
         self.set_position(data["pos_x"], data["pos_y"])
         # Set the name of the state
         self.name = data["name"]
-        # Update the id of the socket input socket
-        self.input_socket[0].set_id(data["input_socket"][0], socket_mapping)
-        # Update all the sockets
-        for ind_socket, socket in enumerate(self.output_sockets):
-            socket.set_id(data["output_sockets"][ind_socket], socket_mapping)
+        # If new socket IDs must be generated
+        if new_sockets is not None:
+            # The sockets created in the __init__ will naturally have a different ID number that the one to be restored
+            self.input_socket[0].register_id(socket_mapping)
+            # Register the mapping between the old and new sockets
+            new_sockets[data["input_socket"][0]] = self.input_socket[0].get_id()
+            # Do the same thing for the output sockets
+            for ind_socket, socket in enumerate(self.output_sockets):
+                socket.register_id(socket_mapping)
+                new_sockets[data["output_sockets"][ind_socket]] = self.output_sockets[ind_socket].get_id()
+        # Otherwise, restore the ID of the sockets of this object
+        else:
+            self.input_socket[0].set_id(data["input_socket"][0], socket_mapping)
+            for ind_socket, socket in enumerate(self.output_sockets):
+                socket.set_id(data["output_sockets"][ind_socket], socket_mapping)
+        # Restore the content of the state
         self.content.set_config(data["content"])

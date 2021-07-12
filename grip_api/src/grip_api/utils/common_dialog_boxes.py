@@ -32,6 +32,21 @@ def error_message(title, main_text, additional_text=None, parent=None):
     error_message.exec_()
 
 
+def warning_message(title, main_text, additional_text=None, parent=None):
+    """
+        Display a warning message to the user on top of a parent widget
+
+        @param title: Title of the message box
+        @param main_text: Content of the message box
+        @param additional_text: Additional text to display. Usually to specify why the warning occurs.
+        @param parent: Specify on top of which widget the message box should be spawned
+    """
+    warning_message = QMessageBox(QMessageBox.Warning, title, main_text, parent=parent)
+    if additional_text is not None:
+        warning_message.setInformativeText(additional_text)
+    warning_message.exec_()
+
+
 def can_save_warning_message(title, main_text, additional_text=None, parent=None):
     """
         Display a waring message to the user on top of a parent widget to ask whether something needs to be saved

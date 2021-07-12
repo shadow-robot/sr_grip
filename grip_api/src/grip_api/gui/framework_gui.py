@@ -114,9 +114,9 @@ class FrameworkGui(QMainWindow):
         if self.views_to_be_restored:
             self.task_editor_area.mdi_area.restore_views()
             self.views_to_be_restored = False
-        # Make sure all the states currently used in the task editors can still be used
+        # Make sure all the states currently used in the task editors match with the robot configuration
         # It is important since the robot integration can be changed while the task editor is on
-        self.task_editor_area.check_state_availability()
+        self.task_editor_area.mdi_area.update_items_availability()
 
     def initialize_status_bar(self):
         """
@@ -281,7 +281,7 @@ class FrameworkGui(QMainWindow):
             # Get the path to the config file for task edition
             config_file_path = os.path.join(TASK_CONFIG_FOLDER, config_filename)
             # Load a new configuration file
-            self.load_task_config(config_file_path, new=True)
+            self.load_task_config(config_file_path, config_name=config_name, new=True)
 
     def open_file(self):
         """
@@ -306,38 +306,56 @@ class FrameworkGui(QMainWindow):
                                                               directory=TASK_CONFIG_FOLDER)
             if task_config_path:
                 # Load the task configuration file
-                self.load_task_config(robot_config_path)
+                self.load_task_config(task_config_path)
                 # Make sure we have the views restored
                 self.task_editor_area.mdi_area.restore_views()
 
-    def save_file(self):
+    def save_file(self, widget_to_save=None):
         """
-            Save the current config file, depending on which widget this function is called. It can either be the robot
-            integration file or the task definition.
+            Save the state of a widget inside a config file, depending on which widget is passed to the function.
+            If None is passed, it will save the widget contained in the current tab opened (task editor or integration)
+
+            @param widget_to_save: Widget contained in one of the two tabs to save. If None is passed, get the current
+                                   widget the user is on.
         """
-        # Save the current state of the robot configuration or the task, depending on which widget the user is on
-        current_widget = self.tab_container.currentWidget()
-        if current_widget is self.robot_integration_area:
-            current_widget.save_config(self.latest_robot_config)
+        if widget_to_save is None or isinstance(widget_to_save, bool):
+            widget_to_save = self.tab_container.currentWidget()
+
+        if widget_to_save is self.robot_integration_area:
+            widget_to_save.save_config(self.latest_robot_config)
             self.settings.setValue("latest_robot_config", self.robot_config_path)
         else:
-            current_widget.save_config(self.latest_task_config)
+            widget_to_save.save_config(self.latest_task_config)
             self.settings.setValue("latest_task_config", self.task_config_path)
 
     def save_file_as(self):
         """
             Save the current config file (task or robot integration) with a specific name provided by the user
         """
-        robot_config_path, _ = QFileDialog.getSaveFileName(self, "Save robot integration config file as",
-                                                           filter="ini(*.ini)",
-                                                           directory=ROBOT_CONFIG_FOLDER)
-        # Ensures we get the correct extension for the config file
-        if not robot_config_path.endswith(".ini"):
-            robot_config_path += ".ini"
-
-        self.robot_config_path = robot_config_path
-        self.latest_robot_config = QSettings(self.robot_config_path, QSettings.IniFormat)
-        self.save_file()
+        # Get the current widget this function is called on
+        current_widget = self.tab_container.currentWidget()
+        # Get the path to where the config will be saved
+        if current_widget is self.robot_integration_area:
+            config_path, ok = QFileDialog.getSaveFileName(self, "Save robot integration config file as",
+                                                          filter="ini(*.ini)",
+                                                          directory=ROBOT_CONFIG_FOLDER)
+        else:
+            config_path, ok = QFileDialog.getSaveFileName(self, "Save task config file as", filter="ini(*.ini)",
+                                                          directory=TASK_CONFIG_FOLDER)
+        # If one path is provided and "Save" has been pressed
+        if config_path and ok:
+            # Make sure the config filename ends with .ini
+            if not config_path.endswith(".ini"):
+                config_path += ".ini"
+        # Update the attribute of the class and create a new ini file
+        if current_widget is self.robot_integration_area:
+            self.robot_config_path = config_path
+            self.latest_robot_config = QSettings(self.robot_config_path, QSettings.IniFormat)
+        else:
+            self.task_config_path = config_path
+            self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
+        # Save the current config in the new file
+        self.save_file(current_widget)
 
     def check_if_save(self, widget=None):
         """
@@ -363,7 +381,7 @@ class FrameworkGui(QMainWindow):
             should_save = can_save_warning_message("Before leaving...", "The current configuration has been modified",
                                                    additional_text="Do you want to save your changes?", parent=self)
             if should_save:
-                self.save_file()
+                self.save_file(widget)
                 # Must call sync to force Qt to remain open, otherwise close without generating the files
                 self.settings.sync()
                 if widget is self.robot_integration_area:
@@ -391,11 +409,12 @@ class FrameworkGui(QMainWindow):
         if not new:
             self.init_robot_config()
 
-    def load_task_config(self, config_file_path, new=False):
+    def load_task_config(self, config_file_path, config_name="root", new=False):
         """
             Load or create a task configuration from a provided configuration file
 
             @param config_file_path: Path to the configuration file. Should end with the extension .ini
+            @param config_name: Name of the main window of the task editor
             @param new: Boolean stating if a new configuration file should be created
         """
         self.task_config_path = config_file_path
@@ -404,7 +423,7 @@ class FrameworkGui(QMainWindow):
             # Create the .ini file
             self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
         # Clear, i.e. reset all the editors allowing to design a task
-        self.task_editor_area.reset()
+        self.task_editor_area.mdi_area.reset(config_name)
         # If we load an existing one, restore all the widgets
         if not new:
             self.init_task_config()

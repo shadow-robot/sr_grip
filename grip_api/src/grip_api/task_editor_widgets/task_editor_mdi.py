@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -19,6 +19,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from grip_core.utils.common_paths import RED_CIRCLE, GREEN_CIRCLE
 from graphical_editor_widget import GraphicalEditorWidget
+from task_editor_clipboard import Clipboard
 
 
 class TaskEditorMDIArea(QMdiArea):
@@ -41,6 +42,7 @@ class TaskEditorMDIArea(QMdiArea):
         self.add_subwindow("root", "base")
         # Initialize the focused subwindow
         self.focused_subwindow = self.subWindowList()[0]
+        self.clipboard = Clipboard()
 
     def init_ui(self):
         """
@@ -99,6 +101,47 @@ class TaskEditorMDIArea(QMdiArea):
             Activate the subwindow_index-th subwindow
         """
         self.setActiveSubWindow(self.subWindowList()[subwindow_index])
+
+    def update_items_availability(self):
+        """
+            Check if the states currently used in all the editors match with the robot configuration
+        """
+        for subwindow in self.subWindowList():
+            subwindow.widget().container.update_current_items_availability()
+
+    def reset(self, task_name="root"):
+        """
+            Remove all the editors currently open and add a new empty one with a provided name
+
+            @param task_name: Name of the main window (i.e. task) to be created after closing all the others
+        """
+        # Remove all the editors
+        for widget in self.subWindowList():
+            self.removeSubWindow(widget)
+        # Add a new base one
+        self.add_subwindow(task_name, "base")
+        # Update the focused subwindow
+        self.focused_subwindow = self.subWindowList()[0]
+
+    def copy_task_editor_elements(self):
+        """
+            Copy the elements selected in one editor to this widget's clipboard
+        """
+        # If this function has been called but the "Cut" functionality, pass it to the core function
+        is_cutting = self.sender().text() == "C&ut"
+        # Get the container on which the copy action has been called
+        container = self.focused_subwindow.widget().container
+        # Copy the elements to the clipboard
+        self.clipboard.copy_selected_items(container, remove_copied=is_cutting)
+
+    def paste(self):
+        """
+            Paste all the elements stored in the clipboard to the current container
+        """
+        # Get the container on which the action has been called
+        container = self.focused_subwindow.widget().container
+        # Paste the elements from the clipboard
+        self.clipboard.paste(container)
 
 
 class TaskEditorSubWindow(QMdiSubWindow):
@@ -159,7 +202,7 @@ class TaskEditorSubWindow(QMdiSubWindow):
             @param event: QCloseEvent sent by PyQt5
         """
         # Make sure the user cannot close the base state machine (can't hide the close button for a specific subwindow)
-        if self.widget().container.type == "root":
+        if self.widget().container.type == "base":
             event.ignore()
         # Otherwise proceed as usual
         else:

@@ -361,15 +361,21 @@ class TaskEditorView(QGraphicsView):
 
     def mouseMoveEvent(self, event):
         """
-            Function triggered whe the mouse is moved in the view
+            Function triggered when the mouse is moved in the view
 
             @param event: QMouseEvent
         """
+        # Get where the even has been triggered
+        event_position = event.pos()
+        # Map the position to the scene's
+        pos = self.mapToScene(event_position)
         # If the user is dragging a connector, update its destination with the mouse position
         if self.is_dragging:
-            pos = self.mapToScene(event.pos())
             self.drag_connector.graphics_connector.set_destination(pos.x(), pos.y())
             self.drag_connector.graphics_connector.update()
+        # If the mouse is not hovering any object, then update the latest valid cursor position
+        if self.itemAt(event_position) is None:
+            self.latest_valid_cursor_position = pos
         super(TaskEditorView, self).mouseMoveEvent(event)
 
     def mouseDoubleClickEvent(self, event):

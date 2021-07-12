@@ -17,6 +17,7 @@
 import re
 from PyQt5.QtWidgets import QGridLayout, QLineEdit, QGroupBox, QLabel, QComboBox
 from grip_api.utils.files_specifics import COMMANDER_DATA_TYPE_CHOICE, ALL_MANAGER_TYPE_CHOICE
+from grip_api.utils.common_dialog_boxes import warning_message
 
 
 class GenericConfigBoxWidget(QGroupBox):
@@ -130,10 +131,13 @@ class GenericConfigBoxWidget(QGroupBox):
             @param slot_name: String specifying for which slot we want to set the content
             @param value: String to be displayed in the given slot
         """
+        # If the value to set is a list, transform it back to a string so it can be displayed
         if isinstance(value, list):
-            # If the value to set is a list, transform it back to a string so it can be displayed
             value = map(lambda x: str(x), value)
             value = "[" + ", ".join(value) + "]"
+        # Transform booleans to strings
+        elif isinstance(value, bool):
+            value = str(value)
         # Check if the slot corresponds to a QComboBox
         combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
         # If that's the case
@@ -149,21 +153,19 @@ class GenericConfigBoxWidget(QGroupBox):
                     index_choice = all_items.index(value)
                     combo_widget.setCurrentIndex(index_choice)
                 except ValueError:
-                    # TODO: Create proper QT way to signal this OR custom made logs (with specific colours)
-                    print("========== WARNING ==========")
-                    print("For slot {}, the provided value {} is not valid.".format(slot_name, value))
+                    warning_message("Error configuring a state", "For state of type {}:".format(self.title()),
+                                    additional_text="The provided value {} for slot {} is not valid.".format(value,
+                                                                                                             slot_name))
         # Otherwise it should be a QLineEdit
         else:
             widget = self.findChild(QLineEdit, "line {}".format(slot_name))
             # If it is indeed a QLineEdit then we just need to set the provided input
             if widget:
                 widget.setText(value)
-            # TODO: Create proper QT way to signal this OR custom made logs (with specific colours)
             elif not (isinstance(self, CommanderStateConfigBox) and slot_name == "group_name" and
                       len(self.commander_choice) == 2):
-                # TODO: Create proper QT way to signal this OR custom made logs (with specific colours
-                print("========== WARNING ==========")
-                print("Could not find parameter {} in state {}".format(slot_name, self.title()))
+                warning_message("Error configuring a state", "For state of type {}:".format(self.title()),
+                                additional_text="The parameter {} cannot be found".format(slot_name))
 
     @staticmethod
     def to_format(input):
@@ -281,7 +283,9 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             Update the list of available commanders
         """
         # Update the proper attribute
-        self.commander_choice = [""] + sorted(self.sender().commander_config)
+        self.commander_choice = [""]
+        if self.sender().commander_config is not None:
+            self.commander_choice += sorted(self.sender().commander_config)
         # Get the corresponding drop down list
         combo_box = self.findChild(QComboBox, "choice {}".format("group_name"))
         # Update its content

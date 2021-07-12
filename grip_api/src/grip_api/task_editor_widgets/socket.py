@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -15,7 +15,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from grip_api.task_editor_graphics.socket import GraphicsSocket
-from collections import OrderedDict
 
 
 class Socket(object):
@@ -146,4 +145,12 @@ class Socket(object):
             @param socket_mapping: Dictionary mapping the id of sockets to the actual objects
         """
         self.id = id
-        socket_mapping[id] = self
+        self.register_id(socket_mapping)
+
+    def register_id(self, socket_mapping):
+        """
+            Add an entry to the input dictionary with the ID of the object as key and a pointer to this object as value
+
+            @param socket_mapping: Dictionary
+        """
+        socket_mapping[self.id] = self

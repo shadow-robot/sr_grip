@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -35,6 +35,8 @@ class TaskEditorArea(QWidget):
         # Set the object name to be able to look it up and restore it
         self.setObjectName("Task editor area")
         self.framework_gui = parent
+        # Flag stating whether the widget can be saved or not
+        self.can_be_saved = False
         self.init_ui()
 
     def init_ui(self):
