@@ -143,6 +143,18 @@ class TaskEditorMDIArea(QMdiArea):
         # Paste the elements from the clipboard
         self.clipboard.paste(container)
 
+    def undo(self):
+        """
+            Undo the last action performed in the current graphical editor widget
+        """
+        self.focused_subwindow.widget().container.history.undo()
+
+    def redo(self):
+        """
+            Redo the previously canceled action in the current graphical editor widget
+        """
+        self.focused_subwindow.widget().container.history.redo()
+
 
 class TaskEditorSubWindow(QMdiSubWindow):
 

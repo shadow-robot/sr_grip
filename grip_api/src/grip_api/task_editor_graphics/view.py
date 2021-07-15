@@ -103,7 +103,7 @@ class TaskEditorView(QGraphicsView):
 
     def connector_drag_end(self, item):
         """
-            Function called when the user releases the previous dragged conenctor
+            Function called when the user releases a previously dragged connector
 
             @param item: Object on which the connector has been released
             @return: Boolean stating if a connector has been created
@@ -128,16 +128,16 @@ class TaskEditorView(QGraphicsView):
                 if self.drag_start_socket.is_terminal and item.socket.is_terminal:
                     return False
 
-                # Make sure we cannot create a connector from input to input socket or output to output. We also need to
-                # deal with the case of the starting terminal socket for concurrent state machines.
                 is_start_socket_terminal = self.drag_start_socket.is_terminal and self.drag_start_socket.is_starting
                 is_target_socket_input = item.socket.is_multi_connected and not item.socket.is_terminal
-
-                if self.drag_start_socket.is_multi_connected ^ item.socket.is_multi_connected:
+                # Input/output to input/output
+                not_io_to_io = self.drag_start_socket.is_multi_connected ^ item.socket.is_multi_connected
+                # Make sure we cannot create a connector from input to input socket or output to output. We also need to
+                # deal with the case of the starting terminal socket for concurrent state machines.
+                if not_io_to_io or (is_start_socket_terminal and is_target_socket_input):
                     Connector(self.graphics_scene.container, self.drag_start_socket, item.socket)
-                    return True
-                elif is_start_socket_terminal and is_target_socket_input:
-                    Connector(self.graphics_scene.container, self.drag_start_socket, item.socket)
+                    # Once a connector is created, store the new content of the container
+                    self.graphics_scene.container.history.store_current_history()
                     return True
 
         return False
@@ -168,6 +168,8 @@ class TaskEditorView(QGraphicsView):
                 item.state.remove()
             elif isinstance(item, GraphicsStateMachine):
                 item.state_machine.remove()
+        # Once the selected items have been deleted, store the current container
+        self.graphics_scene.container.history.store_current_history()
 
     def perform_unit_zoom(self, is_incremental):
         """
@@ -203,7 +205,7 @@ class TaskEditorView(QGraphicsView):
             @param settings: QSettings object in which widgets' information are stored
         """
         # Get the current center of the view once fitted to the display area
-        view_center = QPoint(self.size().width()/2, self.size().height()/2)
+        view_center = QPoint(self.size().width() / 2, self.size().height() / 2)
         settings.beginGroup("view")
         # Get the curretn zoom
         settings.setValue("current_zoom", self.current_zoom)

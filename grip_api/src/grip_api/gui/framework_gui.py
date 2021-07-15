@@ -154,6 +154,11 @@ class FrameworkGui(QMainWindow):
         # Paste the elements that were previously copied in the task editor
         self.action_paste = QAction('&Paste', self, shortcut='Ctrl+V', statusTip="Paste previously copied items",
                                     triggered=self.task_editor_area.mdi_area.paste)
+
+        self.action_undo = QAction('&Undo', self, shortcut='Ctrl+Z', statusTip="Undo last operation",
+                                   triggered=self.task_editor_area.mdi_area.undo)
+        self.action_redo = QAction('&Redo', self, shortcut='Ctrl+Y', statusTip="Redo last operation",
+                                   triggered=self.task_editor_area.mdi_area.redo)
         # Delete the selection in the task editor
         self.delete_selection = QAction('&Delete', self, shortcut='Del', statusTip="Delete selected items",
                                         triggered=self.delete)
@@ -205,6 +210,9 @@ class FrameworkGui(QMainWindow):
         self.robot_menu.addAction(self.stop_robot)
         # Add the "Edit" menu
         self.edit_menu = menubar.addMenu("&Edit")
+        self.edit_menu.addAction(self.action_undo)
+        self.edit_menu.addAction(self.action_redo)
+        self.edit_menu.addSeparator()
         self.edit_menu.addAction(self.action_copy)
         self.edit_menu.addAction(self.action_cut)
         self.edit_menu.addAction(self.action_paste)
@@ -222,6 +230,8 @@ class FrameworkGui(QMainWindow):
         self.action_copy.setEnabled(is_task_editor)
         self.action_cut.setEnabled(is_task_editor)
         self.action_paste.setEnabled(is_task_editor)
+        self.action_undo.setEnabled(is_task_editor)
+        self.action_redo.setEnabled(is_task_editor)
         self.delete_selection.setEnabled(is_task_editor)
 
     def update_robot_launch_action(self, is_robot_launchable):

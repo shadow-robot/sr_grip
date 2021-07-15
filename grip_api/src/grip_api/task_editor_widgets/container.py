@@ -25,6 +25,7 @@ import os
 from state import State
 from state_machine import StateMachine
 from collections import OrderedDict
+from container_history import ContainerHistory
 
 
 class Container(object):
@@ -64,6 +65,8 @@ class Container(object):
         # Attribute tracking the current "layer" height required to be sure to have a widget overposing all the others
         self.z_tracker = 0
         self.output_userdata = list()
+        # History of the actions performed inside the container
+        self.history = ContainerHistory(self)
 
     def get_outcomes(self):
         """
@@ -223,6 +226,24 @@ class Container(object):
             self.update_validity()
             # Update the depth tracker
             self.z_tracker -= 1
+
+    def clear(self, include_state_machines=True):
+        """
+            Remove all the states and connectors of the scene. If include_state_machines is True, also remove all the
+            state machines.
+
+            @param include_state_machines: Boolean that specifies whether the state machines should be deleted or not
+        """
+        # Remove all the states
+        while self.states:
+            self.states[0].remove()
+        # If instructed, remove all the state machines
+        if include_state_machines:
+            while self.state_machines:
+                self.state_machines[0].remove()
+        # Remove residual connectors
+        while self.connectors:
+            self.connectors[0].remove()
 
     def get_unique_name(self, name):
         """
@@ -481,6 +502,15 @@ class Container(object):
             error_message("Error while restoring items", "Some states could not be loaded due to missing configuration",
                           additional_text="The states named {} will be missing.".format(states_name))
 
+    def get_state_machine_by_name(self, name):
+        """
+            Return the StateMachine object with the provided name. If none is found, return None
+
+            @param name: String corresponding to the name of the state machine to return
+            @return: StateMachine if one is found, None otherwise
+        """
+        return next((i for i in self.state_machines if i.name == name), None)
+
     def restore(self, properties):
         """
             Restore the configuration of the container according to the parameters saved in properties
@@ -495,21 +525,33 @@ class Container(object):
         states_data = properties["states"]
         state_machines_data = properties["state_machines"]
         connectors_data = properties["connectors"]
+        # Remove the different elements depending on that needs to be restored
+        self.clear(not state_machines_data)
 
         # For each terminal socket (already created), restore their previous configuration
         for ind_sock, socket in enumerate(self.terminal_sockets):
             socket.restore(terminal_sockets_data[ind_sock], socket_mapping)
-
+        # Restore the states
         self.restore_states(states_data, socket_mapping)
 
-        # Create subwindows for each state machine added
+        # Restore the state machines
         for state_machine_data in state_machines_data:
-            self.editor_widget.parent().mdiArea().add_subwindow(state_machine_data["name"], state_machine_data["type"])
-            container = self.editor_widget.parent().mdiArea().focused_subwindow.widget().container
-            # Create a state like representation to be displayed in the current widget
-            dropped_state_machine = StateMachine(self, container)
-            # Restore the state machine
-            dropped_state_machine.restore(state_machine_data, socket_mapping)
+            state_machine_name = state_machine_data["name"]
+            # Get the state machine if already existing
+            state_machine = self.get_state_machine_by_name(state_machine_name)
+            # If it does not exist
+            if state_machine is None:
+                # Create a new subwindow
+                self.editor_widget.parent().mdiArea().add_subwindow(state_machine_name, state_machine_data["type"])
+                container = self.editor_widget.parent().mdiArea().focused_subwindow.widget().container
+                # Create a state like representation to be displayed in the current widget
+                dropped_state_machine = StateMachine(self, container)
+                # Restore the state machine
+                dropped_state_machine.restore(state_machine_data, socket_mapping)
+            # If it does, just restore its configuration (it allows us to avoid changing other editors, and keep each
+            # subwindow independant)
+            else:
+                state_machine.restore(state_machine_data, socket_mapping)
 
         # Add the connectors
         if connectors_data:

@@ -39,6 +39,8 @@ class GraphicsState(QGraphicsItem):
         # Connect the signal coming from the view to a function that will update the behaviour
         self.state.container.get_view().viewScaled.connect(self.update_scaling_factor)
         self.init_ui()
+        # Flag to know if the state has been moved
+        self.is_moved = False
 
     def init_dimensions(self):
         """
@@ -150,6 +152,22 @@ class GraphicsState(QGraphicsItem):
         # If the object is selected and is moved, update the connectors linked to this state
         if self.isSelected():
             self.state.update_connectors()
+        # The flag of the object must be changed
+        self.is_moved = True
+
+    def mouseReleaseEvent(self, event):
+        """
+            Function triggered when the mouse is released (click off) from this object
+
+            @param event: QMouseEvent sent by PyQt5
+        """
+        super(GraphicsState, self).mouseReleaseEvent(event)
+        # If the object has been moved
+        if self.is_moved:
+            # Reset the flag
+            self.is_moved = False
+            # Store the history
+            self.state.container.history.store_current_history(set_modified=True)
 
     def mousePressEvent(self, event):
         """

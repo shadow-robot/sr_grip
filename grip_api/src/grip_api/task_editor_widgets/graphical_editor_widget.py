@@ -153,6 +153,8 @@ class GraphicalEditorWidget(QWidget):
                     dropped_state_machine.set_position(view_position.x(), view_position.y())
                     # Link it to the newly created container
                     container.set_state_like(dropped_state_machine)
+            # Now that the item has been added to the container, save a snapshot
+            self.container.history.store_current_history()
             # Accept the drop action
             event.setDropAction(Qt.MoveAction)
             event.accept()
@@ -254,6 +256,8 @@ class GraphicalEditorWidget(QWidget):
             self.set_name(settings.value("name"))
         # Restore the container
         self.container.restore(settings.value("container"))
+        # Now that editor's content has been restored, save a snapshot
+        self.container.history.store_current_history()
         # Store the saved configuration, but won't restore them as it must be done at execution time
         self.editor_view.store_config(settings)
         settings.endGroup()

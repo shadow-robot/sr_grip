@@ -70,6 +70,8 @@ class TaskEditorArea(QWidget):
             @param settings: QSettings object in which widgets' information are stored
         """
         settings.beginGroup(self.objectName())
+        # Make sure not to have some residual configurations (e.g. removed state machine)
+        settings.remove("")
         class_name = self.metaObject().className()
         settings.setValue("type", class_name)
         # For each subwindow part of the task editor, save its configuration

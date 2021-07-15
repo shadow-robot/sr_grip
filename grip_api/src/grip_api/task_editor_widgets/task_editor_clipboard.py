@@ -99,10 +99,10 @@ class Clipboard(object):
         # Calculate the offset of the nodes to be pasted
         offset_x = mouse_scene_pos.x() - bbox_center_x
         offset_y = mouse_scene_pos.y() - bbox_center_y
-        # Get the list of all the elements that can be pasted
-        states_data = self.content["states"]
-        state_machines_data = self.content["state_machines"]
-        connectors_data = self.content["connectors"]
+        # Get a copy of all the elements that can be pasted
+        states_data = [state_dict.copy() for state_dict in self.content["states"]]
+        state_machines_data = [state_machine_dict.copy() for state_machine_dict in self.content["state_machines"]]
+        connectors_data = [connector_dict.copy() for connector_dict in self.content["connectors"]]
         # Dictionary that will contain the mapping between the old and new IDs of the sockets
         new_sockets = {}
         # Restore the states, but make sure to change the ID of all the sockets since we want "new" sockets
@@ -127,7 +127,9 @@ class Clipboard(object):
                 start, end = connector_data["start"], connector_data["end"]
                 # If the socket ID has been remapped
                 if start in new_sockets and end in new_sockets:
-                    # Get the new Id of the socket
+                    # Get the new ID of the socket
                     mapped_start, mapped_end = new_sockets[start], new_sockets[end]
                     # Create the connector from the new socket numbers
                     Connector(container, socket_mapping[mapped_start], socket_mapping[mapped_end])
+        # When the elements are pasted, store the new content of the container
+        container.history.store_current_history(set_modified=True)
