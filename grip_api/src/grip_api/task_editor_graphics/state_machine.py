@@ -426,12 +426,17 @@ class StateMachineTitle(QGraphicsTextItem):
         self.setTextInteractionFlags(Qt.NoTextInteraction)
         # Call the original behaviour
         super(StateMachineTitle, self).focusOutEvent(event)
-        # Update the name of the state machine with the current text
-        self.parent.state_machine.def_container.editor_widget.set_name(self.toPlainText())
+        # Direct access to the StateMachine Object
+        state_machine = self.parent.state_machine
+        # Update the name of the state machine with the current text, making sure 2 items don't have the same name
+        if state_machine.name != self.toPlainText():
+            unique_name = state_machine.container.get_unique_name(self.toPlainText())
+            unique_name = state_machine.container.editor_widget.parent().mdiArea().get_unique_name(unique_name)
+            state_machine.def_container.editor_widget.set_name(unique_name)
         # Make sure the text fits in the given width
         self.adapt_text_length()
         # Update the parent's tooltip
-        self.parent.setToolTip(self.parent.state_machine.name)
+        self.parent.setToolTip(state_machine.name)
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
         """
