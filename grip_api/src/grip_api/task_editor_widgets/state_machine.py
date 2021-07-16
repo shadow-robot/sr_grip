@@ -65,6 +65,18 @@ class StateMachine(object):
         """
         self.graphics_state.setPos(x, y)
 
+    def translate(self, x, y):
+        """
+            Translate the graphical representation of the object in the view.
+
+            @param x: Value to add to the x coordinate of the graphical representation of the object
+            @param y: Value to add to the x coordinate of the graphical representation of the object
+        """
+        # Get the current position
+        current_x, current_y = self.graphics_state.x(), self.graphics_state.y()
+        # Set position when applying the offset
+        self.set_position(current_x + x, current_y + y)
+
     def init_sockets(self):
         """
             Create the sockets associated to the state machine
@@ -153,6 +165,24 @@ class StateMachine(object):
         container_information["transitions"] = transitions
         # Return the configuration
         return container_information
+
+    def get_opacity(self):
+        """
+            Return the opacity (which represents the availability of the object) of the graphical state machine
+
+            @return: Float value between 0 and 1
+        """
+        return self.graphics_state.opacity()
+
+    def set_opacity(self, value):
+        """
+            Set the opacity of the graphical state machine
+
+            @param value: Float between 0 and 1
+        """
+        # Make sure the opacity to set is between 0 and 1
+        value = 0 if value < 0 else value if value < 1 else 1
+        self.graphics_state.setOpacity(value)
 
     def save(self):
         """

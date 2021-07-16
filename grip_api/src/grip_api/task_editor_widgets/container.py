@@ -390,7 +390,8 @@ class Container(object):
 
     def update_current_items_availability(self):
         """
-            FOR NOW IS ONLY STATES, BUT NEED TO ADD STATE MACHINES
+            Make sure all the states and state machines currently used in the task editor are compatible with the
+            current robot configuration. If not, make them semi-transparent and displays a message
         """
         # Get all the states that can currently be used
         list_available_states = self.editor_widget.parent().parent().parent().parent().state_displayer.list_widget
@@ -426,6 +427,11 @@ class Container(object):
 
             for state in cannot_be_found_states:
                 state.set_opacity(0.5)
+        # If there's at least of state for which there is an issue, update the opacity of the box-like representation
+        # to 0.5 and 1 if everything is alright
+        if self.state_machine is not None:
+            self.state_machine.set_opacity(0.5 if cannot_be_found_states else 1.)
+
         # Update the validity of the container
         self.update_validity()
 

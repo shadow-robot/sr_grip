@@ -143,6 +143,22 @@ class TaskEditorMDIArea(QMdiArea):
         # Paste the elements from the clipboard
         self.clipboard.paste(container)
 
+    def get_unique_name(self, name):
+        """
+            Modify the input name by appending a digit at the end if needed to make sure two subwindows don't end up
+            having the same name
+
+            @param name: Candidate name (string) of the element to be add to the container
+            @return: Unchanged name if it is unique, otherwise name+index, for instance name0 or name1
+        """
+        final_name = name
+        counter = 0
+        # As long as we find the given name in the current subwindows, generate another one
+        while any(final_name == x.widget().container.name for x in self.subWindowList()):
+            final_name = name + "{}".format(counter)
+            counter += 1
+        return final_name
+
     def undo(self):
         """
             Undo the last action performed in the current graphical editor widget

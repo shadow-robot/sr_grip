@@ -59,6 +59,7 @@ class TaskEditorView(QGraphicsView):
         # Variables set when the view should be restored
         self.zoom_to_apply = None
         self.center_to_set = None
+        self.latest_valid_cursor_position = None
 
     def init_ui(self):
         """

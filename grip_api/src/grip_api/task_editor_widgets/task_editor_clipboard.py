@@ -41,13 +41,17 @@ class Clipboard(object):
         """
         # Lists that will contain all the different objects that are selected by the user
         selected_states, selected_state_machines, selected_connectors = list(), list(), list()
+        # When copying a state machines we also want to copy its content, i.e. its definition
+        selected_containers = list()
         # To get the mapping between old and new socket ids
         for selected_item in container.graphics_container.selectedItems():
             # Only consider items that can be loaded from the robot config
             if hasattr(selected_item, "state") and selected_item.state.get_opacity() == 1.:
                 selected_states.append(selected_item.state.save())
-            if hasattr(selected_item, "state_machine") and selected_item.state_machine.graphics_state.opacity() == 1.:
+            if hasattr(selected_item, "state_machine") and selected_item.state_machine.get_opacity() == 1.:
                 selected_state_machines.append(selected_item.state_machine.save())
+                # Get the definition of the state machine
+                selected_containers.append(selected_item.state_machine.def_container.save())
             elif hasattr(selected_item, "connector"):
                 selected_connectors.append(selected_item.connector.save())
 
@@ -66,7 +70,7 @@ class Clipboard(object):
 
         # Store the valid content
         self.content = OrderedDict([('states', selected_states), ('state_machines', selected_state_machines),
-                                    ('connectors', selected_connectors)])
+                                    ('connectors', selected_connectors), ('containers', selected_containers)])
         # If required, remove the selected items
         if remove_copied:
             container.get_view().delete_selected()
@@ -81,10 +85,11 @@ class Clipboard(object):
         if self.content is None:
             return
 
-        # Initialize the dictionary that records the mapping between the id of the sockets and the actual objects
-        socket_mapping = {}
         # Get the last valid posiiton of the cursor in the view
         mouse_scene_pos = container.get_view().latest_valid_cursor_position
+        # If the user has not clicked or moved inside the target container, do nothing
+        if mouse_scene_pos is None:
+            return
 
         # Calculate selected objects bbox and center
         min_x, max_x, min_y, max_y = 1e10, -1e10, 1e10, -1e10
@@ -102,23 +107,37 @@ class Clipboard(object):
         # Get a copy of all the elements that can be pasted
         states_data = [state_dict.copy() for state_dict in self.content["states"]]
         state_machines_data = [state_machine_dict.copy() for state_machine_dict in self.content["state_machines"]]
+        containers_data = [container_dict.copy() for container_dict in self.content["containers"]]
         connectors_data = [connector_dict.copy() for connector_dict in self.content["connectors"]]
+
+        # Initialize the dictionary that records the mapping between the id of the sockets and the actual objects
+        socket_mapping = {}
         # Dictionary that will contain the mapping between the old and new IDs of the sockets
         new_sockets = {}
         # Restore the states, but make sure to change the ID of all the sockets since we want "new" sockets
         container.restore_states(states_data, socket_mapping, offset=(offset_x, offset_y), new_sockets=new_sockets)
 
+        # Get the index of the container in which we want to paste the state machines
+        container_index = container.editor_widget.parent().mdiArea().get_current_subwindow_index()
         # Create subwindows for each state machine added
-        for state_machine_data in state_machines_data:
-            container.editor_widget.parent().mdiArea().add_subwindow(state_machine_data["name"],
-                                                                     state_machine_data["type"])
-            container = container.editor_widget.parent().mdiArea().focused_subwindow.widget().container
+        for state_machine_data, container_data in zip(state_machines_data, containers_data):
+            # Make sure the name is unique within and between containers
+            state_machine_name = container.get_unique_name(state_machine_data["name"])
+            state_machine_name = container.editor_widget.parent().mdiArea().get_unique_name(state_machine_name)
+            # Create a new subwindow
+            container.editor_widget.parent().mdiArea().add_subwindow(state_machine_name, state_machine_data["type"])
+            # Get the container in which the new state mahcine will be defined
+            secondary_container = container.editor_widget.parent().mdiArea().focused_subwindow.widget().container
             # Create a state like representation to be displayed in the current widget
-            dropped_state_machine = StateMachine(container, container)
+            dropped_state_machine = StateMachine(container, secondary_container)
             # Restore the state machine
             dropped_state_machine.restore(state_machine_data, socket_mapping)
-            dropped_state_machine.set_position(dropped_state_machine.graphics_state.x() + offset_x,
-                                               dropped_state_machine.graphics_state.y() + offset_y)
+            # Apply the translation
+            dropped_state_machine.translate(offset_x, offset_y)
+            # Restore the definition of the state machine
+            secondary_container.restore(container_data)
+        # Make sure the user only sees the original container (not switching to another subwindow)
+        container.editor_widget.parent().mdiArea().set_current_subwindow_from_index(container_index)
 
         # Add the connectors
         if connectors_data:

@@ -145,6 +145,9 @@ class GraphicalEditorWidget(QWidget):
                 state_machine_name, ok = QInputDialog().getText(self, "Input name", "Name of the state machine:",
                                                                 QLineEdit.Normal)
                 if state_machine_name and ok:
+                    # Make sure we have unique names within the same container and between the containers
+                    state_machine_name = self.container.get_unique_name(state_machine_name)
+                    state_machine_name = self.parent().parent().parent().get_unique_name(state_machine_name)
                     # Create another tab and extract the container
                     self.parent().mdiArea().add_subwindow(state_machine_name, item_type)
                     container = self.parent().mdiArea().focused_subwindow.widget().container
