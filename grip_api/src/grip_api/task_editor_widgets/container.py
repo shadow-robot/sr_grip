@@ -531,8 +531,15 @@ class Container(object):
         states_data = properties["states"]
         state_machines_data = properties["state_machines"]
         connectors_data = properties["connectors"]
-        # Remove the different elements depending on that needs to be restored
+        # Remove the different elements depending on what needs to be restored
         self.clear(not state_machines_data)
+        # Make sure to remove state machines that are not supposed to be there
+        if state_machines_data:
+            # Get the name of the one to be restored
+            to_be_restored = list([x["name"] for x in state_machines_data])
+            for state_machine in self.state_machines:
+                if state_machine.name not in to_be_restored:
+                    state_machine.remove()
 
         # For each terminal socket (already created), restore their previous configuration
         for ind_sock, socket in enumerate(self.terminal_sockets):
