@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import QMdiArea, QMdiSubWindow, QMenu
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from grip_core.utils.common_paths import RED_CIRCLE, GREEN_CIRCLE
 from graphical_editor_widget import GraphicalEditorWidget
@@ -27,6 +27,7 @@ class TaskEditorMDIArea(QMdiArea):
     """
         Widget managing the Multi Document Interface (MDI) required to design and execute tasks
     """
+    canBeSaved = pyqtSignal(bool)
 
     def __init__(self, parent=None):
         """
@@ -36,6 +37,8 @@ class TaskEditorMDIArea(QMdiArea):
         """
         super(TaskEditorMDIArea, self).__init__(parent=parent)
         self.init_ui()
+        # Will contain the name of each subwindow and whether it can be saved
+        self.modifiers = dict()
         # Update which subwindow has currently the focus
         self.subWindowActivated.connect(self.track_activated_subwindow)
         # Add a subwindow containing the base of all state machines
@@ -57,6 +60,15 @@ class TaskEditorMDIArea(QMdiArea):
         self.setTabsMovable(True)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
+    def update_modified(self, can_be_saved):
+        """
+            Emit a signal stating if the content of at least one subwindow can be saved
+
+            @param can_be_saved: Boolean stating whether the sender can be saved or not
+        """
+        self.modifiers[self.sender().windowTitle()] = can_be_saved
+        self.canBeSaved.emit(any(self.modifiers.values()))
+
     def track_activated_subwindow(self, sub_window):
         """
             Function called everytime a subwindow is activated. Updates the internal variable that stores which
@@ -75,6 +87,8 @@ class TaskEditorMDIArea(QMdiArea):
         """
         # Create the subwindow
         subwindow = TaskEditorSubWindow(state_machine_name, state_machine_type, parent=self)
+        # Connect the editor of the new subwindow to update the signal emitted by this object
+        subwindow.widget().hasBeenModified.connect(self.update_modified)
         # Add it to the MDI area
         self.addSubWindow(subwindow)
         self.setActiveSubWindow(subwindow)
@@ -122,6 +136,8 @@ class TaskEditorMDIArea(QMdiArea):
         self.add_subwindow(task_name, "base")
         # Update the focused subwindow
         self.focused_subwindow = self.subWindowList()[0]
+        # Reset the modifiers
+        self.modifiers = dict()
 
     def copy_task_editor_elements(self):
         """

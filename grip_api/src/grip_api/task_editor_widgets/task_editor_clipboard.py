@@ -151,4 +151,4 @@ class Clipboard(object):
                     # Create the connector from the new socket numbers
                     Connector(container, socket_mapping[mapped_start], socket_mapping[mapped_end])
         # When the elements are pasted, store the new content of the container
-        container.history.store_current_history(set_modified=True)
+        container.history.store_current_history()

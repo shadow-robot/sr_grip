@@ -167,7 +167,7 @@ class GraphicsState(QGraphicsItem):
             # Reset the flag
             self.is_moved = False
             # Store the history
-            self.state.container.history.store_current_history(set_modified=True)
+            self.state.container.history.store_current_history()
 
     def mousePressEvent(self, event):
         """

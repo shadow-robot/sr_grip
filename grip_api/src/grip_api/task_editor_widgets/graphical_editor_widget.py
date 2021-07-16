@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import QGridLayout, QWidget, QInputDialog, QLineEdit, QMenu
-from PyQt5.QtCore import Qt, QDataStream, QIODevice
+from PyQt5.QtCore import Qt, QDataStream, QIODevice, pyqtSignal
 from grip_api.task_editor_graphics.view import TaskEditorView
 from container import Container
 from state_machine import StateMachine
@@ -32,6 +32,8 @@ class GraphicalEditorWidget(QWidget):
     """
         Widget gathering the high level logic and event handler allowing the user to edit state machines
     """
+    # Signal stating when the content of the editor widget has been modified
+    hasBeenModified = pyqtSignal(bool)
 
     def __init__(self, container_name, container_type, parent=None):
         """
@@ -245,6 +247,8 @@ class GraphicalEditorWidget(QWidget):
         settings.setValue("container", self.container.save())
         # Save the view
         self.editor_view.save_config(settings)
+        # If saved, set the initial snapshot
+        self.container.history.set_initial_snapshot()
         settings.endGroup()
 
     def restore_config(self, settings):
@@ -259,8 +263,8 @@ class GraphicalEditorWidget(QWidget):
             self.set_name(settings.value("name"))
         # Restore the container
         self.container.restore(settings.value("container"))
-        # Now that editor's content has been restored, save a snapshot
-        self.container.history.store_current_history()
         # Store the saved configuration, but won't restore them as it must be done at execution time
         self.editor_view.store_config(settings)
         settings.endGroup()
+        # Now that editor's content has been restored, save a snapshot
+        self.container.history.store_current_history()

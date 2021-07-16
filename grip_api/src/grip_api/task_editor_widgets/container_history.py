@@ -24,7 +24,7 @@ class ContainerHistory(object):
             Initialize the object
 
             @param container: Container object from which we want to store snapshots
-            @param memory_length: Integer (> 1) that describes the maximum nuber of previous steps to keep in memory
+            @param memory_length: Integer (> 1) that describes the maximum number of previous steps to keep in memory
         """
         # Store the container
         self.container = container
@@ -76,18 +76,16 @@ class ContainerHistory(object):
             # Restore the given snapshot
             self.restore_history()
 
-    def store_current_history(self, set_modified=False):
+    def set_initial_snapshot(self):
+        """
+
+        """
+        self.initial_snapshot = self.container.save()
+
+    def store_current_history(self):
         """
             Store the current content of the container associated to this object
-
-            @param set_modified: Boolean specifying whether the TaskEditorArea object should have the can_be_saved
-                                 updated or not
         """
-        # Change the can_be_saved flag of the task editor area if required
-        if set_modified:
-            # TODO: Send a signal so that the Task Editor area gets the can_be_saved updated
-            task_editor_area = self.container.editor_widget.parent().parent().parent().parent()
-
         # If the current step is not the latest one
         if self.can_redo():
             # Discard all the other "future" steps
@@ -98,10 +96,17 @@ class ContainerHistory(object):
             self.history_stack.pop(0)
             self.history_step -= 1
 
+        # If it is the first history step, then set the initial snapshot
+        if self.history_step == -1:
+            self.set_initial_snapshot()
+
         # Storing the current state of the container
-        self.history_stack.append(self.container.save())
+        snapshot = self.container.save()
+        self.history_stack.append(snapshot)
         # Increment the history step
         self.history_step += 1
+        # Emit a signal stating whether the state of the container has changed or not
+        self.emit_signal(snapshot)
 
     def restore_history(self):
         """
@@ -109,3 +114,16 @@ class ContainerHistory(object):
         """
         snapshot = self.history_stack[self.history_step]
         self.container.restore(snapshot)
+        self.emit_signal(snapshot)
+        # print(self.initial_snapshot == snapshot)
+
+    def emit_signal(self, snapshot):
+        """
+            Make the GraphicalEditorWidget object emit a signal that specifies if the content of the container has been
+            modified
+
+            @param snapshot: Dictionary obtained by running container.save()
+        """
+        # We need to have the sorted because each value is a list and the order of the elements might change
+        is_different = any(sorted(x) != sorted(y) for x, y in zip(self.initial_snapshot.values(), snapshot.values()))
+        self.container.editor_widget.hasBeenModified.emit(is_different)
