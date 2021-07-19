@@ -32,6 +32,8 @@ class ContainerHistory(object):
         self.memory_length = memory_length - 1
         # Make sure to have everything empty
         self.clear()
+        # Initialize a new snapshot
+        self.initial_snapshot = None
 
     def clear(self):
         """
@@ -78,9 +80,9 @@ class ContainerHistory(object):
 
     def set_initial_snapshot(self):
         """
-
+            Store the state of the container and set it as initial
         """
-        self.initial_snapshot = self.container.save()
+        self.initial_snapshot = self.container.save().copy()
 
     def store_current_history(self):
         """
@@ -100,11 +102,22 @@ class ContainerHistory(object):
         if self.history_step == -1:
             self.set_initial_snapshot()
 
-        # Storing the current state of the container
+        # Store the current state of the container and emit a signal if the state of the container has changed
+        self.evaluate_snapshot(store=True)
+
+    def evaluate_snapshot(self, store=False):
+        """
+            Evaluate the current state of the container (snapshot) and emit a signal if the two states are different.
+            The current state is by default not saved into the history stack
+
+            @param store: Boolean specifying if the snapshot should be added to the history stack
+        """
         snapshot = self.container.save()
-        self.history_stack.append(snapshot)
-        # Increment the history step
-        self.history_step += 1
+        if store:
+            # Storing the current state of the container
+            self.history_stack.append(snapshot)
+            # Increment the history step
+            self.history_step += 1
         # Emit a signal stating whether the state of the container has changed or not
         self.emit_signal(snapshot)
 
@@ -114,8 +127,8 @@ class ContainerHistory(object):
         """
         snapshot = self.history_stack[self.history_step]
         self.container.restore(snapshot)
+        # Emit a signal stating whether the restored snapshot is different from the initial one or not
         self.emit_signal(snapshot)
-        # print(self.initial_snapshot == snapshot)
 
     def emit_signal(self, snapshot):
         """
@@ -124,6 +137,9 @@ class ContainerHistory(object):
 
             @param snapshot: Dictionary obtained by running container.save()
         """
+        # Don't send anything if the initial snapshot is None
+        if self.initial_snapshot is None:
+            return
         # We need to have the sorted because each value is a list and the order of the elements might change
         is_different = any(sorted(x) != sorted(y) for x, y in zip(self.initial_snapshot.values(), snapshot.values()))
         self.container.editor_widget.hasBeenModified.emit(is_different)

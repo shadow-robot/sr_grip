@@ -61,6 +61,8 @@ class GenericConfigBoxWidget(QGroupBox):
         slot_title = QLabel(slot_name + ":", objectName="slot {}".format(slot_name))
         # Configure the QLine Edit
         line = QLineEdit(objectName="line {}".format(slot_name))
+        # Make sure to update the can_be_saved attribute of the task editor area when the config of a state is changed
+        line.textChanged.connect(self.evaluate_change)
         line.setClearButtonEnabled(True)
         # If provided, set the placeholder text
         if placeholder_text is not None:
@@ -91,6 +93,13 @@ class GenericConfigBoxWidget(QGroupBox):
         # Update the class' attributes
         self.number_rows += 1
         self.registered_keys.append(slot_name)
+
+    def evaluate_change(self):
+        """
+            Check if the initial configuration of the state is different from the current one
+        """
+        # Call the method that compares the initial state of a container from the current one
+        self.parent().state.container.history.evaluate_snapshot()
 
     def get_slot_config(self, slot_name):
         """
@@ -308,6 +317,8 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         # Set the different choices
         list_choice.addItems(choices)
         list_choice.setEditable(is_editable)
+        # When the choice is changed by the user, make sure to update hte can_be_saved attribute of the task edito area
+        list_choice.currentTextChanged.connect(self.evaluate_change)
         if "type" in slot_name:
             list_choice.currentTextChanged.connect(self.update_choice_content)
         # Add both widgets in the layout
