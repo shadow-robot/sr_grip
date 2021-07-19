@@ -99,7 +99,7 @@ class ContainerHistory(object):
             self.history_step -= 1
 
         # If it is the first history step, then set the initial snapshot
-        if self.history_step == -1:
+        if self.history_step == -1 and self.initial_snapshot is None:
             self.set_initial_snapshot()
 
         # Store the current state of the container and emit a signal if the state of the container has changed

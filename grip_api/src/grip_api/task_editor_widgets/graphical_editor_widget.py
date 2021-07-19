@@ -59,6 +59,8 @@ class GraphicalEditorWidget(QWidget):
         self.robot_integration_area.robotCanBeStopped.connect(self.update_execution)
         # Boolean specifying if the widget hosts the root of the task
         self.is_root = container_type == "base"
+        # Initialise the history of the container
+        self.container.history.set_initial_snapshot()
 
     def init_ui(self):
         """
