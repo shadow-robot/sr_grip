@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import QGraphicsView
-from PyQt5.QtCore import Qt, QEvent, pyqtSignal
+from PyQt5.QtCore import Qt, QEvent, pyqtSignal, QPoint
 from PyQt5.QtGui import QPainter, QMouseEvent
 from socket import GraphicsSocket
 from terminal_socket import TerminalGraphicsSocket
@@ -53,9 +53,13 @@ class TaskEditorView(QGraphicsView):
         self.zoom_in_multiplier = 1.1
         self.zoom_out_multiplier = 1 / 1.1
         self.current_zoom = 0
-        self.zoom_range = [-15, 15]
+        self.zoom_range = [-25, 25]
         # Indicates whether the user is dragging an edge
         self.is_dragging = False
+        # Variables set when the view should be restored
+        self.zoom_to_apply = None
+        self.center_to_set = None
+        self.latest_valid_cursor_position = None
 
     def init_ui(self):
         """
@@ -100,7 +104,7 @@ class TaskEditorView(QGraphicsView):
 
     def connector_drag_end(self, item):
         """
-            Function called when the user releases the previous dragged conenctor
+            Function called when the user releases a previously dragged connector
 
             @param item: Object on which the connector has been released
             @return: Boolean stating if a connector has been created
@@ -125,16 +129,16 @@ class TaskEditorView(QGraphicsView):
                 if self.drag_start_socket.is_terminal and item.socket.is_terminal:
                     return False
 
-                # Make sure we cannot create a connector from input to input socket or output to output. We also need to
-                # deal with the case of the starting terminal socket for concurrent state machines.
                 is_start_socket_terminal = self.drag_start_socket.is_terminal and self.drag_start_socket.is_starting
                 is_target_socket_input = item.socket.is_multi_connected and not item.socket.is_terminal
-
-                if self.drag_start_socket.is_multi_connected ^ item.socket.is_multi_connected:
+                # Input/output to input/output
+                not_io_to_io = self.drag_start_socket.is_multi_connected ^ item.socket.is_multi_connected
+                # Make sure we cannot create a connector from input to input socket or output to output. We also need to
+                # deal with the case of the starting terminal socket for concurrent state machines.
+                if not_io_to_io or (is_start_socket_terminal and is_target_socket_input):
                     Connector(self.graphics_scene.container, self.drag_start_socket, item.socket)
-                    return True
-                elif is_start_socket_terminal and is_target_socket_input:
-                    Connector(self.graphics_scene.container, self.drag_start_socket, item.socket)
+                    # Once a connector is created, store the new content of the container
+                    self.graphics_scene.container.history.store_current_history()
                     return True
 
         return False
@@ -165,6 +169,76 @@ class TaskEditorView(QGraphicsView):
                 item.state.remove()
             elif isinstance(item, GraphicsStateMachine):
                 item.state_machine.remove()
+        # Once the selected items have been deleted, store the current container
+        self.graphics_scene.container.history.store_current_history()
+
+    def perform_unit_zoom(self, is_incremental):
+        """
+            Scale the view in order to either zoom in or out
+
+            @param is_incremental: Boolean stating whether we should zoom in or out
+        """
+        # Select which factor to use when scaling the view, and update the current_zoom attribute
+        if is_incremental:
+            zoom_to_apply = self.zoom_in_multiplier
+            self.current_zoom += 1
+        else:
+            zoom_to_apply = self.zoom_out_multiplier
+            self.current_zoom -= 1
+
+        # Clamp the zoom if required
+        clamped = False
+        if self.current_zoom < self.zoom_range[0]:
+            self.current_zoom, clamped = self.zoom_range[0], True
+        if self.current_zoom > self.zoom_range[1]:
+            self.current_zoom, clamped = self.zoom_range[1], True
+
+        # Set view scale
+        if not clamped:
+            # Emit the signal giving the current zoom
+            self.viewScaled.emit(self.current_zoom)
+            self.scale(zoom_to_apply, zoom_to_apply)
+
+    def save_config(self, settings):
+        """
+            Store the configuration of the view into settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        # Get the current center of the view once fitted to the display area
+        view_center = QPoint(self.size().width() / 2, self.size().height() / 2)
+        settings.beginGroup("view")
+        # Get the curretn zoom
+        settings.setValue("current_zoom", self.current_zoom)
+        # Get the current translation
+        settings.setValue("view_center", self.mapToScene(view_center))
+        settings.endGroup()
+
+    def store_config(self, settings):
+        """
+            Store the parameters related to the view, saved in settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        settings.beginGroup("view")
+        # Get the current zoom
+        self.zoom_to_apply = settings.value("current_zoom", type=int)
+        # Get the center of the view
+        self.center_to_set = settings.value("view_center")
+        settings.endGroup()
+
+    def restore_view(self):
+        """
+            Restore the view based on the settings previously extracted from the settings
+        """
+        # Make sure both components of the view are set
+        if self.zoom_to_apply is None or self.center_to_set is None:
+            return
+        # Apply each step to fake a wheel event (allows to be 100% certain that the QGraphicsItem are properly scaled)
+        for zoom_index in range(abs(self.zoom_to_apply)):
+            self.perform_unit_zoom(self.zoom_to_apply > 0)
+        # Make sure the view is properly centered
+        self.centerOn(self.center_to_set)
 
     def mousePressEvent(self, event):
         """
@@ -244,7 +318,7 @@ class TaskEditorView(QGraphicsView):
                 self.is_dragging = True
                 self.connector_drag_start(item)
                 return
-        # If we are already dragging, make sure to update teh end of the dummy connector so the user can see it
+        # If we are already dragging, make sure to update the end of the dummy connector so the user can see it
         if self.is_dragging:
             is_connector_created = self.connector_drag_end(item)
             # If the connector is created then don't go through the normal left click behaviour
@@ -261,7 +335,7 @@ class TaskEditorView(QGraphicsView):
         """
         # Get the item that is being clicked
         item = self.itemAt(event.pos())
-        # If we are dragging an edge and the release action is not too far from the previous click
+        # If we are dragging a connector and the release action is not too far from the previous click
         if self.is_dragging and self.is_distance_between_click_and_release_enough(event):
             # Drag the connector there
             is_connector_created = self.connector_drag_end(item)
@@ -290,15 +364,21 @@ class TaskEditorView(QGraphicsView):
 
     def mouseMoveEvent(self, event):
         """
-            Function triggered whe the mouse is moved in the view
+            Function triggered when the mouse is moved in the view
 
             @param event: QMouseEvent
         """
+        # Get where the even has been triggered
+        event_position = event.pos()
+        # Map the position to the scene's
+        pos = self.mapToScene(event_position)
         # If the user is dragging a connector, update its destination with the mouse position
         if self.is_dragging:
-            pos = self.mapToScene(event.pos())
             self.drag_connector.graphics_connector.set_destination(pos.x(), pos.y())
             self.drag_connector.graphics_connector.update()
+        # If the mouse is not hovering any object, then update the latest valid cursor position
+        if self.itemAt(event_position) is None:
+            self.latest_valid_cursor_position = pos
         super(TaskEditorView, self).mouseMoveEvent(event)
 
     def mouseDoubleClickEvent(self, event):
@@ -356,23 +436,5 @@ class TaskEditorView(QGraphicsView):
         if isinstance(pointed_item, GraphicsStateContent):
             super(TaskEditorView, self).wheelEvent(event)
             return
-        # Calculate zoom
-        if event.angleDelta().y() > 0:
-            zoom_to_apply = self.zoom_in_multiplier
-            self.current_zoom += 1
-        else:
-            zoom_to_apply = self.zoom_out_multiplier
-            self.current_zoom -= 1
-
-        # Clamp the zoom if required
-        clamped = False
-        if self.current_zoom < self.zoom_range[0]:
-            self.current_zoom, clamped = self.zoom_range[0], True
-        if self.current_zoom > self.zoom_range[1]:
-            self.current_zoom, clamped = self.zoom_range[1], True
-
-        # Set view scale
-        if not clamped:
-            # Emit the signal giving the current zoom
-            self.viewScaled.emit(self.current_zoom)
-            self.scale(zoom_to_apply, zoom_to_apply)
+        # Perform the zoom
+        self.perform_unit_zoom(event.angleDelta().y() > 0)

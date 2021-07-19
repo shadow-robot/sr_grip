@@ -15,12 +15,12 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from grip_api.task_editor_graphics.state_machine import GraphicsStateMachine
-from graphical_editor_base import Serializable
 from state_content_widget import StateMachineContentWidget
 from socket import Socket
+from collections import OrderedDict
 
 
-class StateMachine(Serializable):
+class StateMachine(object):
 
     """
         Object that gathers all the logic necessary to handle the state-like representation of state machines
@@ -33,7 +33,6 @@ class StateMachine(Serializable):
             @param parent_container: Object (Container) to which the state machine is added
             @param def_container: Object (Container) in which this state machine is defined
         """
-        super(StateMachine, self).__init__()
         # Container the state machine is nested to
         self.container = parent_container
         # Container in which this state machine is being defined
@@ -65,6 +64,18 @@ class StateMachine(Serializable):
             @param y: y coordinate (float or integer) of the top left corner
         """
         self.graphics_state.setPos(x, y)
+
+    def translate(self, x, y):
+        """
+            Translate the graphical representation of the object in the view.
+
+            @param x: Value to add to the x coordinate of the graphical representation of the object
+            @param y: Value to add to the x coordinate of the graphical representation of the object
+        """
+        # Get the current position
+        current_x, current_y = self.graphics_state.x(), self.graphics_state.y()
+        # Set position when applying the offset
+        self.set_position(current_x + x, current_y + y)
 
     def init_sockets(self):
         """
@@ -142,9 +153,6 @@ class StateMachine(Serializable):
             @return: Dictionary containing the information of the state machine and its transitions
         """
         # Get the information of the container that defines this state-like representation
-        # container_information = self.def_container.get_container_specific_information()
-        # # Get the composition
-        # self.def_container.parse_composition(container_information)
         container_information = self.def_container.get_parsed_container()
         # Extract the transitions
         transitions = dict()
@@ -157,3 +165,64 @@ class StateMachine(Serializable):
         container_information["transitions"] = transitions
         # Return the configuration
         return container_information
+
+    def get_opacity(self):
+        """
+            Return the opacity (which represents the availability of the object) of the graphical state machine
+
+            @return: Float value between 0 and 1
+        """
+        return self.graphics_state.opacity()
+
+    def set_opacity(self, value):
+        """
+            Set the opacity of the graphical state machine
+
+            @param value: Float between 0 and 1
+        """
+        # Make sure the opacity to set is between 0 and 1
+        value = 0 if value < 0 else value if value < 1 else 1
+        self.graphics_state.setOpacity(value)
+
+    def save(self):
+        """
+            Save the current properties of the object so it can be restored later on
+
+            @return: Dictionary containing the configuration of the input nad output sockets, type, name and position of
+                     the state machine
+        """
+        # Position of the graphical representation of the state
+        pos = self.graphics_state.pos()
+        # Get configuration of all the sockets
+        input_socket, output_sockets = list(), list()
+        for socket in self.input_socket:
+            input_socket.append(socket.get_id())
+        for socket in self.output_sockets:
+            output_sockets.append(socket.get_id())
+
+        return OrderedDict([
+            ("name", self.name),
+            ("type", self.def_container.type),
+            ("pos_x", pos.x()),
+            ("pos_y", pos.y()),
+            ("input_socket", input_socket),
+            ("output_sockets", output_sockets)
+        ])
+
+    def restore(self, properties, socket_mapping={}):
+        """
+            Set all the parameters of the state machine to restore it to a previously saved state
+
+            @param data: Dictionary containing the input nad output sockets, type, name and position of
+                         the state machine
+            @param socket_mapping: Dictionary mapping the id of the sockets to the pointer of the actual object
+        """
+        # Set the position
+        self.set_position(properties["pos_x"], properties["pos_y"])
+        # Set the id of the input socket
+        self.input_socket[0].set_id(properties["input_socket"][0], socket_mapping)
+        # Update all the sockets
+        for ind_socket, socket in enumerate(self.output_sockets):
+            socket.set_id(properties["output_sockets"][ind_socket], socket_mapping)
+        # Link this object to the container in which the state machine is defined
+        self.def_container.set_state_like(self)

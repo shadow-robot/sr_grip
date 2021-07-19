@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -37,12 +37,14 @@ class GenericUserEntryWidget(QWidget):
             Initialize the widget
 
             @param entry_name: String to be displayed to specify what is expected
-            @param is_optional: Boolean stating whether the user entry is optional to launch the robot
+            @param is_optional: Boolean stating whether the user entry is optional to launch the robot or not
             @param browser_button: Boolean stating whether the browse button should be displayed
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
         super(GenericUserEntryWidget, self).__init__(parent=parent)
+        self.is_optional = is_optional
+        self.originally_enabled = enabled
         self.entry_name = entry_name
         self.empty_value = str() if is_optional else None
         self.valid_input = self.empty_value
@@ -156,6 +158,19 @@ class GenericUserEntryWidget(QWidget):
             self.canBeSaved.emit(False)
         self.initial_input = self.valid_input
 
+    def reset(self):
+        """
+            Reset the state of this widget to its initial, i.e. empty
+        """
+        # Remove the current text if any
+        self.entry_edit_line.clear()
+        # Reset the attributes
+        self.empty_value = str() if self.is_optional else None
+        self.valid_input = self.empty_value
+        self.initial_input = self.empty_value
+        # Make it enabled or disabled depending on how it was configured at first
+        self.setEnabled(self.originally_enabled)
+
     def save_config(self, settings):
         """
             Save the current state of the widget
@@ -176,6 +191,8 @@ class GenericUserEntryWidget(QWidget):
 
             @param settings: PyQt5 object (QSettings) containing the information about the configuration of each widget
         """
+        # Make sure we don't have any overlap that can come from a previous configuration
+        self.entry_edit_line.clear()
         settings.beginGroup(self.objectName())
         stored_value = settings.value("value")
         value_to_set = stored_value[0] if isinstance(stored_value, tuple) else stored_value

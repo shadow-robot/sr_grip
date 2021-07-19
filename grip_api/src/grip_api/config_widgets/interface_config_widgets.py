@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QSpinBox, QHBoxLayout, QCheckBox
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QSpinBox, QHBoxLayout, QCheckBox, QLayout
 from PyQt5.QtCore import pyqtSignal
 from plain_editor_widgets import XMLEditorWidget
 import user_entry_widgets as uew
@@ -67,7 +67,7 @@ class SimulationConfig(GenericInterfaceConfigWidget):
         super(SimulationConfig, self).__init__("Simulation parameters", parent=parent)
         self.initial_checked = True
         # Configuration of the simulation
-        self.configuration = SIMU_CONFIG
+        self.configuration = SIMU_CONFIG.copy()
         # By default it is not valid
         self.is_config_valid = False
         self.initialize_content()
@@ -130,6 +130,21 @@ class SimulationConfig(GenericInterfaceConfigWidget):
             return
         self.is_config_valid = True
 
+    def reset(self):
+        """
+            Reset the state of this widget to its initial state, i.e. empty without any field configured
+        """
+        self.initial_checked = True
+        # By default it is not valid
+        self.is_config_valid = False
+        self.check_box.setChecked(self.initial_checked)
+        # Reset the three user entries
+        self.gazebo_file_entry_widget.reset()
+        self.gazebo_folder_entry_widget.reset()
+        self.starting_pose_entry_widget.reset()
+        # Configuration of the simulation, set to the initial one
+        self.configuration = SIMU_CONFIG.copy()
+
     def save_config(self, settings):
         """
             Store the state of this widget and its children into settings
@@ -173,8 +188,8 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         """
         super(MoveitConfig, self).__init__("Moveit parameters", parent=parent)
         # Configuration of the moveit interface
-        self.configuration = MOVEIT_CONFIG
-        # By default it is not valid
+        self.configuration = MOVEIT_CONFIG.copy()
+        # By default it is valid
         self.is_config_valid = True
         self.initialize_content()
         self.connect_update()
@@ -195,9 +210,12 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         """
             Setup the editors allowing to modify the move group and rviz launch files
         """
-        # If the provided package is valid then make the editors enabled
+        # Since the provided package is valid then make the editors enabled
         self.move_group_editor.setEnabled(True)
         self.rviz_editor.setEnabled(True)
+        # Make sure both editors are as good as new
+        self.move_group_editor.code_editor.reset()
+        self.rviz_editor.code_editor.reset()
         # Display the skeleton helping the user to change options of some of the moveit launch files
         self.move_group_editor.set_editor_content(self.get_moveit_config("move_group"))
         self.rviz_editor.set_editor_content(self.get_moveit_config("moveit_rviz"))
@@ -308,6 +326,20 @@ class MoveitConfig(GenericInterfaceConfigWidget):
             return
         self.is_config_valid = True
 
+    def reset(self):
+        """
+            Reset the state of this widget to its initial state, i.e. empty without any field configured
+        """
+        # Reset the two editors
+        self.move_group_editor.code_editor.reset()
+        self.rviz_editor.code_editor.reset()
+        # By default it is valid
+        self.is_config_valid = True
+        # Reset the user entry widget
+        self.moveit_package_entry_widget.reset()
+        # Configuration of the moveit interface
+        self.configuration = MOVEIT_CONFIG.copy()
+
     def save_config(self, settings):
         """
             Store the state of this widget into settings
@@ -316,7 +348,7 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         """
         settings.beginGroup(self.objectName())
         for widget in self.children():
-            if not (isinstance(widget, QLabel) or isinstance(widget, QGridLayout)):
+            if not (isinstance(widget, QLabel) or isinstance(widget, QLayout)):
                 widget.save_config(settings)
         settings.endGroup()
 
@@ -327,9 +359,9 @@ class MoveitConfig(GenericInterfaceConfigWidget):
             @param settings: QSettings object that contains information of the widgets to restore
         """
         settings.beginGroup(self.objectName())
-        for widget in self.children():
-            if not (isinstance(widget, QLabel) or isinstance(widget, QGridLayout)):
-                widget.restore_config(settings)
+        self.moveit_package_entry_widget.restore_config(settings)
+        self.move_group_editor.restore_config(settings)
+        self.rviz_editor.restore_config(settings)
         settings.endGroup()
 
 
@@ -347,7 +379,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         """
         super(RobotInterfaceConfig, self).__init__("Robot interface", parent=parent)
         # Configuration of the interface
-        self.configuration = INTERFACE_CONFIG
+        self.configuration = INTERFACE_CONFIG.copy()
         # By default it is not valid
         self.is_config_valid = False
         self.initialize_content()
@@ -388,7 +420,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         """
             Setup the editor allowing to modify the provided launch file
         """
-
+        self.launch_file_editor.code_editor.reset()
         self.launch_file_editor.setEnabled(True)
         self.launch_file_editor.set_editor_content(self.get_launch_config())
 
@@ -483,6 +515,20 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
             return
         self.is_config_valid = True
 
+    def reset(self):
+        """
+            Reset the state of this widget to its initial state, i.e. empty without any field configured
+        """
+        # Reset the code editor first
+        self.launch_file_editor.code_editor.reset()
+        # By default it is not valid
+        self.is_config_valid = False
+        for widget in self.children():
+            if not (isinstance(widget, QLayout) or isinstance(widget, XMLEditorWidget) or isinstance(widget, QLabel)):
+                widget.reset()
+        # Configuration of the interface, set to the initial one
+        self.configuration = INTERFACE_CONFIG.copy()
+
     def save_config(self, settings):
         """
             Store the state of this widget and its children into settings
@@ -491,7 +537,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         """
         settings.beginGroup(self.objectName())
         for widget in self.children():
-            if not (isinstance(widget, QLabel) or isinstance(widget, QHBoxLayout) or isinstance(widget, QGridLayout)):
+            if not (isinstance(widget, QLabel) or isinstance(widget, QLayout)):
                 widget.save_config(settings)
         settings.endGroup()
 
@@ -503,7 +549,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         """
         settings.beginGroup(self.objectName())
         for widget in self.children():
-            if not (isinstance(widget, QLabel) or isinstance(widget, QHBoxLayout) or isinstance(widget, QGridLayout)):
+            if not (isinstance(widget, QLabel) or isinstance(widget, QLayout)):
                 widget.restore_config(settings)
         settings.endGroup()
 
@@ -579,6 +625,13 @@ class HardwareSpinBox(QWidget):
             @param value: Value to set to the spin box (int)
         """
         self.spin_box.setValue(value)
+
+    def reset(self):
+        """
+            Reset the widget to its initial state, i.e. with a value of 0
+        """
+        self.initial_value = 0
+        self.set_value(0)
 
     def save_config(self, settings):
         """

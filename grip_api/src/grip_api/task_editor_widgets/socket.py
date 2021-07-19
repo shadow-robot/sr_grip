@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,14 +14,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from graphical_editor_base import Serializable
 from grip_api.task_editor_graphics.socket import GraphicsSocket
 
 
-class Socket(Serializable):
+class Socket(object):
 
     """
-        Object gathering all the logic related to sockets that are directlt linked to a State
+        Object gathering all the logic related to sockets that are directly linked to a State
     """
 
     def __init__(self, state, socket_name, index=0, multi_connections=True, count_on_this_side=1):
@@ -34,7 +33,8 @@ class Socket(Serializable):
             @param multi_connections: Boolean stating if the socket accepts multiple connections
             @param count_on_this_side: Total number of sockets on this side of the node
         """
-        super(Socket, self).__init__()
+        # Store the id of the object
+        self.id = id(self)
         # Store all the information
         self.state = state
         self.index = index
@@ -128,3 +128,29 @@ class Socket(Serializable):
             @return: True if the socket contains at least a connector, otherwise False
         """
         return not not self.connectors
+
+    def get_id(self):
+        """
+            Return the ID of the socket (required for restoring the connectors)
+
+            @return: ID number of the object generated via the built-in id() function
+        """
+        return self.id
+
+    def set_id(self, id, socket_mapping={}):
+        """
+            Set the ID of the socket and update the optionally provided socket_mapping object
+
+            @param id: ID of the socket
+            @param socket_mapping: Dictionary mapping the id of sockets to the actual objects
+        """
+        self.id = id
+        self.register_id(socket_mapping)
+
+    def register_id(self, socket_mapping):
+        """
+            Add an entry to the input dictionary with the ID of the object as key and a pointer to this object as value
+
+            @param socket_mapping: Dictionary
+        """
+        socket_mapping[self.id] = self

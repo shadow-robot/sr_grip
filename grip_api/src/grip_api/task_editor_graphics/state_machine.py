@@ -39,6 +39,8 @@ class GraphicsStateMachine(QGraphicsItem):
         # Connect the signal coming from the view to a function that will update the behaviour
         self.state_machine.container.get_view().viewScaled.connect(self.update_scaling_factor)
         self.init_ui()
+        # Flag to know if the state has been moved
+        self.is_moved = False
 
     def init_dimensions(self):
         """
@@ -151,6 +153,21 @@ class GraphicsStateMachine(QGraphicsItem):
         # If the object is selected and is moved, update the connectors linked to this state machine
         if self.isSelected():
             self.state_machine.update_connectors()
+        # Update the flag
+        self.is_moved = True
+
+    def mouseReleaseEvent(self, event):
+        """
+            Function triggered when the mouse is released (click off) from this object
+
+            @param event: QMouseEvent sent by PyQt5
+        """
+        super(GraphicsStateMachine, self).mouseReleaseEvent(event)
+        if self.is_moved:
+            # Reset the flag
+            self.is_moved = False
+            # Store the current state of the container
+            self.state_machine.container.history.store_current_history()
 
     def mousePressEvent(self, event):
         """
@@ -409,12 +426,17 @@ class StateMachineTitle(QGraphicsTextItem):
         self.setTextInteractionFlags(Qt.NoTextInteraction)
         # Call the original behaviour
         super(StateMachineTitle, self).focusOutEvent(event)
-        # Update the name of the state machine with the current text
-        self.parent.state_machine.def_container.editor_widget.set_name(self.toPlainText())
+        # Direct access to the StateMachine Object
+        state_machine = self.parent.state_machine
+        # Update the name of the state machine with the current text, making sure 2 items don't have the same name
+        if state_machine.name != self.toPlainText():
+            unique_name = state_machine.container.get_unique_name(self.toPlainText())
+            unique_name = state_machine.container.editor_widget.parent().mdiArea().get_unique_name(unique_name)
+            state_machine.def_container.editor_widget.set_name(unique_name)
         # Make sure the text fits in the given width
         self.adapt_text_length()
         # Update the parent's tooltip
-        self.parent.setToolTip(self.parent.state_machine.name)
+        self.parent.setToolTip(state_machine.name)
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
         """

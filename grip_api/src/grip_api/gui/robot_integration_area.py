@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -282,35 +282,38 @@ class RobotIntegrationArea(QTabWidget):
     def update_custom_display(self, should_enable):
         """
             Update the widget displayed when a custom launch file is provided
+
+            @param should_enable: Boolean stating if a valid launch file has been set by the user
         """
         # Enable/disable the user entries related to simulation
-        self.sender().simulation_config.gazebo_file_entry_widget.setEnabled(should_enable)
-        self.sender().simulation_config.gazebo_folder_entry_widget.setEnabled(should_enable)
-        self.sender().simulation_config.starting_pose_entry_widget.setEnabled(should_enable)
-        self.sender().simulation_config.check_box.setEnabled(should_enable)
+        self.sender().simulation_config.gazebo_file_entry_widget.setEnabled(not should_enable)
+        self.sender().simulation_config.gazebo_folder_entry_widget.setEnabled(not should_enable)
+        self.sender().simulation_config.starting_pose_entry_widget.setEnabled(not should_enable)
+        self.sender().simulation_config.check_box.setEnabled(not should_enable)
         # Update the validity of the simulation section
         self.sender().simulation_config.update_validity()
-        # If we don't have a custom launch file anymore
+        # If a launch file is provided
         if should_enable:
+            # Enable all the widgets that can be edited in this mode
+            self.arm_config_widget.hardware_connection_config.setEnabled(should_enable)
+            self.hand_config_widget.hardware_connection_config.setEnabled(should_enable)
+            self.arm_config_widget.moveit_planners_config.setEnabled(should_enable)
+            self.hand_config_widget.moveit_planners_config.setEnabled(should_enable)
+            self.sender().robot_config.collision_scene_entry_widget.setEnabled(should_enable)
+            self.settings_config_widget.sensor_plugins.setEnabled(should_enable)
+        # If the launch file has been removed
+        else:
+            # Get the current configurations
             simulation_on = self.sender().simulation_config.check_box.isChecked()
             moveit_off = not self.sender().moveit_config.configuration["UE Moveit package"]
             sensor_on = self.sender().robot_config.sensor_spin_box.get_value() > 0
             # Depending on the current configuration update the proper state of the different widgets
-            self.arm_config_widget.hardware_connection_config.setEnabled(should_enable and not simulation_on)
-            self.hand_config_widget.hardware_connection_config.setEnabled(should_enable and not simulation_on)
-            self.sender().robot_config.collision_scene_entry_widget.setEnabled(not(should_enable and simulation_on))
-            self.settings_config_widget.sensor_plugins.setEnabled(should_enable and not moveit_off and sensor_on)
-            self.arm_config_widget.moveit_planners_config.setEnabled(should_enable and not moveit_off)
-            self.hand_config_widget.moveit_planners_config.setEnabled(should_enable and not moveit_off)
-        # If a custom launch file is just provided
-        else:
-            # Enable/disable the widgets that can/cannot be edited in this mode
-            self.arm_config_widget.hardware_connection_config.setEnabled(should_enable)
-            self.hand_config_widget.hardware_connection_config.setEnabled(should_enable)
-            self.arm_config_widget.moveit_planners_config.setEnabled(not should_enable)
-            self.hand_config_widget.moveit_planners_config.setEnabled(not should_enable)
-            self.sender().robot_config.collision_scene_entry_widget.setEnabled(not should_enable)
-            self.settings_config_widget.sensor_plugins.setEnabled(not should_enable)
+            self.arm_config_widget.hardware_connection_config.setEnabled(not simulation_on)
+            self.hand_config_widget.hardware_connection_config.setEnabled(not simulation_on)
+            self.sender().robot_config.collision_scene_entry_widget.setEnabled(not simulation_on)
+            self.settings_config_widget.sensor_plugins.setEnabled(not moveit_off and sensor_on)
+            self.arm_config_widget.moveit_planners_config.setEnabled(not moveit_off)
+            self.hand_config_widget.moveit_planners_config.setEnabled(not moveit_off)
 
     def launch_robot(self):
         """
@@ -512,6 +515,18 @@ class RobotIntegrationArea(QTabWidget):
             self.commander_config = updated_commander_config
             self.commanderUpdated.emit()
 
+    def reset(self):
+        """
+            Reset the state of this widget to the initial one, i.e. empty without any field configured
+        """
+        # For each tab, reset the corresponding widget
+        for tab_index in range(self.count()):
+            self.widget(tab_index).reset()
+        # Make sure to reset the attributes of the widget
+        self.config_changed = dict()
+        # After resetting everything, make sure unsaved changes cannot be found
+        self.can_be_saved = False
+
     def save_config(self, settings):
         """
             Store the state of this widget and its children into settings
@@ -538,5 +553,8 @@ class RobotIntegrationArea(QTabWidget):
             widget_in_tab = self.widget(tab_index)
             widget_in_tab.restore_config(settings)
         settings.endGroup()
+        # Make sure to update the commanders config
+        self.send_commanders_config()
         # If removed then will always ask to save even though nothing has been modified
+        self.config_changed = dict()
         self.can_be_saved = False

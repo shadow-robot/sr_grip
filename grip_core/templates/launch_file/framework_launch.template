@@ -21,7 +21,8 @@
 
   {% if launch_parameters.launch_file_path %}
   {{ launch_parameters.launch_file_configuration }}
-  {% elif launch_parameters.simulation %}
+  {% endif %}
+  {% if launch_parameters.simulation %}
   <arg name="gazebo_model_path" value="{{ launch_parameters.gazebo_model_path }}"/>
   <!-- Set environment variables allowing to access the proper workspace and models to display in gazebo and MoveIt! -->
   <env name="GAZEBO_MODEL_PATH" value="$(arg gazebo_model_path)"/>

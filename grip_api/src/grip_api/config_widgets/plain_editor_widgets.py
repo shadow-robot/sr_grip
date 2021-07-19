@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -77,7 +77,7 @@ class GenericEditorWidget(QWidget):
         # Make sure the editor is lexed before setting any text
         if not self.code_editor.is_lexed:
             self.code_editor.set_lexer()
-        self.code_editor.setText(content)
+        self.code_editor.set_text_and_trigger_checks(content)
         self.code_editor.setReadOnly(False)
         self.setEnabled(True)
 
@@ -263,9 +263,17 @@ class YAMLEditorWidget(GenericEditorWidget):
 
     def close_file(self):
         """
-            Reset the editor and unlinks the editor to any file
+            Unlinks the file from the editor, but the latter reamins enabled
         """
         self.code_editor.reinitialize()
+        self.file_path = None
+        self.title.setText(self.name)
+
+    def reset(self):
+        """
+            Reset the editor and unlinks any file from the editor
+        """
+        self.code_editor.reset()
         self.file_path = None
         self.title.setText(self.name)
 
@@ -313,13 +321,15 @@ class YAMLEditorWidget(GenericEditorWidget):
 
             @param settings: PyQt5 object (QSettings) containing the information about the configuration of each widget
         """
+        # Make sure to close an already open file
+        self.close_file()
         settings.beginGroup(self.objectName())
         if settings.contains("file_path") and os.path.exists(settings.value("file_path")):
             self.should_emit_signal = False
             self.file_path = settings.value("file_path")
             self.load_file()
         else:
-            self.code_editor.clear()
+            self.code_editor.reset()
         self.setEnabled(settings.value("enabled", type=bool))
         settings.endGroup()
 

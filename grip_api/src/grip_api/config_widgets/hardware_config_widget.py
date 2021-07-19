@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -40,7 +40,7 @@ class HardwareConfigWidget(QWidget):
         self.hardware_part = hardware_part
         self.setObjectName("{} config widget".format(hardware_part))
         # Configuration of the hardware config
-        self.configuration = ARM_CONFIG if hardware_part == "Arm" else HAND_CONFIG
+        self.configuration = ARM_CONFIG.copy() if hardware_part == "Arm" else HAND_CONFIG.copy()
         # By default it is not valid
         self.is_config_valid = False
         self.init_ui()
@@ -98,7 +98,7 @@ class HardwareConfigWidget(QWidget):
 
     def connect_update(self):
         """
-            Connect signals to a slot allowing to update the hardware configuration
+            Connect signals related to the update of the hardware configuration
         """
         self.hardware_connection_config.canBeSaved.connect(self.update_config)
         self.external_controller.canBeSaved.connect(self.update_config)
@@ -106,6 +106,17 @@ class HardwareConfigWidget(QWidget):
         self.external_motion_planner.canBeSaved.connect(self.update_config)
         self.ros_controllers.canBeSaved.connect(self.update_config)
         self.moveit_planners_config.canBeSaved.connect(self.update_config)
+
+    def disconnect_update(self):
+        """
+            Disconnect signals related to the update of the hardware configuration
+        """
+        self.hardware_connection_config.canBeSaved.disconnect()
+        self.external_controller.canBeSaved.disconnect()
+        self.kinematic_libraries_config.canBeSaved.disconnect()
+        self.external_motion_planner.canBeSaved.disconnect()
+        self.ros_controllers.canBeSaved.disconnect()
+        self.moveit_planners_config.canBeSaved.disconnect()
 
     def update_config(self, has_widget_changed):
         """
@@ -142,6 +153,26 @@ class HardwareConfigWidget(QWidget):
             self.is_config_valid = False
             return
         self.is_config_valid = True
+
+    def reset(self):
+        """
+            Reset the state of this widget to its initial, i.e. all editors closed
+        """
+        # Disconnect the update signals just for resetting everything, it avoids having conflict of signals on the upper
+        # levels
+        self.disconnect_update()
+        self.is_config_valid = False
+        # Reset all the editors
+        self.hardware_connection_config.reset()
+        self.ros_controllers.reset()
+        self.moveit_planners_config.reset()
+        self.kinematic_libraries_config.reset()
+        self.external_controller.reset()
+        self.external_motion_planner.reset()
+        # Reconnect the update signals
+        self.connect_update()
+        self.editor_content_changed = dict()
+        self.configuration = ARM_CONFIG.copy() if self.hardware_part == "Arm" else HAND_CONFIG.copy()
 
     def save_config(self, settings):
         """

@@ -31,8 +31,11 @@ STATE_TEMPLATES_FOLDER = os.path.join(BUILT_IN_TEMPLATES_FOLDER, "states")
 
 # GUI configuration
 GUI_CONFIGS_FOLDER = os.path.join(API_PATH, "gui_configs")
-ROBOT_INTEGRATION_MAIN_CONFIG_FILE = os.path.join(GUI_CONFIGS_FOLDER, "gui.ini")
-ROBOT_INTEGRATION_DEFAULT_CONFIG_FILE = os.path.join(GUI_CONFIGS_FOLDER, "gui_config.ini")
+MAIN_CONFIG_FILE = os.path.join(GUI_CONFIGS_FOLDER, "gui.ini")
+ROBOT_CONFIG_FOLDER = os.path.join(GUI_CONFIGS_FOLDER, "robot_config")
+TASK_CONFIG_FOLDER = os.path.join(GUI_CONFIGS_FOLDER, "task_config")
+DEFAULT_ROBOT_CONFIG_FILE = os.path.join(ROBOT_CONFIG_FOLDER, "robot_config.ini")
+DEFAULT_TASK_CONFIG_FILE = os.path.join(TASK_CONFIG_FOLDER, "task_config.ini")
 
 # Catkin workspace
 CATKIN_WS = "/home/user/projects/shadow_robot/base/src"

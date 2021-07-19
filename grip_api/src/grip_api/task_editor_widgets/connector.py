@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -15,11 +15,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from grip_api.task_editor_graphics.connector import GraphicsConnector
-from graphical_editor_base import Serializable
 from terminal_socket import TerminalSocket
+from collections import OrderedDict
 
 
-class Connector(Serializable):
+class Connector(object):
 
     """
         Object that connects two states together through sockets
@@ -33,7 +33,6 @@ class Connector(Serializable):
             @param start_socket: First socket on which the user clicked to create this connector. Default is None
             @param end_socket: Target socket of this connector. Default is None
         """
-        super(Connector, self).__init__()
         self.container = container
         # Default initialization
         self._start_socket = None
@@ -150,3 +149,11 @@ class Connector(Serializable):
         """
         # We only need to check on the end socket knowing that this object can be created iif we have a starting socket
         return self.end_socket is not None
+
+    def save(self):
+        """
+            Save the current properties of the object so it can be restored later on
+
+            @return: Dictionary containing the id of the two sockets the connector links
+        """
+        return OrderedDict([('start', self.start_socket.id), ('end', self.end_socket.id)])

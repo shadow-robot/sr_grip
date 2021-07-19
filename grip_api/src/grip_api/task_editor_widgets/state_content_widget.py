@@ -17,14 +17,13 @@
 import inflection
 import os
 from collections import OrderedDict
-from graphical_editor_base import Serializable
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from grip_core.utils.file_parsers import AVAILABLE_STATES, get_import_statement
 from grip_core.utils.common_paths import EXTERNAL_COMPONENT_TEMPLATE, GENERATED_STATES_FOLDER, SENSOR_TEMPLATE
 from state_config_widgets import StateConfigBox, CommanderStateConfigBox, GeneratedStateConfigBox, StateMachineConfigBox
 
 
-class StateContentWidget(QWidget, Serializable):
+class StateContentWidget(QWidget):
 
     """
         Widget that contains the area in which the user can configure a state
@@ -120,8 +119,40 @@ class StateContentWidget(QWidget, Serializable):
         else:
             return None
 
+    def get_config(self, to_save=False):
+        """
+            Retrieve the current configuration of the content of the state
 
-class StateMachineContentWidget(QWidget, Serializable):
+            @param to_save: Boolean specifying whether the returned config is going to be saved or if it used to
+                            generate the state machine. Default is False (i.e. for generating the state machine)
+
+            @return: Dictionary mapping the name of the parameters of the state to their configured values
+        """
+        state_config = OrderedDict()
+        # Extract the different information from the state's content
+        for parameter_name in self.state_info["parameters"].keys():
+            # Make sure to only extract displayed parameters
+            if parameter_name not in ["outcomes", "input_keys", "output_keys", "io_keys"]:
+                # Specific case when we want to save the configuration for the sensor states
+                if isinstance(self.config_state, GeneratedStateConfigBox) and to_save:
+                    user_config = self.config_state.get_slot_config(parameter_name, False)
+                else:
+                    user_config = self.config_state.get_slot_config(parameter_name)
+                # Store the user config in the dictionary
+                state_config[parameter_name] = user_config
+        return state_config
+
+    def set_config(self, config):
+        """
+            Set the parameters of the state according to a previously saved configuration
+
+            @param config: Dictionary mapping the name of the parameters of the state to their saved values
+        """
+        for param_name, param_value in config.items():
+            self.config_state.set_slot_value(param_name, param_value)
+
+
+class StateMachineContentWidget(QWidget):
 
     """
         Widget that contains the area in which the user can configure the userdata of a state machine

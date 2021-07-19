@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import QGridLayout, QWidget, QInputDialog, QLineEdit, QMenu
-from PyQt5.QtCore import Qt, QDataStream, QIODevice
+from PyQt5.QtCore import Qt, QDataStream, QIODevice, pyqtSignal
 from grip_api.task_editor_graphics.view import TaskEditorView
 from container import Container
 from state_machine import StateMachine
@@ -32,6 +32,8 @@ class GraphicalEditorWidget(QWidget):
     """
         Widget gathering the high level logic and event handler allowing the user to edit state machines
     """
+    # Signal stating when the content of the editor widget has been modified
+    hasBeenModified = pyqtSignal(bool)
 
     def __init__(self, container_name, container_type, parent=None):
         """
@@ -55,6 +57,8 @@ class GraphicalEditorWidget(QWidget):
         # Update the above attribute according to whether the robot is launched or not
         self.robot_integration_area = self.parent().parent().parent().framework_gui.robot_integration_area
         self.robot_integration_area.robotCanBeStopped.connect(self.update_execution)
+        # Boolean specifying if the widget hosts the root of the task
+        self.is_root = container_type == "base"
 
     def init_ui(self):
         """
@@ -143,6 +147,9 @@ class GraphicalEditorWidget(QWidget):
                 state_machine_name, ok = QInputDialog().getText(self, "Input name", "Name of the state machine:",
                                                                 QLineEdit.Normal)
                 if state_machine_name and ok:
+                    # Make sure we have unique names within the same container and between the containers
+                    state_machine_name = self.container.get_unique_name(state_machine_name)
+                    state_machine_name = self.parent().parent().parent().get_unique_name(state_machine_name)
                     # Create another tab and extract the container
                     self.parent().mdiArea().add_subwindow(state_machine_name, item_type)
                     container = self.parent().mdiArea().focused_subwindow.widget().container
@@ -151,6 +158,8 @@ class GraphicalEditorWidget(QWidget):
                     dropped_state_machine.set_position(view_position.x(), view_position.y())
                     # Link it to the newly created container
                     container.set_state_like(dropped_state_machine)
+            # Now that the item has been added to the container, save a snapshot
+            self.container.history.store_current_history()
             # Accept the drop action
             event.setDropAction(Qt.MoveAction)
             event.accept()
@@ -223,3 +232,39 @@ class GraphicalEditorWidget(QWidget):
             self.rename()
         elif action == self.execute_action:
             self.execute_container()
+
+    def save_config(self, settings):
+        """
+            Store the configuration of this widget into settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        settings.beginGroup("root" if self.is_root else self.windowTitle())
+        # Get the name of the window so that we can restore it (only for root widget)
+        if self.is_root:
+            settings.setValue("name", self.windowTitle())
+        # Get all information related to the container as a dictionary and save it
+        settings.setValue("container", self.container.save())
+        # Save the view
+        self.editor_view.save_config(settings)
+        # If saved, set the initial snapshot
+        self.container.history.set_initial_snapshot()
+        settings.endGroup()
+
+    def restore_config(self, settings):
+        """
+            Restore the configuration of this widget from the parameters saved in settings
+
+            @param settings: QSettings object in which widgets' information are stored
+        """
+        settings.beginGroup("root" if self.is_root else self.windowTitle())
+        # Set the name of the window and container (only for root widget)
+        if self.is_root:
+            self.set_name(settings.value("name"))
+        # Restore the container
+        self.container.restore(settings.value("container"))
+        # Store the saved configuration, but won't restore them as it must be done at execution time
+        self.editor_view.store_config(settings)
+        settings.endGroup()
+        # Now that editor's content has been restored, save a snapshot
+        self.container.history.store_current_history()

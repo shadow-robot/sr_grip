@@ -1,4 +1,6 @@
 # Ignore everything in this directory
 *
-# Except this file
+# Except this file and the two folders for robot and task configuration
 !.gitignore
+!robot_config
+!task_config

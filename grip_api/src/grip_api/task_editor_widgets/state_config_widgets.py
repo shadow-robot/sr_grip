@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -17,6 +17,7 @@
 import re
 from PyQt5.QtWidgets import QGridLayout, QLineEdit, QGroupBox, QLabel, QComboBox
 from grip_api.utils.files_specifics import COMMANDER_DATA_TYPE_CHOICE, ALL_MANAGER_TYPE_CHOICE
+from grip_api.utils.common_dialog_boxes import warning_message
 
 
 class GenericConfigBoxWidget(QGroupBox):
@@ -60,6 +61,8 @@ class GenericConfigBoxWidget(QGroupBox):
         slot_title = QLabel(slot_name + ":", objectName="slot {}".format(slot_name))
         # Configure the QLine Edit
         line = QLineEdit(objectName="line {}".format(slot_name))
+        # Make sure to update the can_be_saved attribute of the task editor area when the config of a state is changed
+        line.textChanged.connect(self.evaluate_change)
         line.setClearButtonEnabled(True)
         # If provided, set the placeholder text
         if placeholder_text is not None:
@@ -91,6 +94,13 @@ class GenericConfigBoxWidget(QGroupBox):
         self.number_rows += 1
         self.registered_keys.append(slot_name)
 
+    def evaluate_change(self):
+        """
+            Check if the initial configuration of the state is different from the current one
+        """
+        # Call the method that compares the initial state of a container from the current one
+        self.parent().state.container.history.evaluate_snapshot()
+
     def get_slot_config(self, slot_name):
         """
             Get the current config of a given slot
@@ -101,10 +111,10 @@ class GenericConfigBoxWidget(QGroupBox):
         # If the slot name corresponds to a QCombo box then return its text
         combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
         if combo_widget:
-            return combo_widget.currentText()
-
-        # Otherwise it means it comes from a QLineEdit, and get the text from it
-        raw_text = self.findChild(QLineEdit, "line {}".format(slot_name)).text()
+            raw_text = combo_widget.currentText()
+        else:
+            # Otherwise it means it comes from a QLineEdit, and get the text from it
+            raw_text = self.findChild(QLineEdit, "line {}".format(slot_name)).text()
         # If the slot is empty
         if not raw_text:
             return raw_text
@@ -122,6 +132,49 @@ class GenericConfigBoxWidget(QGroupBox):
         for text in split_text:
             final_list.append(self.to_format(text))
         return final_list
+
+    def set_slot_value(self, slot_name, value):
+        """
+            Set the current config of a given slot
+
+            @param slot_name: String specifying for which slot we want to set the content
+            @param value: String to be displayed in the given slot
+        """
+        # If the value to set is a list, transform it back to a string so it can be displayed
+        if isinstance(value, list):
+            value = map(lambda x: str(x), value)
+            value = "[" + ", ".join(value) + "]"
+        # Transform booleans to strings
+        elif isinstance(value, bool):
+            value = str(value)
+        # Check if the slot corresponds to a QComboBox
+        combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
+        # If that's the case
+        if combo_widget:
+            # And the widget is editable, set the current text
+            if combo_widget.isEditable():
+                combo_widget.setCurrentText(value)
+            # Otherwise, it means that we can only select pre-determined options.
+            else:
+                # Get all registered choices for the specific QComboBox
+                all_items = [combo_widget.itemText(i) for i in range(combo_widget.count())]
+                try:
+                    index_choice = all_items.index(value)
+                    combo_widget.setCurrentIndex(index_choice)
+                except ValueError:
+                    warning_message("Error configuring a state", "For state of type {}:".format(self.title()),
+                                    additional_text="The provided value {} for slot {} is not valid.".format(value,
+                                                                                                             slot_name))
+        # Otherwise it should be a QLineEdit
+        else:
+            widget = self.findChild(QLineEdit, "line {}".format(slot_name))
+            # If it is indeed a QLineEdit then we just need to set the provided input
+            if widget:
+                widget.setText(value)
+            elif not (isinstance(self, CommanderStateConfigBox) and slot_name == "group_name" and
+                      len(self.commander_choice) == 2):
+                warning_message("Error configuring a state", "For state of type {}:".format(self.title()),
+                                additional_text="The parameter {} cannot be found".format(slot_name))
 
     @staticmethod
     def to_format(input):
@@ -239,7 +292,9 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             Update the list of available commanders
         """
         # Update the proper attribute
-        self.commander_choice = [""] + sorted(self.sender().commander_config)
+        self.commander_choice = [""]
+        if self.sender().commander_config is not None:
+            self.commander_choice += sorted(self.sender().commander_config)
         # Get the corresponding drop down list
         combo_box = self.findChild(QComboBox, "choice {}".format("group_name"))
         # Update its content
@@ -262,6 +317,8 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         # Set the different choices
         list_choice.addItems(choices)
         list_choice.setEditable(is_editable)
+        # When the choice is changed by the user, make sure to update hte can_be_saved attribute of the task edito area
+        list_choice.currentTextChanged.connect(self.evaluate_change)
         if "type" in slot_name:
             list_choice.currentTextChanged.connect(self.update_choice_content)
         # Add both widgets in the layout
@@ -437,12 +494,17 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         """
         # Get the other (associated) QComboBox
         widget = self.findChild(QComboBox, "{}".format(self.sender().objectName().replace("_type", "")))
+        # When restoring, allows us to get the text previously set
+        widget_text = widget.currentText()
+        # Allows for removing useless suggestions
         widget.clear()
         # Depending on the current text of the sender, update the possible choices
         if not current_text:
             widget.addItem("")
         else:
             widget.addItems([""] + self.known_msgs[current_text])
+            # Restore the previously set text
+            widget.setCurrentText(widget_text)
 
     def update_known_poses(self):
         """
@@ -464,17 +526,19 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         known_traj = list() if not self.sender().valid_input else self.sender().valid_input.keys()
         self.known_msgs["trajectory"] = known_traj
 
-    def get_slot_config(self, slot_name):
+    def get_slot_config(self, slot_name, return_mapped=True):
         """
             Get the current config of a given slot
 
             @param slot_name: String specifying from which slot we want to extract the config from
+            @param return_mapped: Boolean stating whether the returned parameter should be the renamed topic or not.
+                                  This parameter matters only for states generated for sensors
             @return: String, list, int or float corresponding to the current config
         """
         slot_config = super(GeneratedStateConfigBox, self).get_slot_config(slot_name)
 
-        # For the sensor_topic slot we must send the real topic name
-        if slot_name == "sensor_topic":
+        # For the sensor_topic slot we must send the real topic name if requested, otherwise send the remapped one
+        if slot_name == "sensor_topic" and return_mapped:
             return self.topic_mapping[slot_config]
         else:
             return slot_config

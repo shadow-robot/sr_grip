@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,18 +14,21 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from graphical_editor_base import Serializable
 from terminal_socket import TerminalSocket
 from socket import Socket
-from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_file,
-                                          AVAILABLE_STATEMACHINES)
+from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_file, AVAILABLE_STATEMACHINES)
 from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
+from grip_api.utils.common_dialog_boxes import error_message, warning_message
 from connector import Connector
 import os
+from state import State
+from state_machine import StateMachine
+from collections import OrderedDict
+from container_history import ContainerHistory
 
 
-class Container(Serializable):
+class Container(object):
 
     """
         Object keeping record of which widgets are currently composing a state machine.
@@ -38,7 +41,6 @@ class Container(Serializable):
             @param editor_widget: GraphicalEditorWidget for which the state machine is the container
             @param container_type: Type of the container (string)
         """
-        super(Container, self).__init__()
         # Store the graphical editor widget
         self.editor_widget = editor_widget
         # Set the type of the container
@@ -63,6 +65,8 @@ class Container(Serializable):
         # Attribute tracking the current "layer" height required to be sure to have a widget overposing all the others
         self.z_tracker = 0
         self.output_userdata = list()
+        # History of the actions performed inside the container
+        self.history = ContainerHistory(self)
 
     def get_outcomes(self):
         """
@@ -223,6 +227,24 @@ class Container(Serializable):
             # Update the depth tracker
             self.z_tracker -= 1
 
+    def clear(self, include_state_machines=True):
+        """
+            Remove all the states and connectors of the scene. If include_state_machines is True, also remove all the
+            state machines.
+
+            @param include_state_machines: Boolean that specifies whether the state machines should be deleted or not
+        """
+        # Remove all the states
+        while self.states:
+            self.states[0].remove()
+        # If instructed, remove all the state machines
+        if include_state_machines:
+            while self.state_machines:
+                self.state_machines[0].remove()
+        # Remove residual connectors
+        while self.connectors:
+            self.connectors[0].remove()
+
     def get_unique_name(self, name):
         """
             Modify the input name by appending a digit at the end if needed to make sure two elements part of the
@@ -365,6 +387,190 @@ class Container(Serializable):
                         connected_states.append(state)
             starting_components = starting_components + connected_states
         return ordered_components
+
+    def update_current_items_availability(self):
+        """
+            Make sure all the states and state machines currently used in the task editor are compatible with the
+            current robot configuration. If not, make them semi-transparent and displays a message
+        """
+        # Get all the states that can currently be used
+        list_available_states = self.editor_widget.parent().parent().parent().parent().state_displayer.list_widget
+        # Boolean stating whether some generated or commander states are available
+        has_some_generated = "Generated" in list_available_states.states_to_display
+        has_some_commanders = "Commander" in list_available_states.states_to_display
+        # Get the list of the generated, constant and commander states
+        generated_states = list() if not has_some_generated else list_available_states.states_to_display["Generated"]
+        constant_states = list_available_states.states_to_display["Constant"]
+        commander_states = list() if not has_some_commanders else list_available_states.states_to_display["Commander"]
+
+        # Will contain all the states that can't be found
+        cannot_be_found_states = list()
+        # For all the states that are currently being used
+        for state in self.states:
+            is_available = state.type in constant_states or state.type in commander_states
+            is_generated = state.type in generated_states
+            # If the state is not available and not to be generated, then store it in a specific list. Otherwise, make
+            # sure that the graphical representation shows a valid state (fully opaque)
+            if not (is_available or is_generated):
+                cannot_be_found_states.append(state)
+            # If the state is now available but wasn't before, reset the opacity to 1
+            elif state.get_opacity() < 1:
+                state.set_opacity(1.)
+
+        # Make all the states not found semi-transparent as a cue and display a message to inform the user about the
+        # current issue
+        if cannot_be_found_states:
+            states_name = ", ".join(map(lambda x: x.name, cannot_be_found_states))
+            warning_message(
+                "Error parsing the task", "Some states aren't available anymore due to missing configurations",
+                additional_text="Please add the missing configuration for the states {}".format(states_name))
+
+            for state in cannot_be_found_states:
+                state.set_opacity(0.5)
+        # If there's at least of state for which there is an issue, update the opacity of the box-like representation
+        # to 0.5 and 1 if everything is alright
+        if self.state_machine is not None:
+            self.state_machine.set_opacity(0.5 if cannot_be_found_states else 1.)
+
+        # Update the validity of the container
+        self.update_validity()
+
+    def save(self):
+        """
+            Save the current properties of the object so it can be restored later on
+
+            @return: Dictionary containing the configuration of the terminal sockets, states and connectors
+        """
+        # Lists containing required information to restore the current configuration of the terminal sockets, states,
+        # state machines and connectors.
+        terminal_sockets, states, state_machines, connectors = list(), list(), list(), list()
+        # Save their configuration
+        for socket in self.terminal_sockets:
+            terminal_sockets.append(socket.save())
+
+        for state in self.states:
+            states.append(state.save())
+
+        for state_machine in self.state_machines:
+            state_machines.append(state_machine.save())
+
+        for connector in self.connectors:
+            connectors.append(connector.save())
+
+        return OrderedDict([
+            ('terminal_sockets', terminal_sockets),
+            ('states', states),
+            ('state_machines', state_machines),
+            ('connectors', connectors)
+        ])
+
+    def restore_states(self, list_of_states, socket_mapping, offset=list(), new_sockets=None):
+        """
+            Restore the states stored in a list of saved states
+
+            @param list_of_states: List of dictionaries obtained by calling the save() function for each state
+            @param socket_mapping: Dictionary mapping the id of the sockets to the pointer of the actual object
+            @param offset: List or tuple containing the translational offset to be applied to the items restored
+            @param new_sockets: Dictionary that will contain the mapping between the old and new socket IDs. If set to
+                                None, new socket IDs won't be generated.
+        """
+        # Access the states that can currently be used
+        list_available_states = self.editor_widget.parent().parent().parent().parent().state_displayer.list_widget
+        has_some_generated = "Generated" in list_available_states.states_to_display
+        has_some_commanders = "Commander" in list_available_states.states_to_display
+        # Get the list of the generated, contant and commander states
+        generated_states = list() if not has_some_generated else list_available_states.states_to_display["Generated"]
+        constant_states = list_available_states.states_to_display["Constant"]
+        commander_states = list() if not has_some_commanders else list_available_states.states_to_display["Commander"]
+
+        cannot_be_found_states = list()
+        # Make sure that each state to be restores is compatible with the current robot configuration
+        for state_data in list_of_states:
+            state_type = state_data["type"]
+            is_available = state_type in constant_states or state_type in commander_states
+            is_generated = state_type in generated_states
+            # If some states can't be used as the current robot configuration does not allow to do so, extract its name
+            if not (is_available or is_generated):
+                cannot_be_found_states.append(state_data["name"])
+            else:
+                # Make sure to have an unique name. It is important, especially when pasting states with same name
+                state_data["name"] = self.get_unique_name(state_data["name"])
+                # Create the state and restore its configuration
+                created_state = State(self, state_data["type"])
+                created_state.restore(state_data, socket_mapping, new_sockets=new_sockets)
+
+                # If is_pasted
+                if offset and (isinstance(offset, list) or isinstance(offset, tuple)):
+                    created_state.translate(offset[0], offset[1])
+
+        if cannot_be_found_states:
+            states_name = ", ".join(cannot_be_found_states)
+            error_message("Error while restoring items", "Some states could not be loaded due to missing configuration",
+                          additional_text="The states named {} will be missing.".format(states_name))
+
+    def get_state_machine_by_name(self, name):
+        """
+            Return the StateMachine object with the provided name. If none is found, return None
+
+            @param name: String corresponding to the name of the state machine to return
+            @return: StateMachine if one is found, None otherwise
+        """
+        return next((i for i in self.state_machines if i.name == name), None)
+
+    def restore(self, properties):
+        """
+            Restore the configuration of the container according to the parameters saved in properties
+
+            @param properties: Dictionary containing the configuration of the terminal sockets, states and connectors
+        """
+        # Initialize the dictionary that records the mapping between the id of the sockets and the actual objects
+        socket_mapping = {}
+
+        # Extract the different information stored in properties
+        terminal_sockets_data = properties["terminal_sockets"]
+        states_data = properties["states"]
+        state_machines_data = properties["state_machines"]
+        connectors_data = properties["connectors"]
+        # Remove the different elements depending on what needs to be restored
+        self.clear(not state_machines_data)
+        # Make sure to remove state machines that are not supposed to be there
+        if state_machines_data:
+            # Get the name of the one to be restored
+            to_be_restored = list([x["name"] for x in state_machines_data])
+            for state_machine in self.state_machines:
+                if state_machine.name not in to_be_restored:
+                    state_machine.remove()
+
+        # For each terminal socket (already created), restore their previous configuration
+        for ind_sock, socket in enumerate(self.terminal_sockets):
+            socket.restore(terminal_sockets_data[ind_sock], socket_mapping)
+        # Restore the states
+        self.restore_states(states_data, socket_mapping)
+
+        # Restore the state machines
+        for state_machine_data in state_machines_data:
+            state_machine_name = state_machine_data["name"]
+            # Get the state machine if already existing
+            state_machine = self.get_state_machine_by_name(state_machine_name)
+            # If it does not exist
+            if state_machine is None:
+                # Create a new subwindow
+                self.editor_widget.parent().mdiArea().add_subwindow(state_machine_name, state_machine_data["type"])
+                container = self.editor_widget.parent().mdiArea().focused_subwindow.widget().container
+                # Create a state like representation to be displayed in the current widget
+                dropped_state_machine = StateMachine(self, container)
+                # Restore the state machine
+                dropped_state_machine.restore(state_machine_data, socket_mapping)
+            # If it does, just restore its configuration (it allows us to avoid changing other editors, and keep each
+            # subwindow independant)
+            else:
+                state_machine.restore(state_machine_data, socket_mapping)
+
+        # Add the connectors
+        if connectors_data:
+            for connector_data in connectors_data:
+                if connector_data["start"] in socket_mapping and connector_data["end"] in socket_mapping:
+                    Connector(self, socket_mapping[connector_data["start"]], socket_mapping[connector_data["end"]])
 
     @property
     def type(self):
