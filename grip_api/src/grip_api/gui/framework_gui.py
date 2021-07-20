@@ -364,6 +364,9 @@ class FrameworkGui(QMainWindow):
         else:
             self.task_config_path = config_path
             self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
+            # Set the name of the task to the first window
+            task_name = os.path.basename(config_path).replace(".ini", "")
+            self.task_editor_area.mdi_area.subWindowList()[0].widget().set_name(task_name)
         # Save the current config in the new file
         self.save_file(current_widget)
 

@@ -268,5 +268,7 @@ class GraphicalEditorWidget(QWidget):
         # Store the saved configuration, but won't restore them as it must be done at execution time
         self.editor_view.store_config(settings)
         settings.endGroup()
+        # Make sure to have everything as good as new
+        self.container.history.clear()
         # Now that editor's content has been restored, save a snapshot
         self.container.history.store_current_history()
