@@ -57,7 +57,7 @@ def extract_state_parameters_from_file(file_path):
             parameters[parameter] = ""
         else:
             name, value = parameter.split("=")
-            parameters[name] = value
+            parameters[name] = value.strip("\"")
     return parameters
 
 

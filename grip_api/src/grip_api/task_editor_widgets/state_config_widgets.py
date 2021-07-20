@@ -120,13 +120,18 @@ class GenericConfigBoxWidget(QGroupBox):
             return raw_text
 
         # If the text does not correspond to a list or tuple
-        if "[" not in raw_text and "]" not in raw_text:
+        if not("[" in raw_text and "]" in raw_text):
             return self.to_format(raw_text)
 
         # If the config is a list or tuple, remove the corresponding brackets.
-        raw_text = re.search("[^\[\(].*[^\]\)]", raw_text).group(0)
-        # Split the text according to "," and store what it finds in a list
-        split_text = re.split("\,\s*", raw_text)
+        raw_text = re.search("[^\[\(].*[^\]\)]", raw_text)
+        # If the current configuration is an empty list
+        if raw_text is None:
+            split_text = list()
+        else:
+            raw_text = raw_text.group(0)
+            # Split the text according to "," and store what it finds in a list
+            split_text = re.split("\,\s*", raw_text)
         # Generate the list with all the elements parsed
         final_list = list()
         for text in split_text:
@@ -145,7 +150,7 @@ class GenericConfigBoxWidget(QGroupBox):
             value = map(lambda x: str(x), value)
             value = "[" + ", ".join(value) + "]"
         # Transform booleans to strings
-        elif isinstance(value, bool):
+        elif not isinstance(value, str):
             value = str(value)
         # Check if the slot corresponds to a QComboBox
         combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
