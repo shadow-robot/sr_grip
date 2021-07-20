@@ -16,6 +16,7 @@
 
 import re
 from PyQt5.QtWidgets import QGridLayout, QLineEdit, QGroupBox, QLabel, QComboBox
+from PyQt5.QtCore import QRegExp
 from grip_api.utils.files_specifics import COMMANDER_DATA_TYPE_CHOICE, ALL_MANAGER_TYPE_CHOICE
 from grip_api.utils.common_dialog_boxes import warning_message
 
@@ -108,9 +109,9 @@ class GenericConfigBoxWidget(QGroupBox):
             @param slot_name: String specifying from which slot we want to extract the config from
             @return: String, list, int or float corresponding to the current config
         """
-        # If the slot name corresponds to a QCombo box then return its text
+        # If the slot name corresponds to a QComboBox then return its text
         combo_widget = self.findChild(QComboBox, "choice {}".format(slot_name))
-        if combo_widget:
+        if combo_widget is not None:
             raw_text = combo_widget.currentText()
         else:
             # Otherwise it means it comes from a QLineEdit, and get the text from it
@@ -268,14 +269,19 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         settings_config = robot_integration_area.settings_config_widget
         # Initialize the choice for commander
         self.commander_choice = [""] + sorted(robot_integration_area.commander_config.keys())
-        # Initialize the list of registered poses and joint states
+        # Initialize the list of registered poses, joint states and trajectories
         self.known_states = {"pose": settings_config.named_poses.poses.keys(),
-                             "joint state": settings_config.named_joint_states.valid_input.keys()}
+                             "joint state": settings_config.named_joint_states.valid_input.keys(),
+                             "trajectory": settings_config.named_trajectories.valid_input.keys()}
         # Connect the signal coming from the robot integration area re. the commander configs
         robot_integration_area.commanderUpdated.connect(self.update_commander_choice)
-        # Connect the signals coming from the poses and joint states editors
-        settings_config.named_poses.canBeSaved.connect(self.update_known_poses)
-        settings_config.named_joint_states.canBeSaved.connect(self.update_known_joint_states)
+        # Connect the signals coming from the poses joint states and trajectories editors
+        settings_config.named_poses.contentUpdated.connect(self.update_known_poses)
+        settings_config.named_joint_states.contentUpdated.connect(self.update_known_joint_states)
+        settings_config.named_trajectories.contentUpdated.connect(self.update_known_trajectories)
+        # Regex finding all the slot following the input template name
+        self.regex = QRegExp("choice *_name")
+        self.regex.setPatternSyntax(QRegExp.Wildcard)
         # Initialize the content
         self.initialize_content(state_parameters)
 
@@ -284,6 +290,14 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             Update available poses defined in the corresponding editor
         """
         self.known_states["pose"] = self.sender().poses.keys()
+        # Dynamically update the content of the combo boxes that are part of the graphical representation
+        combo_boxes = self.findChildren(QComboBox, self.regex)
+        # For each box with a potential ComboBox
+        for combo_box in combo_boxes:
+            combo_type = self.findChild(QComboBox, combo_box.objectName().replace("name", "type"))
+            # If the poses are getting updated and the target_type or starting_type is on pose, refresh the poses
+            if combo_type is not None and combo_type.currentText() == "pose":
+                self.refresh_choices(combo_box, "pose")
 
     def update_known_joint_states(self):
         """
@@ -291,6 +305,25 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         """
         known_js = list() if not self.sender().valid_input else self.sender().valid_input.keys()
         self.known_states["joint state"] = known_js
+        # Dynamically update the content of the combo boxes that are part of the graphical representation
+        combo_boxes = self.findChildren(QComboBox, self.regex)
+        for combo_box in combo_boxes:
+            combo_type = self.findChild(QComboBox, combo_box.objectName().replace("name", "type"))
+            if combo_type is not None and combo_type.currentText() == "joint state":
+                self.refresh_choices(combo_box, "joint state")
+
+    def update_known_trajectories(self):
+        """
+            Update the available trajectories defined in the corresponding editor
+        """
+        known_trajectories = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        self.known_states["trajectory"] = known_trajectories
+        # Dynamically update the content of the only combo box that displays trajectories
+        combo_boxes = self.findChildren(QComboBox, self.regex)
+        for combo_box in combo_boxes:
+            combo_type = self.findChild(QComboBox, combo_box.objectName().replace("name", "type"))
+            if combo_type is None:
+                self.refresh_choices(combo_box, "trajectory")
 
     def update_commander_choice(self):
         """
@@ -341,12 +374,37 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         """
         # Get the other (associated) QComboBox
         widget = self.findChild(QComboBox, "{}".format(self.sender().objectName().replace("type", "name")))
-        widget.clear()
-        # Depending on the current text of the sender, update the possible choices
-        if not current_text:
-            widget.addItem("")
+        # Refresh the choices
+        self.refresh_choices(widget, current_text)
+
+    def refresh_choices(self, combo_widget, msg_type):
+        """
+            Update the items of a given QComboBox object
+
+            @param combo_widget: QComboBox widget for which the items will be refreshed
+            @param msg_type: String, specifying which kind of ROS msgs registered in the robot integration area should
+                             be displayed
+        """
+        # Get the current text of the input widget so we can set it after refreshing the widget if possible
+        previous_text = combo_widget.currentText()
+        # Get all the items of the widget
+        all_msgs = [combo_widget.itemText(i) for i in range(combo_widget.count())]
+        # Remove everything
+        combo_widget.clear()
+        # If msg type is empty, then set the new msgs to known
+        if not msg_type:
+            combo_widget.addItems([""])
+            currently_known = list()
+        # Otherwise update the items
         else:
-            widget.addItems([""] + self.known_states[current_text])
+            currently_known = self.known_states[msg_type]
+            combo_widget.addItems([""] + currently_known)
+        is_known = previous_text in currently_known
+        was_known = previous_text in all_msgs
+        # If the previous text was in the previous items but is not anymore, then it should not be displayed.
+        # If the text was not part of the items and is still not, it means that it can be one from the userdata
+        if combo_widget.isEditable() and (is_known and was_known or not is_known and not was_known):
+            combo_widget.setCurrentText(previous_text)
 
     def initialize_content(self, state_parameters):
         """
@@ -375,12 +433,16 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             # Initialise a choice slot providing the joint states and poses already configured in GRIP
             elif key in ("target_name", "starting_name"):
                 self.add_choice_slot(key, [""], True)
+                # create_regex = True
             # Only two kind of collisions can be changed
             elif key == "collision":
                 self.add_choice_slot(key, ["self collision", "object collision"])
             # Can only allow (True) or disallow (False) a specific collision
             elif key == "allow":
                 self.add_choice_slot(key, ["True", "False"])
+            elif key == "trajectory_name":
+                self.add_choice_slot(key, [""] + self.known_states["trajectory"], True)
+                # create_regex = True
             else:
                 # Get any default value
                 default_value = re.findall("\"(.*?)\"", value)
@@ -401,7 +463,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             @return: String, list, int or float corresponding to the current config
         """
         # If we have only one commander then returns it
-        if slot_name == "group_name" and len(self.commander_choice) == 2:
+        if slot_name == "group_name" and len(self.commander_choice) <= 2:
             return self.commander_choice[-1]
 
         return super(CommanderStateConfigBox, self).get_slot_config(slot_name)
@@ -439,9 +501,9 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
                                "trajectory": settings_config.named_trajectories.valid_input.keys(),
                                "plan": list()}
             # Connect the signals coming from the different editors
-            settings_config.named_poses.canBeSaved.connect(self.update_known_poses)
-            settings_config.named_joint_states.canBeSaved.connect(self.update_known_joint_states)
-            settings_config.named_trajectories.canBeSaved.connect(self.update_known_trajectories)
+            settings_config.named_poses.contentUpdated.connect(self.update_known_poses)
+            settings_config.named_joint_states.contentUpdated.connect(self.update_known_joint_states)
+            settings_config.named_trajectories.contentUpdated.connect(self.update_known_trajectories)
         # Initialize the content
         self.initialize_content(state_parameters)
 
@@ -491,6 +553,35 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         self.number_rows += 1
         self.registered_keys.append(slot_name)
 
+    def refresh_choices(self, combo_widget, msg_type):
+        """
+            Update the items of a given QComboBox object
+
+            @param combo_widget: QComboBox widget for which the items will be refreshed
+            @param msg_type: String, specifying which kind of ROS msgs registered in the robot integration area should
+                             be displayed
+        """
+        # Get the current text of the input widget so we can set it after refreshing the widget if possible
+        previous_text = combo_widget.currentText()
+        # Get all the items of the widget
+        all_msgs = [combo_widget.itemText(i) for i in range(combo_widget.count())]
+        # Remove everything
+        combo_widget.clear()
+        # If msg type is empty, then set the new msgs to known
+        if not msg_type:
+            combo_widget.addItems([""])
+            currently_known = list()
+        # Otherwise update the items
+        else:
+            currently_known = self.known_states[msg_type]
+            combo_widget.addItems([""] + currently_known)
+        is_known = previous_text in currently_known
+        was_known = previous_text in all_msgs
+        # If the previous text was in the previous items but is not anymore, then it should not be displayed.
+        # If the text was not part of the items and is still not, it means that it can be one from the userdata
+        if combo_widget.isEditable() and (is_known and was_known or not is_known and not was_known):
+            combo_widget.setCurrentText(previous_text)
+
     def update_choice_content(self, current_text):
         """
             Update the choices given in the combo box associated to the sender
@@ -499,23 +590,14 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         """
         # Get the other (associated) QComboBox
         widget = self.findChild(QComboBox, "{}".format(self.sender().objectName().replace("_type", "")))
-        # When restoring, allows us to get the text previously set
-        widget_text = widget.currentText()
-        # Allows for removing useless suggestions
-        widget.clear()
-        # Depending on the current text of the sender, update the possible choices
-        if not current_text:
-            widget.addItem("")
-        else:
-            widget.addItems([""] + self.known_msgs[current_text])
-            # Restore the previously set text
-            widget.setCurrentText(widget_text)
+        self.refresh_choices(widget, current_text)
 
     def update_known_poses(self):
         """
             Update available poses defined in the corresponding editor
         """
         self.known_msgs["pose"] = self.sender().poses.keys()
+        self.update_input_slot("pose")
 
     def update_known_joint_states(self):
         """
@@ -523,6 +605,7 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         """
         known_js = list() if not self.sender().valid_input else self.sender().valid_input.keys()
         self.known_msgs["joint state"] = known_js
+        self.update_input_slot("joint state")
 
     def update_known_trajectories(self):
         """
@@ -530,6 +613,20 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         """
         known_traj = list() if not self.sender().valid_input else self.sender().valid_input.keys()
         self.known_msgs["trajectory"] = known_traj
+        self.update_input_slot("trajectory")
+
+    def update_input_slot(self, msg_type):
+        """
+            Update the content of the input slot
+
+            @param msg_type: Type of the msg that are to be refreshed
+        """
+        # Get the QComboBox
+        combo_box = self.findChild(QComboBox, "choice input")
+        combo_type = self.findChild(QComboBox, combo_box.objectName() + "_type")
+        # If the associated QComboBox is on the msg type to be refreshed then do so
+        if combo_type is not None and combo_type.currentText() == msg_type:
+            self.refresh_choices(combo_box, msg_type)
 
     def get_slot_config(self, slot_name, return_mapped=True):
         """
