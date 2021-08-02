@@ -20,11 +20,13 @@
 #include <ros/ros.h>
 #include <grip_core/AddJointState.h>
 #include <grip_core/GetJointState.h>
+#include <grip_core/ReinitManager.h>
 #include <yaml-cpp/yaml.h>
 #include <sensor_msgs/JointState.h>
 #include <map>
 #include <vector>
 #include <string>
+#include <sys/stat.h>
 
 /**
  Class containing all methods and attributes required to create a joint state manager
@@ -49,6 +51,8 @@ class JointStateManager
     ros::ServiceServer add_joint_state_service_;
     // Service server for retrieving a joint state
     ros::ServiceServer retrieve_joint_state_service_;
+    // Service server for reinitialising the manager
+    ros::ServiceServer reinitialise_service_;
     // Indices used to keep track of the anonymous joint_state registered
     int anonymous_stored_index_;
     int anonymous_requested_index_;
@@ -58,6 +62,8 @@ class JointStateManager
                           grip_core::AddJointStateResponse& response);
     bool _get_joint_state(grip_core::GetJointStateRequest& request,
                           grip_core::GetJointStateResponse& response);
+    bool _reinitialise(grip_core::ReinitManagerRequest& request,
+                       grip_core::ReinitManagerResponse& response);
 };
 
 #endif  // GRIP_CORE_JOINT_STATE_MANAGER_H

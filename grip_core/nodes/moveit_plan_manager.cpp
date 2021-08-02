@@ -29,6 +29,8 @@ MoveitPlanManager::MoveitPlanManager(ros::NodeHandle* nodehandler) : node_handle
     // Initialize services
     add_plan_service_ = node_handler_.advertiseService("add_plan", &MoveitPlanManager::_add_plan, this);
     retrieve_plan_service_ = node_handler_.advertiseService("get_plan", &MoveitPlanManager::_get_plan, this);
+    reinitialise_service_ =
+        node_handler_.advertiseService("reinitialise_plan_manager", &MoveitPlanManager::_reinitialise, this);
     // Display a message stating that initialisation was a success
     ROS_INFO_STREAM("The moveit plan manager is ready");
 }
@@ -117,6 +119,28 @@ bool MoveitPlanManager::_get_plan(grip_core::GetMoveitPlanRequest& request,
         return true;
     }
 }
+
+/**
+ Reinitialise the manager
+ * @param  request  Object containing a field argument (string) that won't impact the behaviour of this function
+ * @param  response Object containing a field "success" (boolean) stating whether the operation was successfull or not
+ * @return          Boolean that should be always true in order to avoid having runtime errors on the client side
+ */
+bool MoveitPlanManager::_reinitialise(grip_core::ReinitManagerRequest& request,
+                                      grip_core::ReinitManagerResponse& response)
+{
+    // Clear all the maps gathering the previously stored plans
+    plans_map_.clear();
+    anonymous_plans_.clear();
+    // Reset the indices
+    anonymous_stored_index_ = 0;
+    anonymous_requested_index_ = 0;
+
+    // Fill the success field of the response to true
+    response.success = true;
+    return true;
+}
+
 
 // If this file is called as a main, then create a node and launches the server
 int main(int argc, char** argv)

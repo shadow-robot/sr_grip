@@ -21,12 +21,14 @@
 #include <grip_core/AddJointTrajectory.h>
 #include <grip_core/GetJointTrajectory.h>
 #include <grip_core/GetJointState.h>
+#include <grip_core/ReinitManager.h>
 #include <yaml-cpp/yaml.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <map>
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <sys/stat.h>
 
 /**
  Class containing all methods and attributes required to create a joint trajectory manager
@@ -51,6 +53,8 @@ class JointTrajectoryManager
     ros::ServiceServer add_trajectory_service_;
     // Service server for retrieving a joint trajectory
     ros::ServiceServer retrieve_trajectory_service_;
+    // Service server for reinitialising the manager
+    ros::ServiceServer reinitialise_service_;
     // Indices used to keep track of the anonymous joint trajectories registered
     int anonymous_stored_index_;
     int anonymous_requested_index_;
@@ -60,6 +64,8 @@ class JointTrajectoryManager
                          grip_core::AddJointTrajectoryResponse& response);
     bool _get_trajectory(grip_core::GetJointTrajectoryRequest& request,
                          grip_core::GetJointTrajectoryResponse& response);
+    bool _reinitialise(grip_core::ReinitManagerRequest& request,
+                       grip_core::ReinitManagerResponse& response);
 };
 
 #endif  // GRIP_CORE_JOINT_TRAJECTORY_MANAGER_H

@@ -21,11 +21,13 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <grip_core/AddPoseStamped.h>
 #include <grip_core/GetPoseStamped.h>
+#include <grip_core/ReinitManager.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <yaml-cpp/yaml.h>
 #include <string>
 #include <vector>
 #include <map>
+#include <sys/stat.h>
 
 /**
  Class containing all methods and attributes required to create a pose stamped manager
@@ -50,6 +52,8 @@ class PoseStampedManager
     ros::ServiceServer add_pose_service_;
     // Service server for retrieving a pose
     ros::ServiceServer retrieve_pose_service_;
+    // Service server for reinitialising the manager
+    ros::ServiceServer reinitialise_service_;
     // Indices used to keep track of the anonymous poses registered
     int anonymous_stored_index_;
     int anonymous_requested_index_;
@@ -59,6 +63,8 @@ class PoseStampedManager
                    grip_core::AddPoseStampedResponse& response);
     bool _get_pose(grip_core::GetPoseStampedRequest& request,
                    grip_core::GetPoseStampedResponse& response);
+    bool _reinitialise(grip_core::ReinitManagerRequest& request,
+                      grip_core::ReinitManagerResponse& response);
 };
 
 #endif  // GRIP_CORE_POSE_STAMPED_MANAGER_H

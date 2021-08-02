@@ -149,12 +149,26 @@ class State(object):
             if user_config in self.container.output_userdata:
                 state_config["input_keys"] = [user_config]
 
-        # Make sure to register all the potential output keys for external states and sensors
+        # Make sure to register all the potential output keys for all the states with the keyword "output"
         if self.to_generate:
             output_value = state_config["output"]
             if (output_value and "sensor_topic" in state_config) or (output_value and not state_config["output_type"]):
                 self.container.output_userdata.append(output_value)
                 state_config["output_keys"] = [output_value]
+        elif "output" in state_config:
+            output_value = state_config["output"]
+            if output_value:
+                self.container.output_userdata.append(output_value)
+                state_config["output_keys"] = [output_value]
+
+        # If the state reinitialises the managers, make sure to get the latest config file path of each editor
+        if "js_file" in self.content.state_info["parameters"]:
+            task_editor_area = self.container.editor_widget.parent().parent().parent().parent()
+            robot_integration_area = task_editor_area.framework_gui.robot_integration_area
+            settings_config = robot_integration_area.settings_config_widget
+            state_config["js_file"] = settings_config.named_joint_states.file_path
+            state_config["pose_file"] = settings_config.named_poses.file_path
+            state_config["traj_file"] = settings_config.named_trajectories.file_path
 
         # Get the source of the state
         state_config["source"] = os.path.basename(self.content.state_info["source"]).split(".")[0]

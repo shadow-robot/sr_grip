@@ -145,6 +145,9 @@ class FrameworkGui(QMainWindow):
                                     triggered=self.robot_integration_area.launch_robot)
         self.stop_robot = QAction("Sto&p", self, shortcut="Ctrl+P", statusTip="Stop the robot", enabled=False,
                                   triggered=self.robot_integration_area.stop_robot)
+        # Update the managers
+        self.update_managers = QAction("Reset &Managers", self, shortcut="Ctrl+M", statusTip="Reset the managers",
+                                       enabled=False, triggered=self.robot_integration_area.reset_managers)
         # Copy the elements that are selected in the task editor
         self.action_copy = QAction('&Copy', self, shortcut='Ctrl+C', statusTip="Copy selected items",
                                    triggered=self.task_editor_area.mdi_area.copy_task_editor_elements)
@@ -204,10 +207,6 @@ class FrameworkGui(QMainWindow):
         self.file_menu.addAction(self.action_save_as)
         self.file_menu.addSeparator()
         self.file_menu.addAction(self.action_exit)
-        # Add the "Robot" menu
-        self.robot_menu = menubar.addMenu('&Robot')
-        self.robot_menu.addAction(self.launch_robot)
-        self.robot_menu.addAction(self.stop_robot)
         # Add the "Edit" menu
         self.edit_menu = menubar.addMenu("&Edit")
         self.edit_menu.addAction(self.action_undo)
@@ -218,6 +217,11 @@ class FrameworkGui(QMainWindow):
         self.edit_menu.addAction(self.action_paste)
         self.edit_menu.addSeparator()
         self.edit_menu.addAction(self.delete_selection)
+        # Add the "Robot" menu
+        self.robot_menu = menubar.addMenu('&Robot')
+        self.robot_menu.addAction(self.launch_robot)
+        self.robot_menu.addAction(self.stop_robot)
+        self.robot_menu.addAction(self.update_managers)
         # Make sure the content of the edit menu is only made available when the focus is on the task editor
         self.edit_menu.aboutToShow.connect(self.update_edit_menu)
 
@@ -244,11 +248,12 @@ class FrameworkGui(QMainWindow):
 
     def update_robot_stop_action(self, is_robot_running):
         """
-            Enable/Disable the action allowing to stop the robot
+            Enable/Disable the action allowing to stop the robot and to reset the managers
 
             @param is_robot_running: Boolean coming from the signal and stating whether the robot can be stopped
         """
         self.stop_robot.setEnabled(is_robot_running)
+        self.update_managers.setEnabled(is_robot_running)
 
     def update_task_editor(self, enable_task_editor):
         """
@@ -364,6 +369,9 @@ class FrameworkGui(QMainWindow):
         else:
             self.task_config_path = config_path
             self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
+            # Set the name of the task to the first window
+            task_name = os.path.basename(config_path).replace(".ini", "")
+            self.task_editor_area.mdi_area.subWindowList()[0].widget().set_name(task_name)
         # Save the current config in the new file
         self.save_file(current_widget)
 

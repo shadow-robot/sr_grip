@@ -81,6 +81,7 @@ add_service_files(
   AddGazeboMapping.srv
   GetGazeboType.srv
   DeleteGazeboMapping.srv
+  ReinitManager.srv
 )
 
 ## Generate actions in the 'action' folder

@@ -32,15 +32,14 @@ class ContainerHistory(object):
         self.memory_length = memory_length - 1
         # Make sure to have everything empty
         self.clear()
-        # Initialize a new snapshot
-        self.initial_snapshot = None
 
     def clear(self):
         """
-            Empty the history stack and reset the step counter
+            Empty the history stack, reset the step counter and initial snapshot
         """
         self.history_stack = list()
         self.history_step = -1
+        self.initial_snapshot = None
 
     def can_undo(self):
         """
@@ -99,7 +98,7 @@ class ContainerHistory(object):
             self.history_step -= 1
 
         # If it is the first history step, then set the initial snapshot
-        if self.history_step == -1:
+        if self.history_step == -1 and self.initial_snapshot is None:
             self.set_initial_snapshot()
 
         # Store the current state of the container and emit a signal if the state of the container has changed
@@ -140,6 +139,7 @@ class ContainerHistory(object):
         # Don't send anything if the initial snapshot is None
         if self.initial_snapshot is None:
             return
+
         # We need to have the sorted because each value is a list and the order of the elements might change
         is_different = any(sorted(x) != sorted(y) for x, y in zip(self.initial_snapshot.values(), snapshot.values()))
         self.container.editor_widget.hasBeenModified.emit(is_different)

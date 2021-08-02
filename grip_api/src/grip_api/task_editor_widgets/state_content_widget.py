@@ -130,14 +130,17 @@ class StateContentWidget(QWidget):
         """
         state_config = OrderedDict()
         # Extract the different information from the state's content
-        for parameter_name in self.state_info["parameters"].keys():
+        for parameter_name, default_config in self.state_info["parameters"].items():
             # Make sure to only extract displayed parameters
-            if parameter_name not in ["outcomes", "input_keys", "output_keys", "io_keys"]:
+            if parameter_name not in self.config_state.slots_to_discard:
                 # Specific case when we want to save the configuration for the sensor states
                 if isinstance(self.config_state, GeneratedStateConfigBox) and to_save:
                     user_config = self.config_state.get_slot_config(parameter_name, False)
                 else:
                     user_config = self.config_state.get_slot_config(parameter_name)
+                # If the configuration slot was left empty, get the default configuration
+                if user_config == "":
+                    user_config = self.config_state.to_format(default_config)
                 # Store the user config in the dictionary
                 state_config[parameter_name] = user_config
         return state_config

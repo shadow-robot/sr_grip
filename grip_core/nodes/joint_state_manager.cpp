@@ -38,6 +38,8 @@ JointStateManager::JointStateManager(ros::NodeHandle* nodehandler, std::string f
         node_handler_.advertiseService("add_joint_state", &JointStateManager::_add_joint_state, this);
     retrieve_joint_state_service_ =
         node_handler_.advertiseService("get_joint_state", &JointStateManager::_get_joint_state, this);
+    reinitialise_service_ =
+        node_handler_.advertiseService("reinitialise_joint_state_manager", &JointStateManager::_reinitialise, this);
     ROS_INFO_STREAM("The joint state manager is ready");
 }
 
@@ -153,6 +155,46 @@ bool JointStateManager::_get_joint_state(grip_core::GetJointStateRequest& reques
         response.success = false;
         return true;
     }
+}
+
+/**
+ Reinitialise the manager
+ * @param  request  Object containing a field argument (string) corresponding to the path of the file that contains
+                    the ROS messages to load
+ * @param  response Object containing a field "success" (boolean) stating whether the operation was successfull or not
+ * @return          Boolean that should be always true in order to avoid having runtime errors on the client side
+ */
+bool JointStateManager::_reinitialise(grip_core::ReinitManagerRequest& request,
+                                      grip_core::ReinitManagerResponse& response)
+{
+    // Extract the objects from the request
+    std::string file_path = request.argument;
+    // Clear all the joint states stored in the manager
+    joint_states_map_.clear();
+    anonymous_joint_states_.clear();
+    // Reset the counters
+    anonymous_stored_index_ = 0;
+    anonymous_requested_index_ = 0;
+
+    // If a file is provided in the request
+    if (!file_path.empty())
+    {
+      // Check that the file does exist
+      struct stat buf;
+      if (stat(file_path.c_str(), &buf) != -1)
+      {
+        load_joint_states_from_file(file_path);
+      }
+      else
+      {
+        ROS_WARN_STREAM("The file " + file_path + " does not seem to exist!");
+        response.success = false;
+        return true;
+      }
+    }
+    // Fill the success field of the response to true
+    response.success = true;
+    return true;
 }
 
 // If this file is called as a main, then create a node and launches the server

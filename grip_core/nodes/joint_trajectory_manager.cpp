@@ -41,6 +41,8 @@ JointTrajectoryManager::JointTrajectoryManager(ros::NodeHandle* nodehandler, std
         node_handler_.advertiseService("add_trajectory", &JointTrajectoryManager::_add_trajectory, this);
     retrieve_trajectory_service_ =
         node_handler_.advertiseService("get_trajectory", &JointTrajectoryManager::_get_trajectory, this);
+    reinitialise_service_ =
+        node_handler_.advertiseService("reinitialise_trajectory_manager", &JointTrajectoryManager::_reinitialise, this);
     ROS_INFO_STREAM("The joint trajectory manager is ready");
 }
 
@@ -160,6 +162,7 @@ void JointTrajectoryManager::load_trajectories_from_file(std::string file_path)
         if (number_valid_waypoints == number_waypoints)
         {
             trajectories_map_[named_trajectory->first.as<std::string>()] = joint_trajectory;
+            ROS_INFO_STREAM("Trajectory named " << named_trajectory->first.as<std::string>() << " successfully added!");
         }
         // Otherwise display an error message
         else
@@ -254,6 +257,44 @@ bool JointTrajectoryManager::_get_trajectory(grip_core::GetJointTrajectoryReques
         response.success = false;
         return true;
     }
+}
+
+/**
+ Reinitialise the manager
+ * @param  request  Object containing a field argument (string) corresponding to the path of the file that contains
+                    ROS messages to load
+ * @param  response Object containing a field "success" (boolean) stating whether the operation was successfull or not
+ * @return          Boolean that should be always true in order to avoid having runtime errors on the client side
+ */
+bool JointTrajectoryManager::_reinitialise(grip_core::ReinitManagerRequest& request,
+                                           grip_core::ReinitManagerResponse& response)
+{
+    // Extract the objects from the request
+    std::string file_path = request.argument;
+
+    trajectories_map_.clear();
+    anonymous_trajectories_.clear();
+    anonymous_stored_index_ = 0;
+    anonymous_requested_index_ = 0;
+
+    if (!file_path.empty())
+    {
+      // Check that the file does exist
+      struct stat buf;
+      if (stat(file_path.c_str(), &buf) != -1)
+      {
+        load_trajectories_from_file(file_path);
+      }
+      else
+      {
+        ROS_WARN_STREAM("The file " + file_path + " does not seem to exist!");
+        response.success = false;
+        return true;
+      }
+    }
+    // Fill the success field of the response to true
+    response.success = true;
+    return true;
 }
 
 // If this file is called as a main, then create a node and launches the server
