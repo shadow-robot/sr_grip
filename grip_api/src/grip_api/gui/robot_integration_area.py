@@ -23,6 +23,7 @@ from grip_api.utils.common_dialog_boxes import error_message
 from grip_api.utils.common_checks import create_yaml_file
 from grip_core.launch_file_generator.launch_templater import LaunchFileTemplater
 from grip_core.utils.common_paths import API_PATH
+from grip_core.utils.manager_utils import reinitialise_managers
 import subprocess
 import os
 from collections import OrderedDict
@@ -348,6 +349,31 @@ class RobotIntegrationArea(QTabWidget):
             self.launch_process = None
             self.robotCanBeStopped.emit(False)
             self.update_launch_availability()
+
+    def reset_managers(self):
+        """
+            Reset all the the managers
+        """
+        # Get the current file of the joint state, pose and trajectory editor
+        joint_states_file_path = self.settings_config_widget.named_joint_states.file_path
+        poses_file_path = self.settings_config_widget.named_poses.file_path
+        trajectories_file_path = self.settings_config_widget.named_trajectories.file_path
+        # Make sure to have a valid input for the function
+        joint_states_file_path = joint_states_file_path if joint_states_file_path is not None else ""
+        poses_file_path = poses_file_path if poses_file_path is not None else ""
+        trajectories_file_path = trajectories_file_path if trajectories_file_path is not None else ""
+        # Try to call the function
+        try:
+            outcome = reinitialise_managers(joint_states_file_path, poses_file_path, trajectories_file_path)
+        # If something happens, set outcome to False
+        except Exception as exception:
+            outcome = False
+            print("Reset manager exception is: {}".format(exception))
+        finally:
+            # In case outcome is False, display an error message
+            if not outcome:
+                error_message("Cannot update the managers", "An error occured (check terminal for more information)",
+                              parent=self)
 
     def extract_launch_parameters(self):
         """
