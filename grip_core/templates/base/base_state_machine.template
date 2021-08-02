@@ -44,42 +44,7 @@ class {{ state_machine.type }}(smach.StateMachine):
             smach.StateMachine.add("{{ state_name }}", {{ state.type }}({% for param_name, param_value in state.parameters.items() %}{% if param_name != "name" %}{{ param_name }}={% if param_value is string and "self" not in param_value %}"{{ param_value }}"{% else %}{{ param_value }}{% endif %}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}), transitions={{ state.transitions}})
         {% endfor %}
         # Initialise the commanders
-        self.initialise_commanders()
-
-    def get_initial_acm(self):
-        """
-            Get and store the original Allowed Collision Matrix (ACM) that should correspond to the one provided
-            indirectly by the SRDF file
-        """
-        # Create a Planning Scene msg
-        planning_scene_diff = PlanningScene()
-        planning_scene_diff.is_diff = True
-        # Wait for the service providing the current planning scene (blocking state)
-        rospy.wait_for_service("/get_planning_scene")
-        # Get the proxy for the service
-        get_planning_scene_service = rospy.ServiceProxy("/get_planning_scene", GetPlanningScene)
-        # Create a request for the service that contains the ACM
-        request = PlanningSceneComponents(components=(PlanningSceneComponents.ALLOWED_COLLISION_MATRIX |
-                                                      PlanningSceneComponents.SCENE_SETTINGS))
-        # Get the response of the request through the proxy
-        response = get_planning_scene_service(request)
-        # Get the name of all the links of the scene
-        link_names = response.scene.allowed_collision_matrix.entry_names
-        # Get the prefix that must be before all links of the manipulator to discriminate it over the links of the arm
-        manipulator_prefix = rospy.get_param("manipulator_prefix")
-        # Get and store the indices corresponding to the links of the manipulator
-        hand_links_indices = []
-        for index, link_name in enumerate(link_names):
-            if manipulator_prefix in link_name:
-                hand_links_indices.append(index)
-        # Send this to the ROS parameter server
-        rospy.set_param("manipulator_links_indices", hand_links_indices)
-        # Use this ACM as the initial one for the manager
-        init_acm = rospy.ServiceProxy("set_init_acm", SetInitACM)
-        storage_response = init_acm(response.scene.allowed_collision_matrix)
-        # Sanity check
-        if not storage_response.success:
-            rospy.logwarn("Error while setting the initial ACM")
+        # self.initialise_commanders()
 
     def initialise_commanders(self):
         """
