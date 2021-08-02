@@ -21,9 +21,11 @@
 #include <moveit_msgs/RobotTrajectory.h>
 #include <grip_core/AddMoveitPlan.h>
 #include <grip_core/GetMoveitPlan.h>
+#include <grip_core/ReinitManager.h>
 #include <string>
 #include <vector>
 #include <map>
+#include <sys/stat.h>
 
 /**
  Class containing all methods and attributes required to create a pose stamped manager
@@ -45,6 +47,8 @@ class MoveitPlanManager
     ros::ServiceServer add_plan_service_;
     // Service server for retrieving a moveit plan
     ros::ServiceServer retrieve_plan_service_;
+    // Service server for reinitialising the manager
+    ros::ServiceServer reinitialise_service_;
     // Indices used to keep track of the anonymous plans registered
     int anonymous_stored_index_;
     int anonymous_requested_index_;
@@ -54,6 +58,8 @@ class MoveitPlanManager
                    grip_core::AddMoveitPlanResponse& response);
     bool _get_plan(grip_core::GetMoveitPlanRequest& request,
                    grip_core::GetMoveitPlanResponse& response);
+    bool _reinitialise(grip_core::ReinitManagerRequest& request,
+                       grip_core::ReinitManagerResponse& response);
 };
 
 #endif  // GRIP_CORE_MOVEIt_PLAN_MANAGER_H

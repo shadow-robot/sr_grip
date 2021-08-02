@@ -21,11 +21,13 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <grip_core/AddRobotPose.h>
 #include <grip_core/GetRobotPose.h>
+#include <grip_core/ReinitManager.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <yaml-cpp/yaml.h>
 #include <string>
 #include <vector>
 #include <map>
+#include <sys/stat.h>
 
 /**
  Class containing all methods and attributes required to create a robot_pose manager
@@ -48,8 +50,10 @@ class RobotPoseManager
     std::vector<grip_core::RobotPose> anonymous_robot_poses_;
     // Service server for adding new robot pose
     ros::ServiceServer add_robot_pose_service_;
-    // Service server for retrieving a  robot pose
+    // Service server for retrieving a robot pose
     ros::ServiceServer retrieve_robot_pose_service_;
+    // Service server for reinitialising the manager
+    ros::ServiceServer reinitialise_service_;
     // Indices used to keep track of the anonymous robot poses registered
     int anonymous_stored_index_;
     int anonymous_requested_index_;
@@ -59,6 +63,8 @@ class RobotPoseManager
                          grip_core::AddRobotPoseResponse& response);
     bool _get_robot_pose(grip_core::GetRobotPoseRequest& request,
                          grip_core::GetRobotPoseResponse& response);
+    bool _reinitialise(grip_core::ReinitManagerRequest& request,
+                       grip_core::ReinitManagerResponse& response);
 };
 
 #endif  // GRIP_CORE_ROBOT_POSE_MANAGER_H

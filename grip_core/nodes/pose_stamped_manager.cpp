@@ -36,6 +36,8 @@ PoseStampedManager::PoseStampedManager(ros::NodeHandle* nodehandler, std::string
     // Initialize services
     add_pose_service_ = node_handler_.advertiseService("add_pose", &PoseStampedManager::_add_pose, this);
     retrieve_pose_service_ = node_handler_.advertiseService("get_pose", &PoseStampedManager::_get_pose, this);
+    reinitialise_service_ = node_handler_.advertiseService("reinitialise_pose_manager",
+                                                           &PoseStampedManager::_reinitialise, this);
     // Display a message stating that initialisation was a success
     ROS_INFO_STREAM("The pose stamped manager is ready");
 }
@@ -172,6 +174,44 @@ bool PoseStampedManager::_get_pose(grip_core::GetPoseStampedRequest& request,
         response.success = false;
         return true;
     }
+}
+
+/**
+ Reinitialise the manager
+ * @param  request  Object containing a field argument (string) corresponding to the path of the file that contains
+                    ROS messages to load
+ * @param  response Object containing a field "success" (boolean) stating whether the operation was successfull or not
+ * @return          Boolean that should be always true in order to avoid having runtime errors on the client side
+ */
+bool PoseStampedManager::_reinitialise(grip_core::ReinitManagerRequest& request,
+                                       grip_core::ReinitManagerResponse& response)
+{
+    // Extract the objects from the request
+    std::string file_path = request.argument;
+
+    poses_map_.clear();
+    anonymous_poses_.clear();
+    anonymous_stored_index_ = 0;
+    anonymous_requested_index_ = 0;
+
+    if (!file_path.empty())
+    {
+      // Check that the file does exist
+      struct stat buf;
+      if (stat(file_path.c_str(), &buf) != -1)
+      {
+        load_poses_from_file(file_path);
+      }
+      else
+      {
+        ROS_WARN_STREAM("The file " + file_path + " does not seem to exist!");
+        response.success = false;
+        return true;
+      }
+    }
+    // Fill the success field of the response to true
+    response.success = true;
+    return true;
 }
 
 // If this file is called as a main, then create a node and launches the server
