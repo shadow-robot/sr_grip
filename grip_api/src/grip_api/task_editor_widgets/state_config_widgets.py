@@ -41,7 +41,7 @@ class GenericConfigBoxWidget(QGroupBox):
         # Store the slots
         self.registered_keys = []
         # Configuration slots we don't want to display
-        self.slots_to_discard = ("outcomes", "input_keys", "output_keys", "io_keys")
+        self.slots_to_discard = ("outcomes", "input_keys", "output_keys", "io_keys", "js_file", "pose_file", "traj_file")
 
     def init_ui(self):
         """

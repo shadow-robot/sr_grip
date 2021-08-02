@@ -161,6 +161,15 @@ class State(object):
                 self.container.output_userdata.append(output_value)
                 state_config["output_keys"] = [output_value]
 
+        # If the state reinitialises the managers, make sure to get the latest config file path of each editor
+        if "js_file" in self.content.state_info["parameters"]:
+            task_editor_area = self.container.editor_widget.parent().parent().parent().parent()
+            robot_integration_area = task_editor_area.framework_gui.robot_integration_area
+            settings_config = robot_integration_area.settings_config_widget
+            state_config["js_file"] = settings_config.named_joint_states.file_path
+            state_config["pose_file"] = settings_config.named_poses.file_path
+            state_config["traj_file"] = settings_config.named_trajectories.file_path
+
         # Get the source of the state
         state_config["source"] = os.path.basename(self.content.state_info["source"]).split(".")[0]
         # Get the outcomes

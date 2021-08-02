@@ -132,7 +132,7 @@ class StateContentWidget(QWidget):
         # Extract the different information from the state's content
         for parameter_name, default_config in self.state_info["parameters"].items():
             # Make sure to only extract displayed parameters
-            if parameter_name not in ["outcomes", "input_keys", "output_keys", "io_keys"]:
+            if parameter_name not in self.config_state.slots_to_discard:
                 # Specific case when we want to save the configuration for the sensor states
                 if isinstance(self.config_state, GeneratedStateConfigBox) and to_save:
                     user_config = self.config_state.get_slot_config(parameter_name, False)
