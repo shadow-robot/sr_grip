@@ -56,10 +56,10 @@ class StateContentWidget(QWidget):
         self.layout = QGridLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
-        # Extract information from the state and set the proper configuration interface in the state
+        # Extract information from the state and set the proper configuration interface for the state
         if self.state.type in AVAILABLE_STATES:
             self.state_info = AVAILABLE_STATES[self.state.type]
-            config_box = StateConfigBox
+            config_box = StateConfigBox if self.state.type != "Select" else GeneratedStateConfigBox
         elif self.state.type in AVAILABLE_STATES["Commander"]:
             self.state_info = AVAILABLE_STATES["Commander"][self.state.type]
             config_box = CommanderStateConfigBox
