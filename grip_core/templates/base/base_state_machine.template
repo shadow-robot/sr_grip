@@ -44,7 +44,7 @@ class {{ state_machine.type }}(smach.StateMachine):
             smach.StateMachine.add("{{ state_name }}", {{ state.type }}({% for param_name, param_value in state.parameters.items() %}{% if param_name != "name" %}{{ param_name }}={% if param_value is string and "self" not in param_value %}"{{ param_value }}"{% else %}{{ param_value }}{% endif %}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}), transitions={{ state.transitions}})
         {% endfor %}
         # Initialise the commanders
-        # self.initialise_commanders()
+        self.initialise_commanders()
 
     def initialise_commanders(self):
         """
