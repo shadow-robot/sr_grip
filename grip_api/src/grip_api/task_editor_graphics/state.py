@@ -142,6 +142,19 @@ class GraphicsState(QGraphicsItem):
         # In case the state is dropped on a scaled view, makes sure dimensions and the content is updated
         self.correct_initial_dimensions()
 
+    def update_dimensions(self):
+        """
+            Update the different components involved in the proper display of the state
+        """
+        # Reset the dimensions of the state w.r.t the size of its content
+        self.state.graphics_state.init_dimensions()
+        # Update the position of the sockets
+        for socket in (self.state.input_socket + self.state.output_sockets):
+            socket.position = socket.get_position()
+            socket.graphics_socket.setPos(*socket.position)
+        #  Update the connectors that are linked to this state
+        self.state.update_connectors()
+
     def mouseMoveEvent(self, event):
         """
             Function triggered when this object is moved by the user
