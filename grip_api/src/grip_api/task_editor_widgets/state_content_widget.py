@@ -56,6 +56,16 @@ class StateContentWidget(QWidget):
         self.layout = QGridLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
+        self.initialise_config_interface()
+        # Add the configuration area in the layout
+        self.layout.addWidget(self.config_state)
+        # Make sure the widget's dimensions are updated
+        self.adjustSize()
+
+    def initialise_config_interface(self):
+        """
+            Initialise the proper widget that allows the user to configure the state from the task editor
+        """
         # Extract information from the state and set the proper configuration interface for the state
         if self.state.type in AVAILABLE_STATES:
             self.state_info = AVAILABLE_STATES[self.state.type]
@@ -68,10 +78,29 @@ class StateContentWidget(QWidget):
             config_box = GeneratedStateConfigBox
         # Create the configuration area
         self.config_state = config_box(self.state.type, self.state_info["parameters"], parent=self)
-        # Add the configuration area in the layout
+        # Make sure the widget has the proper dimensions
+        self.config_state.adjustSize()
+
+    def reset_ui(self):
+        """
+            Reinitialise the widget allowings the user to configure the state from the task editor
+        """
+        # Update the config_state attribute
+        self.initialise_config_interface()
+        # Add the configuration in the layout
         self.layout.addWidget(self.config_state)
-        # Make sure the widget's dimensions are updated
+        # Remove the previous one
+        self.layout.itemAt(0).widget().setParent(None)
+        # Correct size this widget should have (inherited from child)
+        correct_size = self.config_state.size()
+        # Make sure the widget does not get too much space
+        self.setMaximumSize(correct_size)
+        # Adjust the size of this widget
         self.adjustSize()
+        # Make sure this widget takes all the space it needs
+        self.resize(correct_size)
+        # Update the dimensions of the graphical state
+        self.state.graphics_state.update_dimensions()
 
     def initialize_state_info(self):
         """
@@ -138,8 +167,8 @@ class StateContentWidget(QWidget):
                     user_config = self.config_state.get_slot_config(parameter_name, False)
                 else:
                     user_config = self.config_state.get_slot_config(parameter_name)
-                # If the configuration slot was left empty, get the default configuration
-                if user_config == "":
+                # If the configuration slot was left empty, get the default configuration if it's not None
+                if user_config == "" and default_config is not None:
                     user_config = self.config_state.to_format(default_config)
                 # Store the user config in the dictionary
                 state_config[parameter_name] = user_config

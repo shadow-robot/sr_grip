@@ -28,23 +28,23 @@ class ComputePlan(smach.State):
         State performing motion planning from a starting to a target state
     """
 
-    def __init__(self, group_name, target_name, target_type, plan_name="", starting_name="", starting_type="",
+    def __init__(self, group_name, target_type, target_name, plan_name="", starting_type="", starting_name="",
                  outcomes=["success", "failure"], input_keys=[], output_keys=[], io_keys=["commanders"]):
         """
             Initialise the attributes of the class
 
             @param group_name: Name of the group that should be used to plan
+            @param target_type: Target state's type. Can be any of {"", "pose", "joint state"}
             @param target_name: Target state's name. If target_type is "", the target state is fetched from the userdata
                                 If target_type is set to a non empty value, this parameter is used as the key for
                                 retrieving it from the corresponding manager.
-            @param target_type: Target state's type. Can be any of {"", "pose", "joint state"}
             @param plan_name: Name that will be given to the computed plan. If empty, then the plan is internally stored
                               by the commander. If set to an non empty string, then the plan is sent to its manager.
+            @param starting_type: Starting state's type. Can be any of {"", "pose", "joint state"}
             @param starting_name: Starting state's name. If starting_type is "", the target state is fetched from the
                                   userdata. If starting_type is set to a non empty value, this parameter is used as the
                                   key fo retrieving it from the corresponding manager. If both this parameter and
                                   starting_type are empty then use the current robot's state.
-            @param starting_type: Starting state's type. Can be any of {"", "pose", "joint state"}
             @param outcomes: Possible outcomes of the state. Default "success" and "failure"
             @param input_keys: List enumerating all the inputs that a state needs to run
             @param output_keys: List enumerating all the outputs that a state provides

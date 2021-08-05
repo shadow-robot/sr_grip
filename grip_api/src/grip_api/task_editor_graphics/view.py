@@ -131,12 +131,20 @@ class TaskEditorView(QGraphicsView):
 
                 is_start_socket_terminal = self.drag_start_socket.is_terminal and self.drag_start_socket.is_starting
                 is_target_socket_input = item.socket.is_multi_connected and not item.socket.is_terminal
+                is_target_socket_terminal = item.socket.is_terminal and not item.socket.is_starting
                 # Input/output to input/output
                 not_io_to_io = self.drag_start_socket.is_multi_connected ^ item.socket.is_multi_connected
                 # Make sure we cannot create a connector from input to input socket or output to output. We also need to
                 # deal with the case of the starting terminal socket for concurrent state machines.
                 if not_io_to_io or (is_start_socket_terminal and is_target_socket_input):
-                    Connector(self.graphics_scene.container, self.drag_start_socket, item.socket)
+                    # If the connector has been dragged "properly", i.e. from any draggable socket to an input one or
+                    # from an output to a terminal one (but not the Start), then create the connector with the target
+                    # as the end socket, otherwise swap the two
+                    if is_target_socket_input or is_target_socket_terminal:
+                        Connector(self.graphics_scene.container, self.drag_start_socket, item.socket)
+                    else:
+                        Connector(self.graphics_scene.container, item.socket, self.drag_start_socket)
+
                     # Once a connector is created, store the new content of the container
                     self.graphics_scene.container.history.store_current_history()
                     return True

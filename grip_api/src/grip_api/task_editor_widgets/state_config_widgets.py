@@ -177,7 +177,9 @@ class GenericConfigBoxWidget(QGroupBox):
             widget = self.findChild(QLineEdit, "line {}".format(slot_name))
             # If it is indeed a QLineEdit then we just need to set the provided input
             if widget:
-                widget.setText(value)
+                # Set the text iif the input value is different than the placeholder text
+                if value != widget.placeholderText():
+                    widget.setText(value)
             elif not (isinstance(self, CommanderStateConfigBox) and slot_name == "group_name" and
                       len(self.commander_choice) == 2):
                 warning_message("Error configuring a state", "For state of type {}:".format(self.title()),
@@ -322,8 +324,10 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         # Dynamically update the content of the only combo box that displays trajectories
         combo_boxes = self.findChildren(QComboBox, self.regex)
         for combo_box in combo_boxes:
-            combo_type = self.findChild(QComboBox, combo_box.objectName().replace("name", "type"))
-            if combo_type is None:
+            combo_box_name = combo_box.objectName()
+            combo_type = self.findChild(QComboBox, combo_box_name.replace("name", "type"))
+            # Make sure not to account for the slot group_name if it exists
+            if combo_type is None and "group" not in combo_box_name:
                 self.refresh_choices(combo_box, "trajectory")
 
     def update_commander_choice(self):
@@ -336,10 +340,21 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             self.commander_choice += sorted(self.sender().commander_config)
         # Get the corresponding drop down list
         combo_box = self.findChild(QComboBox, "choice {}".format("group_name"))
+
+        # If the current configuration involves several commanders but the choice slot is not displayed, update the
+        # config widget
+        if combo_box is None and len(self.commander_choice) > 2:
+            self.parent().reset_ui()
+
         # Update its content
         if combo_box is not None:
-            combo_box.clear()
-            combo_box.addItems(self.commander_choice)
+            # If the current configuration involves only one commander, then update the config widget to remove the
+            # group_name slot
+            if len(self.commander_choice) == 2:
+                self.parent().reset_ui()
+            else:
+                combo_box.clear()
+                combo_box.addItems(self.commander_choice)
 
     def add_choice_slot(self, slot_name, choices, is_editable=False):
         """

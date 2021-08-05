@@ -340,6 +340,8 @@ class FrameworkGui(QMainWindow):
             widget_to_save.save_config(self.latest_robot_config)
             self.settings.setValue("latest_robot_config", self.robot_config_path)
         else:
+            if self.latest_task_config is None:
+                self.init_task_config()
             widget_to_save.save_config(self.latest_task_config)
             self.settings.setValue("latest_task_config", self.task_config_path)
 
@@ -520,6 +522,7 @@ class FrameworkGui(QMainWindow):
         """
         # Make sure we don't restore the task editor area when the user can't access it due to a non valid config
         if not self.task_editor_area.isEnabled():
+            self.latest_task_config = None
             return
         # If a task configuration has already been saved in a file, get its path
         if self.settings.contains("latest_task_config"):
@@ -541,6 +544,25 @@ class FrameworkGui(QMainWindow):
             @return: Type of class
         """
         return getattr(sys.modules[__name__], self.latest_robot_config.value(class_name))
+
+    def update_task_config_file(self, task_name):
+        """
+            Update the name of the task configuration file so it matches with the latest name of the main container
+
+            @param task_name: Name of the main (i.e. root) container
+        """
+        previous_ini_config_path = self.task_config_path
+        # Update the path of the config file
+        self.task_config_path = os.path.join(os.path.dirname(self.task_config_path), "{}.ini".format(task_name))
+        # Set it in the settings of the main window
+        self.settings.setValue("latest_task_config", self.task_config_path)
+        # Create a new QSettings for this specific file
+        self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
+        # Store the current state of the task editor
+        self.save_file()
+        # If the previous ini file still exists, remove it since we want to replace it
+        if os.path.exists(previous_ini_config_path):
+            os.remove(previous_ini_config_path)
 
     def closeEvent(self, event):
         """

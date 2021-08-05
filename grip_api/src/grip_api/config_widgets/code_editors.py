@@ -16,7 +16,7 @@
 
 from PyQt5 import Qsci
 from PyQt5.QtGui import QColor
-from PyQt5.QtCore import pyqtSignal, QTimer
+from PyQt5.QtCore import pyqtSignal, QTimer, Qt
 import re
 from collections import OrderedDict
 import copy
@@ -73,6 +73,10 @@ class GenericCodeEditor(Qsci.QsciScintilla):
         # Cannot be edited by the user
         self.setReadOnly(True)
         self.is_lexed = False
+        # Remove some of the standard shortcut embedded in QScintilla
+        commands = self.standardCommands()
+        commands.boundTo(Qt.ControlModifier | Qt.Key_L).setKey(0)
+        commands.boundTo(Qt.ControlModifier | Qt.Key_T).setKey(0)
 
     def init_backround_markers(self):
         """
