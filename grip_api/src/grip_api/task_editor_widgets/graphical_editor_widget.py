@@ -182,6 +182,9 @@ class GraphicalEditorWidget(QWidget):
                                                     QLineEdit.Normal)
         if container_name and ok:
             self.set_name(container_name)
+        # If we try to rename the root, make sure to update the name of the task_config_file
+        if self.is_root:
+            self.parent().parent().parent().parent().framework_gui.update_task_config_file(container_name)
 
     def execute_container(self):
         """
