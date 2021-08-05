@@ -167,8 +167,8 @@ class StateContentWidget(QWidget):
                     user_config = self.config_state.get_slot_config(parameter_name, False)
                 else:
                     user_config = self.config_state.get_slot_config(parameter_name)
-                # If the configuration slot was left empty, get the default configuration
-                if user_config == "":
+                # If the configuration slot was left empty, get the default configuration if it's not None
+                if user_config == "" and default_config is not None:
                     user_config = self.config_state.to_format(default_config)
                 # Store the user config in the dictionary
                 state_config[parameter_name] = user_config

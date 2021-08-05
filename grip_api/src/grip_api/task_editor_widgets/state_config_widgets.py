@@ -177,7 +177,9 @@ class GenericConfigBoxWidget(QGroupBox):
             widget = self.findChild(QLineEdit, "line {}".format(slot_name))
             # If it is indeed a QLineEdit then we just need to set the provided input
             if widget:
-                widget.setText(value)
+                # Set the text iif the input value is different than the placeholder text
+                if value != widget.placeholderText():
+                    widget.setText(value)
             elif not (isinstance(self, CommanderStateConfigBox) and slot_name == "group_name" and
                       len(self.commander_choice) == 2):
                 warning_message("Error configuring a state", "For state of type {}:".format(self.title()),
