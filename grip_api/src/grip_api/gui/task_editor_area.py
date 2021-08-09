@@ -17,6 +17,9 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QTabWidget
 from grip_api.task_editor_widgets.task_editor_mdi import TaskEditorMDIArea
 from grip_api.task_editor_widgets.side_displayers import StatesDisplayer, StateMachinesDisplayer
+from grip_core.utils.file_parsers import AVAILABLE_STATES
+from grip_api.utils.common_dialog_boxes import error_message
+from grip_api.utils.common_checks import is_state_source_valid
 
 
 class TaskEditorArea(QWidget):
@@ -73,6 +76,47 @@ class TaskEditorArea(QWidget):
         """
         self.can_be_saved = can_be_saved
 
+    def reset(self, task_name="root"):
+        """
+            Reset the widget, i.e. reset the available states and clear the editors as when opened for the first time
+
+            @param task_name: Name of the main window (i.e. task) to be created after closing all the others
+        """
+        # Update the state sources of the parent widget to only be the internal ones
+        self.framework_gui.state_sources = self.framework_gui.state_sources[:1]
+        # Clear the available states
+        AVAILABLE_STATES.clear()
+        # Reload the states
+        self.state_displayer.load_states(self.framework_gui.state_sources)
+        # Reset the editors
+        self.mdi_area.reset(task_name)
+
+    def check_external_sources(self, external_sources):
+        """
+            Make sure the sources for new states saved in the settings are still valid. If that is the case, load them.
+
+            @param external_sources: List of path poitning to directories with the states to import
+            @return: None if the sources could not have been read properly from the settings. True otherwise
+        """
+        # Make sure the argument external_sources is really a list
+        if not isinstance(external_sources, list):
+            error_message("Error while restoring task configuration",
+                          "The source of the states in the task configuration file must be a list!", parent=self)
+            return None
+        # Flag to update the state_displayer, by default is False
+        update_state_displayer = False
+        # For each path, check if it is valid or not
+        for path in external_sources:
+            is_valid = is_state_source_valid(path, self)
+            # If at leas one is valid, update the flag and add it to the list of state sources
+            if is_valid:
+                update_state_displayer = True
+                self.framework_gui.state_sources.append(path)
+        # If need be, update the content of the state displayer
+        if update_state_displayer:
+            self.state_displayer.load_states(self.framework_gui.state_sources[1:])
+        return True
+
     def save_config(self, settings):
         """
             Store the state of this widget and its children into settings
@@ -92,6 +136,11 @@ class TaskEditorArea(QWidget):
         settings.endGroup()
         # Update the flag
         self.can_be_saved = False
+        # If there are any external sources, save them inside the settings, otherwise remove the key if it exists
+        if len(self.framework_gui.state_sources) > 1:
+            settings.setValue("state_sources", self.framework_gui.state_sources[1:])
+        else:
+            settings.remove("state_sources")
 
     def restore_config(self, settings):
         """
@@ -99,6 +148,12 @@ class TaskEditorArea(QWidget):
 
             @param settings: QSettings object that contains information of the widgets to restore
         """
+        # If any extra source of states must be loaded
+        if settings.contains("state_sources"):
+            is_valid = self.check_external_sources(settings.value("state_sources"))
+            # If an issue occured while reading the configuration file stop the restoration
+            if is_valid is None:
+                return
         settings.beginGroup(self.objectName())
         # For each subwindow that has been previously stored
         for subwindow_index in range(len(settings.childGroups())):

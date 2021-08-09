@@ -188,9 +188,11 @@ class FrameworkGui(QMainWindow):
         # Make sure not to have duplicates
         if source in self.state_sources:
             return
+
         # Add the path to the state sources
         self.state_sources.append(source)
-        self.settings.setValue("state_sources", self.state_sources)
+        # Make sure to write only the additional source of states in the task config file
+        self.latest_task_config.setValue("state_sources", self.state_sources[1:])
 
     def create_menus(self):
         """
@@ -442,8 +444,8 @@ class FrameworkGui(QMainWindow):
         if new:
             # Create the .ini file
             self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
-        # Clear, i.e. reset all the editors allowing to design a task
-        self.task_editor_area.mdi_area.reset(config_name)
+        # Clear, i.e. reset all the editors allowing to design a task and available states
+        self.task_editor_area.reset(config_name)
         # If we load an existing one, restore all the widgets
         if not new:
             self.init_task_config()
@@ -483,14 +485,10 @@ class FrameworkGui(QMainWindow):
 
     def load_states(self):
         """
-            Load all the states from both internal and external sources
+            Load all the states from internal sources
         """
-        # Load states from all sources that might have been defined by the user as well
-        if self.settings.contains("state_sources"):
-            self.state_sources = self.settings.value("state_sources")
-        else:
-            # Points to states provided by the framework
-            self.state_sources = [STATES_FOLDER]
+        # Points to states provided by the framework
+        self.state_sources = [STATES_FOLDER]
         # Load states
         is_path_wrong = fill_available_states(self.state_sources)
         # If any of the path points to an invalid path then display a message

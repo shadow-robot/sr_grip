@@ -235,3 +235,10 @@ class StateListWidget(CommonDraggableListWidget):
         """
         # Store the commander states
         self.states_to_display["Commander"] = AVAILABLE_STATES["Commander"]
+
+    def update_content(self):
+        """
+            Update the states which correspond to the "Constant" part of the list
+        """
+        self.remove_items("Constant")
+        self.add_items("Constant")
