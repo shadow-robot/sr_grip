@@ -595,7 +595,8 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         was_known = previous_text in all_msgs
         # If the previous text was in the previous items but is not anymore, then it should not be displayed.
         # If the text was not part of the items and is still not, it means that it can be one from the userdata
-        if combo_widget.isEditable() and (is_known and was_known or not is_known and not was_known):
+        # If the text was not known but is right now then it's all good
+        if combo_widget.isEditable() and (is_known or (is_known and was_known or not is_known and not was_known)):
             combo_widget.setCurrentText(previous_text)
 
     def update_choice_content(self, current_text):
