@@ -103,6 +103,8 @@ class Container(object):
             self.graphics_container.addItem(terminal_socket.graphics_socket)
         # By default, the default outcome is the last one
         self.default_socket = self.terminal_sockets[-1]
+        # Since the terminal sockets have not been properly located yet, the initialisation of the container is not done
+        self.is_complete = False
 
     def set_name(self, name):
         """

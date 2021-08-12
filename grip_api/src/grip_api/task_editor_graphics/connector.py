@@ -78,7 +78,7 @@ class GraphicsConnector(QGraphicsPathItem):
             @param zoom_value: Current zoom value of the view
         """
         if zoom_value < -7:
-                self.pen_width_compensator = self.view.zoom_in_multiplier**(-7 - self.view.current_zoom)
+            self.pen_width_compensator = self.view.zoom_in_multiplier**(-7 - self.view.current_zoom)
         else:
             self.pen_width_compensator = 1
         self.connector.update_positions()
@@ -90,9 +90,10 @@ class GraphicsConnector(QGraphicsPathItem):
             @param x: Float value corresponding to the x coordinate
             @param y: Float value corresponding to the y coordinate
         """
+        # Set the coordinates of the starting tip of the connector
         self.source_position = [x, y]
-        # Create an extra point to avoid in most cases to get the connector totally hidden behind the state
-        self.after_source_position = [x, y + 10]
+        # Set the path based on this updated information
+        self.setPath(self.calculate_path())
 
     def set_destination(self, x, y):
         """
@@ -101,9 +102,10 @@ class GraphicsConnector(QGraphicsPathItem):
             @param x: Float value corresponding to the x coordinate
             @param y: Float value corresponding to the y coordinate
         """
+        # Set the coordinates of the ending tip of the connector
         self.destination_position = [x, y]
-        # Create an extra point to avoid in most cases to get the connector totally hidden behind the state
-        self.before_destination_position = [x, y - 10]
+        # Set the path based on this updated information
+        self.setPath(self.calculate_path())
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
         """
@@ -122,9 +124,7 @@ class GraphicsConnector(QGraphicsPathItem):
         pen.setWidthF(self.pen_width * self.pen_width_compensator)
         painter.setBrush(Qt.NoBrush)
         painter.setPen(pen)
-        # If we don't add this line, clicks on this object won't be detected
-        self.setPath(self.calculate_path())
-        # Draw the path that we compute ourselves
+        # Draw the path computed from the latest update about the coordinates of the two tips of the connector
         painter.drawPath(self.path())
 
     def calculate_path(self):
@@ -133,9 +133,13 @@ class GraphicsConnector(QGraphicsPathItem):
 
             @return: QPainterPath corresponding to what pixels the connectors will go through
         """
+        # Create two extra points to avoid havingt the connector totally hidden behind the state
+        after_source_position = [self.source_position[0], self.source_position[1] + 10]
+        before_destination_position = [self.destination_position[0], self.destination_position[1] - 10]
+
         # Format all the points to create the path
-        points = map(lambda x: QPointF(*x), [self.source_position, self.after_source_position,
-                                             self.before_destination_position, self.destination_position])
+        points = map(lambda x: QPointF(*x), [self.source_position, after_source_position,
+                                             before_destination_position, self.destination_position])
         # Start the path from the source
         path = QPainterPath(points[0])
         for index, current_point in enumerate(points[1:-1], 1):

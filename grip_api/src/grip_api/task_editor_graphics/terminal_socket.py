@@ -40,6 +40,8 @@ class TerminalGraphicsSocket(QGraphicsItem):
         self.init_resources()
         self.init_ui()
         self.init_title()
+        # Flag stating whether the object has been moved around
+        self.has_moved = False
 
     def update_transform(self, current_zoom):
         """
@@ -112,6 +114,15 @@ class TerminalGraphicsSocket(QGraphicsItem):
             height_offset = -height_offset - 30
         self.title.setPos(-self.title.textWidth() / 2., height_offset)
 
+    def get_total_height(self):
+        """
+            Get the total height of the socket + title
+
+            @return: Integer corresponding to the height (in pixels) of the socket and title
+        """
+        socket_height = 2 * (self.radius + self.outline_width)
+        return socket_height + self.title_padding + self.title_font.pointSize()
+
     def mouseMoveEvent(self, event):
         """
             Function triggered when this object is moved by the user
@@ -119,9 +130,25 @@ class TerminalGraphicsSocket(QGraphicsItem):
             @param event: QMouseEvent sent by PyQt5
         """
         super(TerminalGraphicsSocket, self).mouseMoveEvent(event)
+        # Socket is being moved
+        self.has_moved = True
         # Update all the connectors that are linked to this terminal socket
         for connector in self.socket.connectors:
             connector.update_positions()
+
+    def mouseReleaseEvent(self, event):
+        """
+            Function triggered when the mouse is released (click off) from this object
+
+            @param event: QMouseEvent sent by PyQt5
+        """
+        super(TerminalGraphicsSocket, self).mouseReleaseEvent(event)
+        # If the object has been moved
+        if self.has_moved:
+            # Reset the flag
+            self.has_moved = False
+            # Store the history
+            self.socket.container.history.store_current_history()
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
         """

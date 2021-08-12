@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from grip_api.task_editor_graphics.connector import GraphicsConnector
-from terminal_socket import TerminalSocket
+from socket import Socket
 from collections import OrderedDict
 
 
@@ -104,14 +104,11 @@ class Connector(object):
         """
             Compute the proper source and destination positions the connector should link in the view
         """
-        # Get the position of the socket in its local reference
+        # Get the position of the socket in its parent's coordinates
         source_pos = self.start_socket.get_position()
-        # Add it to the graphical representation's actual position in the view
-        # The source pos can either be a Socket or a TerminalSocket
-        if isinstance(self.start_socket, TerminalSocket):
-            source_pos[0] = self.start_socket.graphics_socket.pos().x()
-            source_pos[1] = self.start_socket.graphics_socket.pos().y()
-        else:
+        # If we have a socket, we need to add the offset of the parent (i.e. graphical representation of the state).
+        # For the TerminalSocket, the function directly sends the coordinates in the scene's reference.
+        if isinstance(self.start_socket, Socket):
             source_pos[0] += self.start_socket.state.graphics_state.pos().x()
             source_pos[1] += self.start_socket.state.graphics_state.pos().y()
         # Set it to the graphical representation
@@ -120,17 +117,12 @@ class Connector(object):
         if self.end_socket is not None:
             end_pos = self.end_socket.get_position()
             # The end pos can either be another Socket or a TerminalSocket
-            if isinstance(self.end_socket, TerminalSocket):
-                end_pos[0] = self.end_socket.graphics_socket.pos().x()
-                end_pos[1] = self.end_socket.graphics_socket.pos().y()
-            else:
+            if isinstance(self.end_socket, Socket):
                 end_pos[0] += self.end_socket.state.graphics_state.pos().x()
                 end_pos[1] += self.end_socket.state.graphics_state.pos().y()
             self.graphics_connector.set_destination(*end_pos)
         else:
             self.graphics_connector.set_destination(*source_pos)
-        # Repaint its graphical representation with the proper coordinates
-        self.graphics_connector.update()
 
     def remove(self):
         """
