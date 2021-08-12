@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -59,8 +59,6 @@ class GraphicalEditorWidget(QWidget):
         self.robot_integration_area.robotCanBeStopped.connect(self.update_execution)
         # Boolean specifying if the widget hosts the root of the task
         self.is_root = container_type == "base"
-        # Initialise the history of the container
-        self.container.history.set_initial_snapshot()
 
     def init_ui(self):
         """
@@ -180,8 +178,12 @@ class GraphicalEditorWidget(QWidget):
         """
         container_name, ok = QInputDialog().getText(self, "Change name", "New name of {}:".format(self.windowTitle()),
                                                     QLineEdit.Normal)
+        # If a name is provided and the OK button is pressed, rename the task configured in this widget
+        # Otherwise just terminate this method
         if container_name and ok:
             self.set_name(container_name)
+        else:
+            return
         # If we try to rename the root, make sure to update the name of the task_config_file
         if self.is_root:
             self.parent().parent().parent().parent().framework_gui.update_task_config_file(container_name)
