@@ -59,7 +59,7 @@ class Counter(smach.State):
         userdata[self.counter_name] = self.current_value
         # Increment/decrement the current value
         if self.current_value < self.end_value:
-            self.times_called += 1
+            self.current_value += 1
         else:
-            self.times_called -= 1
+            self.current_value -= 1
         return self.outcomes[0]
