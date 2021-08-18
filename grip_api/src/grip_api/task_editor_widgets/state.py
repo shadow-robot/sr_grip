@@ -259,7 +259,11 @@ class State(object):
         # Otherwise, restore the ID of the sockets of this object
         else:
             self.input_socket[0].set_id(data["input_socket"][0], socket_mapping)
+            # Get the number of output sockets
+            number_output_socket = len(data["output_sockets"])
             for ind_socket, socket in enumerate(self.output_sockets):
-                socket.set_id(data["output_sockets"][ind_socket], socket_mapping)
+                # Make sure not to break if there is any discrepancy between the current configuration and the saved one
+                if ind_socket < number_output_socket:
+                    socket.set_id(data["output_sockets"][ind_socket], socket_mapping)
         # Restore the content of the state
         self.content.set_config(data["content"])
