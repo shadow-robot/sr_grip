@@ -144,10 +144,11 @@ class State(object):
         # Will contain the configuration of the state (i.e. source, outcomes, parameters and transitions)
         # But for now just get the configuration of the state
         state_config = self.content.get_config()
+        state_config["input_keys"] = list()
         # If some values needs to be set as an input key of the state
-        for user_config in state_config.values():
+        for config_name, user_config in state_config.items():
             if user_config in self.container.output_userdata:
-                state_config["input_keys"] = [user_config]
+                state_config["input_keys"].append(user_config)
 
         # Make sure to register all the potential output keys for all the states with the keyword "output"
         if self.to_generate:
