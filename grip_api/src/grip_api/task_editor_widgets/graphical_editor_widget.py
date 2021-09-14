@@ -52,10 +52,10 @@ class GraphicalEditorWidget(QWidget):
         self.set_name(container_name)
         # Process used to launch the state machine
         self.launch_process = None
-        # By default the container of this editor cannot be launched
-        self.can_be_executed = False
         # Update the above attribute according to whether the robot is launched or not
         self.robot_integration_area = self.parent().parent().parent().framework_gui.robot_integration_area
+        # The container can be executed only if a robot is running
+        self.can_be_executed = self.robot_integration_area.launch_process is not None
         self.robot_integration_area.robotCanBeStopped.connect(self.update_execution)
         # Boolean specifying if the widget hosts the root of the task
         self.is_root = container_type == "base"
