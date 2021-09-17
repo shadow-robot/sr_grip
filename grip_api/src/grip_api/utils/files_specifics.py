@@ -61,4 +61,10 @@ ALL_MANAGER_TYPE_CHOICE = ["", "joint state", "plan", "pose", "trajectory"]
 DEDICATED_SOCKET_COLORS = [QColor("#FF4599FF"), QColor("#FF00cb00"), QColor("#FFFF0021")]
 
 SOCKET_COLORS = [QColor("#FFFF8c00"), QColor("#FFa86db1"), QColor("#FFfc9a9a"),
-                 QColor("#FF82eda2"), QColor("#FFa8e9ff"), QColor("#FFf6fa8e")]
+                 QColor("#FF82eda2"), QColor("#FFa8e9ff"), QColor("#FFf6fa8e"), QColor("#FFFF0021")]
+
+# Create a set of 10 colors uniformly distributed on the hue scale
+TERMINAL_SOCKET_COLORS = [QColor().fromHsvF(i/10., 1., 1.) for i in range(10)]
+# Make sure the two first colors correspond to green and red
+TERMINAL_SOCKET_COLORS[1], TERMINAL_SOCKET_COLORS[3] = TERMINAL_SOCKET_COLORS[3], TERMINAL_SOCKET_COLORS[1]
+TERMINAL_SOCKET_COLORS[0], TERMINAL_SOCKET_COLORS[1] = TERMINAL_SOCKET_COLORS[1], TERMINAL_SOCKET_COLORS[0]

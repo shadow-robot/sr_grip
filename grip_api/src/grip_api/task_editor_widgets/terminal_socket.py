@@ -16,6 +16,7 @@
 
 from grip_api.task_editor_graphics.terminal_socket import TerminalGraphicsSocket
 from collections import OrderedDict
+from grip_api.utils.common_dialog_boxes import warning_message
 
 
 class TerminalSocket(object):
@@ -50,6 +51,8 @@ class TerminalSocket(object):
         self.connectors = list()
         # Allows to recognize terminal sockets from others when releasing edges
         self.is_terminal = True
+        # By default a terminal socket can't be deleted from the container
+        self.is_deletable = False
 
     def set_position(self, x, y):
         """
@@ -126,6 +129,38 @@ class TerminalSocket(object):
             connector = self.connectors.pop(0)
             connector.remove()
 
+    def update_name(self, new_name, save_history=True):
+        """
+            Update the name of this object
+
+            @param new_name: Name (string) to be given to the object
+            @param save_history: Boolean stating if this change should be saved into the container's history
+        """
+        # If a terminal socket has already the required name, then displays a warning message and stop
+        if new_name in map(lambda x: x.name, self.container.terminal_sockets):
+            warning_message("Invalid name", "An outcome with the same name already exists!")
+            return
+        # If the name is valid, set it and replace the outcome in the container's attribute
+        index_in_outcomes = self.container.outcomes.index(self.name)
+        self.name = new_name
+        self.container.outcomes[index_in_outcomes] = new_name
+        # Update the name of the socket of the state-like representation of the container if possible
+        if self.container.state_machine is not None:
+            self.container.state_machine.output_sockets[self.index].set_name(new_name)
+        if save_history:
+            self.container.history.store_current_history()
+
+    def remove(self):
+        """
+            Remove the terminal socket from its corresponding container
+        """
+        # Remove first all connectors connected to it
+        self.remove_all_connectors()
+        # Remove the terminal socket from the container
+        self.container.remove_terminal_socket(self)
+        # Make sure the graphical representation is set to None
+        self.graphics_socket = None
+
     def save(self):
         """
             Save the current properties of the object so it can be restored later on
@@ -149,7 +184,12 @@ class TerminalSocket(object):
             @param socket_mapping: Dictionary mapping the id of sockets to the actual objects
         """
         self.id = properties["id"]
-        self.name = properties["name"]
+        # If the name to restore is different than the current one, update it
+        if self.name != properties["name"]:
+            # Since we just restore the name, don't save it in the history
+            self.update_name(properties["name"], save_history=False)
+            # Make sure the change is updated on the screen
+            self.graphics_socket.update_name()
         # Set the position of the socket
         self.set_position(properties["position_x"], properties["position_y"])
         socket_mapping[properties["id"]] = self

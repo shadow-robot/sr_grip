@@ -105,11 +105,8 @@ class State(object):
         """
             Remove this object from its corresponding container
         """
-        # For each socket, remove all the linked connectors and sockets
+        # Remove each socket
         for socket in (self.input_socket + self.output_sockets):
-            for connector in socket.connectors:
-                connector.remove()
-            # Remove the socket as well
             socket.remove()
         # Remove the state from the container
         self.container.remove_state(self)

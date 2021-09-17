@@ -80,7 +80,7 @@ class Container(object):
         outcomes = ["success", "failure"] if not parsed_outcomes else parsed_outcomes
         return outcomes
 
-    def create_terminal_sockets(self):
+    def create_initial_terminal_sockets(self):
         """
             Create and add the terminal sockets of this state machine container
         """
@@ -105,6 +105,29 @@ class Container(object):
         self.default_socket = self.terminal_sockets[-1]
         # Since the terminal sockets have not been properly located yet, the initialisation of the container is not done
         self.is_complete = False
+
+    def add_terminal_socket(self, outcome_name, position):
+        """
+            Add a terminal socket to the container, which represents a new outcome of the task
+
+            @param outcome_name: Name given to the new terminal socket
+            @param position: List containing the scene coordinates (x, y) of where the socket should be located
+        """
+        # Add the new name ot the outcome attribute
+        self.outcomes.append(outcome_name)
+        # Create the terminal socket
+        new_terminal_socket = TerminalSocket(container=self, socket_name=outcome_name, index=len(self.outcomes) - 1)
+        # Set its position from the the input argument
+        new_terminal_socket.set_position(*position)
+        # All terminal sockets added by this function are deletable
+        new_terminal_socket.is_deletable = True
+        # Add socket to terminal sockets
+        self.terminal_sockets.append(new_terminal_socket)
+        # Add the graphical socket to the graphical representation so it can be rendered
+        self.graphics_container.addItem(new_terminal_socket.graphics_socket)
+        # Update the positions of the sockets of the state-like representation of the container if possible
+        if self.state_machine is not None:
+            self.state_machine.update_sockets_position()
 
     def set_name(self, name):
         """
@@ -211,6 +234,25 @@ class Container(object):
             if connector.graphics_connector is not None:
                 self.graphics_container.removeItem(connector.graphics_connector)
             # Removing a connector can make the container not valid, so update it
+            self.update_validity()
+
+    def remove_terminal_socket(self, socket):
+        """
+            Remove a given terminal socket from the container
+
+            @param socket: TerminalSocket to be removed from the container
+        """
+        # If the socket is properly registered and can be removed
+        if socket in self.terminal_sockets and socket.is_deletable:
+            # Remove from the list of outcomes and terminal sockets
+            self.outcomes.remove(socket.name)
+            self.terminal_sockets.remove(socket)
+            # Remove the graphical representation
+            self.graphics_container.removeItem(socket.graphics_socket)
+            # Update the positions of the sockets of the state-like representation of the container if possible
+            if self.state_machine is not None:
+                self.state_machine.update_sockets_position()
+            # Make sure the container is still valid
             self.update_validity()
 
     def remove_state_machine(self, state_machine):
@@ -519,6 +561,34 @@ class Container(object):
         """
         return next((i for i in self.state_machines if i.name == name), None)
 
+    def restore_terminal_sockets(self, list_of_sockets, socket_mapping):
+        """
+            Restore the terminal sockets stored in a list of saved outcomes
+
+            @param list_of_states: List of dictionaries obtained by calling the save() function for each terminal state
+            @param socket_mapping: Dictionary mapping the id of the sockets to the pointer of the actual object
+        """
+        # Get the number of sockets to restore
+        number_terminal_sockets_to_restore = len(list_of_sockets)
+        # For each terminal socket (already created), restore their previous configuration
+        for ind_sock, socket in enumerate(self.terminal_sockets):
+            # If an existing terminal socket was not present in the content to be restored
+            if ind_sock >= number_terminal_sockets_to_restore:
+                # Remove the socket
+                socket.remove()
+            # Otherwise restore it to the input configuration
+            else:
+                socket.restore(list_of_sockets[ind_sock], socket_mapping)
+        # If some terminal sockets to be restored are not already created, create them
+        if ind_sock < number_terminal_sockets_to_restore:
+            for extra_socket_index in range(ind_sock + 1, number_terminal_sockets_to_restore):
+                # Extract position of socket
+                socket_position = [list_of_sockets[extra_socket_index]["position_x"],
+                                   list_of_sockets[extra_socket_index]["position_y"]]
+                # Add and restore the terminal socket according to the input parameter
+                self.add_terminal_socket(list_of_sockets[extra_socket_index]["name"], socket_position)
+                self.terminal_sockets[-1].restore(list_of_sockets[extra_socket_index], socket_mapping)
+
     def restore(self, properties):
         """
             Restore the configuration of the container according to the parameters saved in properties
@@ -543,9 +613,9 @@ class Container(object):
                 if state_machine.name not in to_be_restored:
                     state_machine.remove()
 
-        # For each terminal socket (already created), restore their previous configuration
-        for ind_sock, socket in enumerate(self.terminal_sockets):
-            socket.restore(terminal_sockets_data[ind_sock], socket_mapping)
+        # Restore the terminal sockets
+        self.restore_terminal_sockets(terminal_sockets_data, socket_mapping)
+
         # Restore the states
         self.restore_states(states_data, socket_mapping)
 

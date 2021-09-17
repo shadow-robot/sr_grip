@@ -176,6 +176,8 @@ class TaskEditorView(QGraphicsView):
                 item.state.remove()
             elif isinstance(item, GraphicsStateMachine):
                 item.state_machine.remove()
+            elif isinstance(item, TerminalGraphicsSocket) and item.socket.is_deletable:
+                item.socket.remove()
         # Once the selected items have been deleted, store the current container
         self.graphics_scene.container.history.store_current_history()
 

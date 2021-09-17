@@ -22,6 +22,7 @@ from state_machine import StateMachine
 from grip_api.utils.files_specifics import LISTITEM_MIMETYPE
 from grip_core.state_machine_generator.state_machine_generator import generate_state_machines
 from grip_core.utils.common_paths import GENERATED_STATE_MACHINE_FOLDER, BASE_STATE_MACHINE_FOLDER
+from grip_api.utils.common_dialog_boxes import warning_message
 from state import State
 import os
 import subprocess
@@ -34,6 +35,8 @@ class GraphicalEditorWidget(QWidget):
     """
     # Signal stating when the content of the editor widget has been modified
     hasBeenModified = pyqtSignal(bool)
+    # Maximum number of outcomes for the container
+    MAX_NUMBER_OUTCOMES = 10
 
     def __init__(self, container_name, container_type, parent=None):
         """
@@ -71,7 +74,7 @@ class GraphicalEditorWidget(QWidget):
         # Create graphical view
         self.editor_view = TaskEditorView(self.container.graphics_container, self)
         # Create the terminal sockets (for each outcome + the starting socket)
-        self.container.create_terminal_sockets()
+        self.container.create_initial_terminal_sockets()
         # Link the drag and drop event that occurs in the view to methods defined here
         self.editor_view.add_drag_enter_listener(self.on_drag_enter)
         self.editor_view.add_drop_listener(self.on_drop)
@@ -97,6 +100,7 @@ class GraphicalEditorWidget(QWidget):
         if self.container.type != "base":
             self.execute_action.setVisible(False)
         self.rename_action = self.context_menu.addAction("Rename")
+        self.add_new_outcome = self.context_menu.addAction("Add new outcome")
         self.connect_free_sockets = self.context_menu.addAction("Connect free sockets")
 
     def set_name(self, name):
@@ -224,6 +228,32 @@ class GraphicalEditorWidget(QWidget):
         # Re-enable the execute option
         self.can_be_executed = True
 
+    def add_outcome(self, event_position):
+        """
+            Add a new terminal outcome for the task being currently edited
+
+            @param event_position: QPointF corresponding to where the the action has been triggered by the user
+        """
+        if len(self.container.outcomes) == self.MAX_NUMBER_OUTCOMES:
+            warning_message("Invalid operation", "The maximum number of outcomes has been reached!")
+            return
+        # Ask the user for the name of the new outcome
+        outcome_name, ok = QInputDialog().getText(self, "Outcome name", "Name of the new outcome:", QLineEdit.Normal)
+        # If OK is not pressed, then quit
+        if not ok:
+            return
+        # Make sure we do not have two sockets with the same name
+        if outcome_name in self.container.outcomes:
+            warning_message("Invalid input", "An outcome with the same name already exists!",
+                            "Please retry with a valid name", parent=self)
+            return
+        # Get the position on which the object should be added
+        view_position = self.container.get_view().mapToScene(event_position)
+        # Add a terminal socket to the container
+        self.container.add_terminal_socket(outcome_name, [view_position.x(), view_position.y()])
+        # Store the new content of the container
+        self.container.history.store_current_history()
+
     def contextMenuEvent(self, event):
         """
             Function triggered when right click is pressed to make a context menu appear
@@ -239,6 +269,8 @@ class GraphicalEditorWidget(QWidget):
             self.rename()
         elif action == self.execute_action:
             self.execute_container()
+        elif action == self.add_new_outcome:
+            self.add_outcome(event.pos())
 
     def save_config(self, settings):
         """

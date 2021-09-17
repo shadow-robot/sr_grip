@@ -17,7 +17,7 @@
 from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5.QtGui import QColor, QPen, QBrush
 from PyQt5.QtCore import QRectF
-from grip_api.utils.files_specifics import DEDICATED_SOCKET_COLORS, SOCKET_COLORS
+from grip_api.utils.files_specifics import DEDICATED_SOCKET_COLORS, SOCKET_COLORS, TERMINAL_SOCKET_COLORS
 
 
 class GraphicsSocket(QGraphicsItem):
@@ -55,12 +55,13 @@ class GraphicsSocket(QGraphicsItem):
         # Input sockets always have the same colour
         if self.socket.index == 0 and self.socket.count_on_this_side == 1:
             self.color_background = DEDICATED_SOCKET_COLORS[0]
-        # We keep two specific colors for socket whose name contain success and failure
-        elif "success" in self.socket.name:
-            self.color_background = DEDICATED_SOCKET_COLORS[1]
-        elif "failure" in self.socket.name:
-            self.color_background = DEDICATED_SOCKET_COLORS[2]
-        # Output sockets have their color set depending on their index
+        # Make sure that the colors used for the state representation match the color used for terminal sockets
+        elif hasattr(self.socket.state, "def_container") or not self.socket.state.to_generate:
+            self.color_background = TERMINAL_SOCKET_COLORS[self.socket.index]
+        # Make sure the last outcome of generated state is red (for state_failure)
+        elif self.socket.index == self.socket.count_on_this_side - 1:
+            self.color_background = SOCKET_COLORS[-1]
+        # Use specific colors for generated states
         else:
             self.color_background = SOCKET_COLORS[self.socket.index]
         # Outline will be painted in black

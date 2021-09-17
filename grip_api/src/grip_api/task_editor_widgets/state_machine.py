@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -89,6 +89,34 @@ class StateMachine(object):
         for counter, item in enumerate(outcomes):
             self.output_sockets.append(Socket(state=self, index=counter, socket_name=item, multi_connections=False,
                                               count_on_this_side=len(outcomes)))
+
+    def update_sockets_position(self):
+        """
+            Update the socket's position of the state machine with respect to the current outcomes of the container used
+            to define the state machine
+        """
+        # Get the new outcomes of the definition container
+        new_outcomes = self.def_container.outcomes[:]
+        new_number_outcomes = len(new_outcomes)
+        # Get the current nuumber of outcomes
+        current_number_outcomes = len(self.output_sockets)
+        # For each new outcome
+        for outcome_index, outcome_name in enumerate(new_outcomes):
+            # If one outcome was not registered previously, create a new socket
+            if outcome_index >= current_number_outcomes:
+                self.output_sockets.append(Socket(state=self, index=outcome_index, socket_name=outcome_name,
+                                                  multi_connections=False, count_on_this_side=new_number_outcomes))
+            # Otherwise update the socket's position
+            else:
+                self.output_sockets[outcome_index].update_position(new_number_outcomes)
+        # If the new outcomes contain fewer elements, delete the one that should not be there anymore
+        if outcome_index != current_number_outcomes - 1:
+            for index in range(outcome_index + 1, current_number_outcomes):
+                self.output_sockets[index].remove()
+                # Make sure the element is removed from the list
+                del self.output_sockets[index]
+        # Update the connectors
+        self.update_connectors()
 
     def update_connectors(self):
         """
