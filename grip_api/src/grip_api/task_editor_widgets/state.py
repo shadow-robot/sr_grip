@@ -79,6 +79,17 @@ class State(object):
         # Set position when applying the offset
         self.set_position(current_x + x, current_y + y)
 
+    def update_name(self, new_name):
+        """
+            Update the name of the state, making sure that two items in one container don't have the exact same name
+
+            @param new_name: Name to be given to the state
+        """
+        # Make sure the name is unique
+        self.name = self.container.get_unique_name(new_name)
+        # Store the current history
+        self.container.history.store_current_history()
+
     def init_sockets(self):
         """
             Create the sockets associated to the state
