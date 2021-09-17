@@ -42,7 +42,7 @@ class Select(smach.State):
         # Initialise the state
         smach.State.__init__(self, outcomes=outcomes, io_keys=io_keys, input_keys=input_keys, output_keys=output_keys)
         self.input = input
-        self.output = output
+        self.output = output if output != "" else input
         # If needed, initialize the services required to retrieve and send messages to the managers
         self.message_getter = get_retrieve_service_from_type(input_type) if input_type else None
         # Outcomes of the state

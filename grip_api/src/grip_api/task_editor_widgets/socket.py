@@ -86,6 +86,28 @@ class Socket(object):
 
         return [x, y]
 
+    def set_name(self, name):
+        """
+            Set the name of the socket and update the text displayed by the graphical ToolTip
+
+            @param name: String corresponding to the new name of the socket
+        """
+        self.name = name
+        self.graphics_socket.setToolTip(self.name)
+
+    def update_position(self, count_on_side):
+        """
+            Update the position of the socket with respect to the box-like representation
+
+            @param count_on_side: New number of sockets on the given side of the state
+        """
+        # Update the object's attribute
+        self.count_on_this_side = count_on_side
+        # Recompute position of the socket
+        self.position = self.get_position()
+        # Change the position of the graphical representation
+        self.graphics_socket.setPos(*self.position)
+
     def add_connector(self, connector):
         """
             Add a provided connector to this socket
@@ -117,6 +139,8 @@ class Socket(object):
         """
             Remove this object from the graphics container
         """
+        # Make sure no connectors are linked to the socket
+        self.remove_all_connectors()
         # Remove the graphics representation from the graphics container
         self.state.container.graphics_container.removeItem(self.graphics_socket)
         self.graphics_socket = None

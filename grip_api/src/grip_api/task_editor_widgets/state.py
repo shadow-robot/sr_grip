@@ -79,6 +79,17 @@ class State(object):
         # Set position when applying the offset
         self.set_position(current_x + x, current_y + y)
 
+    def update_name(self, new_name):
+        """
+            Update the name of the state, making sure that two items in one container don't have the exact same name
+
+            @param new_name: Name to be given to the state
+        """
+        # Make sure the name is unique
+        self.name = self.container.get_unique_name(new_name)
+        # Store the current history
+        self.container.history.store_current_history()
+
     def init_sockets(self):
         """
             Create the sockets associated to the state
@@ -105,11 +116,8 @@ class State(object):
         """
             Remove this object from its corresponding container
         """
-        # For each socket, remove all the linked connectors and sockets
+        # Remove each socket
         for socket in (self.input_socket + self.output_sockets):
-            for connector in socket.connectors:
-                connector.remove()
-            # Remove the socket as well
             socket.remove()
         # Remove the state from the container
         self.container.remove_state(self)
@@ -144,10 +152,11 @@ class State(object):
         # Will contain the configuration of the state (i.e. source, outcomes, parameters and transitions)
         # But for now just get the configuration of the state
         state_config = self.content.get_config()
+        state_config["input_keys"] = list()
         # If some values needs to be set as an input key of the state
-        for user_config in state_config.values():
+        for config_name, user_config in state_config.items():
             if user_config in self.container.output_userdata:
-                state_config["input_keys"] = [user_config]
+                state_config["input_keys"].append(user_config)
 
         # Make sure to register all the potential output keys for all the states with the keyword "output"
         if self.to_generate:
@@ -259,7 +268,11 @@ class State(object):
         # Otherwise, restore the ID of the sockets of this object
         else:
             self.input_socket[0].set_id(data["input_socket"][0], socket_mapping)
+            # Get the number of output sockets
+            number_output_socket = len(data["output_sockets"])
             for ind_socket, socket in enumerate(self.output_sockets):
-                socket.set_id(data["output_sockets"][ind_socket], socket_mapping)
+                # Make sure not to break if there is any discrepancy between the current configuration and the saved one
+                if ind_socket < number_output_socket:
+                    socket.set_id(data["output_sockets"][ind_socket], socket_mapping)
         # Restore the content of the state
         self.content.set_config(data["content"])

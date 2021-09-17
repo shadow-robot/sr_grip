@@ -19,7 +19,7 @@ class ContainerHistory(object):
     """
         Object that stores snapshots of the state of a given container at a given time
     """
-    def __init__(self, container, memory_length=16):
+    def __init__(self, container, memory_length=32):
         """
             Initialize the object
 

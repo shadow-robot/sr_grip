@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -19,10 +19,11 @@ from collections import OrderedDict
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 from list_widgets import StateListWidget, StateMachineListWidget
-from grip_core.utils.common_paths import CATKIN_WS
+from grip_core.utils.common_paths import CATKIN_WS, INTERNAL_SRC_CORE
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_core.utils.file_parsers import fill_available_states, fill_available_state_machines
 from grip_api.utils.files_specifics import EDITOR_TO_DESCRIPTION
+from grip_api.utils.common_checks import is_state_source_valid
 
 
 class CommonSideDisplayer(QWidget):
@@ -191,16 +192,25 @@ class StatesDisplayer(CommonSideDisplayer):
             Method adding new states from external folder
         """
         returned_path = QFileDialog.getExistingDirectory(self, "Select the folder containing the states",
-                                                         options=QFileDialog.DontUseNativeDialog, directory=CATKIN_WS)
+                                                         options=QFileDialog.DontUseNativeDialog,
+                                                         directory=INTERNAL_SRC_CORE)
         if not returned_path:
             return
-        # Make sure the directory contains at least one correct file
-        if not any(any(y.endswith(".py") for y in x[-1]) for x in os.walk(returned_path)):
-            error_message("Error", "No template files have been found in the provided directory", parent=self)
+        # Make sure the returned path is valid (i.e. a folder in INTERNAL_SRC_CORE and with at least a python file)
+        if not is_state_source_valid(returned_path, self):
             return
-        # Add the new states to the common dictionary
-        fill_available_states([returned_path])
-        # Update the list widget
-        self.list_widget.update_content()
+        # Load the new states to the list widget
+        self.load_states([returned_path])
         # Trigger the signal
         self.stateSourceAdded.emit(returned_path)
+
+    def load_states(self, sources):
+        """
+            Load the states contained in sources to the list_widget object
+
+            @param sources: List of path pointing to valid directories containing states
+        """
+        # Add the new states to the common dictionary
+        fill_available_states(sources)
+        # Update the list widget
+        self.list_widget.update_content()

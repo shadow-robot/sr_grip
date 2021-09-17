@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -246,7 +246,7 @@ class GraphicsState(QGraphicsItem):
         """
         # Get the transform between the view and the local coordinates
         world_transform = painter.worldTransform()
-        # If required, set the appropriate transform to have a fixed size vcollapsed view of the state
+        # If required, set the appropriate transform to have a fixed size collapsed view of the state
         if self.zoom < self.zoom_threshold:
             t = QTransform(self.scaling_factor, world_transform.m12(), world_transform.m13(),
                            world_transform.m21(), self.scaling_factor, world_transform.m23(),
@@ -270,7 +270,7 @@ class GraphicsState(QGraphicsItem):
     @staticmethod
     def create_unscaled_transform(transform_matrix):
         """
-            Static method that creates an version of the input transform matrix for which the scaling factor is 1
+            Static method that creates a version of the input transform matrix for which the scaling factor is 1
 
             @param transform_matrix: QTransform to modify
             @return: New QTransform matrix with scaling factor set to 1
@@ -431,9 +431,9 @@ class StateTitle(QGraphicsTextItem):
         self.setTextInteractionFlags(Qt.NoTextInteraction)
         # Call the original behaviour
         super(StateTitle, self).focusOutEvent(event)
-        # Update the name of the state with the current text, making sure we don't have two items with the same name
+        # Update the name of the state with the current text
         if self.parent.state.name != self.toPlainText():
-            self.parent.state.name = self.parent.state.container.get_unique_name(self.toPlainText())
+            self.parent.state.update_name(self.toPlainText())
         # Make sure the text fits in the given width
         self.adapt_text_length()
         # Update the parent's tooltip

@@ -144,7 +144,6 @@ class TaskEditorView(QGraphicsView):
                         Connector(self.graphics_scene.container, self.drag_start_socket, item.socket)
                     else:
                         Connector(self.graphics_scene.container, item.socket, self.drag_start_socket)
-
                     # Once a connector is created, store the new content of the container
                     self.graphics_scene.container.history.store_current_history()
                     return True
@@ -177,6 +176,8 @@ class TaskEditorView(QGraphicsView):
                 item.state.remove()
             elif isinstance(item, GraphicsStateMachine):
                 item.state_machine.remove()
+            elif isinstance(item, TerminalGraphicsSocket) and item.socket.is_deletable:
+                item.socket.remove()
         # Once the selected items have been deleted, store the current container
         self.graphics_scene.container.history.store_current_history()
 
@@ -290,6 +291,10 @@ class TaskEditorView(QGraphicsView):
         release_event = QMouseEvent(QEvent.MouseButtonRelease, event.localPos(), event.screenPos(),
                                     Qt.LeftButton, Qt.NoButton, event.modifiers())
         super(TaskEditorView, self).mouseReleaseEvent(release_event)
+        # If we want to move the scene around while dragging a connector, need to make the dragged connector not visible
+        # when pressing down the middle (wheel) button
+        if self.is_dragging:
+            self.drag_connector.graphics_connector.setVisible(False)
         # Create the dragging mode
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         # Emulate the event that would normally be triggered by a left mouse press
@@ -309,6 +314,9 @@ class TaskEditorView(QGraphicsView):
         super(TaskEditorView, self).mouseReleaseEvent(fake_event)
         # Set the dragging
         self.setDragMode(QGraphicsView.RubberBandDrag)
+        # When this button is realease, make sure to reset the dragged connector visible
+        if self.is_dragging:
+            self.drag_connector.graphics_connector.setVisible(True)
 
     def leftMouseButtonPress(self, event):
         """
@@ -383,7 +391,6 @@ class TaskEditorView(QGraphicsView):
         # If the user is dragging a connector, update its destination with the mouse position
         if self.is_dragging:
             self.drag_connector.graphics_connector.set_destination(pos.x(), pos.y())
-            self.drag_connector.graphics_connector.update()
         # If the mouse is not hovering any object, then update the latest valid cursor position
         if self.itemAt(event_position) is None:
             self.latest_valid_cursor_position = pos
@@ -423,6 +430,27 @@ class TaskEditorView(QGraphicsView):
         for callback in self.drag_enter_listeners:
             callback(event)
 
+    def showEvent(self, event):
+        """
+            Function called when any show() function is being called upon one of the parent of this widget
+
+            @param event: QShowEvent
+        """
+        # Show the view
+        super(TaskEditorView, self).showEvent(event)
+        # If the container is not completely initialized (i.e. the terminal sockets are not properly located) and if
+        # the subwindow in which the view is located is maximized, then set the position of the terminal sockets so
+        # they are properly fit to the avaialble disaply area
+        # This statement should only be True when a new and empty window is created
+        if not self.graphics_scene.container.is_complete and self.graphics_scene.container.editor_widget.isMaximized():
+            # Make sure the view is centered on the scene
+            self.centerOn(0, 0)
+            # For each terminal socket already created, set its initial position now that the view has the correct size
+            for terminal_socket in self.graphics_scene.container.terminal_sockets:
+                terminal_socket.set_initial_position()
+            # Create the first history (should also be the initial one)
+            self.graphics_scene.container.history.store_current_history()
+
     def dropEvent(self, event):
         """
             Function called when an item is dropped onto this widget
@@ -446,3 +474,8 @@ class TaskEditorView(QGraphicsView):
             return
         # Perform the zoom
         self.perform_unit_zoom(event.angleDelta().y() > 0)
+        # Make sure that when a zoom is triggered while dragging a connector, the latter keeps pointing to where the
+        # mouse is
+        if self.is_dragging:
+            scene_pos = self.mapToScene(event.pos())
+            self.drag_connector.graphics_connector.set_destination(scene_pos.x(), scene_pos.y())

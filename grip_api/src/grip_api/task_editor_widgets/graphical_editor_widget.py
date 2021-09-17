@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -22,6 +22,7 @@ from state_machine import StateMachine
 from grip_api.utils.files_specifics import LISTITEM_MIMETYPE
 from grip_core.state_machine_generator.state_machine_generator import generate_state_machines
 from grip_core.utils.common_paths import GENERATED_STATE_MACHINE_FOLDER, BASE_STATE_MACHINE_FOLDER
+from grip_api.utils.common_dialog_boxes import warning_message
 from state import State
 import os
 import subprocess
@@ -34,6 +35,8 @@ class GraphicalEditorWidget(QWidget):
     """
     # Signal stating when the content of the editor widget has been modified
     hasBeenModified = pyqtSignal(bool)
+    # Maximum number of outcomes for the container
+    MAX_NUMBER_OUTCOMES = 10
 
     def __init__(self, container_name, container_type, parent=None):
         """
@@ -52,15 +55,13 @@ class GraphicalEditorWidget(QWidget):
         self.set_name(container_name)
         # Process used to launch the state machine
         self.launch_process = None
-        # By default the container of this editor cannot be launched
-        self.can_be_executed = False
         # Update the above attribute according to whether the robot is launched or not
         self.robot_integration_area = self.parent().parent().parent().framework_gui.robot_integration_area
+        # The container can be executed only if a robot is running
+        self.can_be_executed = self.robot_integration_area.launch_process is not None
         self.robot_integration_area.robotCanBeStopped.connect(self.update_execution)
         # Boolean specifying if the widget hosts the root of the task
         self.is_root = container_type == "base"
-        # Initialise the history of the container
-        self.container.history.set_initial_snapshot()
 
     def init_ui(self):
         """
@@ -73,7 +74,7 @@ class GraphicalEditorWidget(QWidget):
         # Create graphical view
         self.editor_view = TaskEditorView(self.container.graphics_container, self)
         # Create the terminal sockets (for each outcome + the starting socket)
-        self.container.create_terminal_sockets()
+        self.container.create_initial_terminal_sockets()
         # Link the drag and drop event that occurs in the view to methods defined here
         self.editor_view.add_drag_enter_listener(self.on_drag_enter)
         self.editor_view.add_drop_listener(self.on_drop)
@@ -99,6 +100,7 @@ class GraphicalEditorWidget(QWidget):
         if self.container.type != "base":
             self.execute_action.setVisible(False)
         self.rename_action = self.context_menu.addAction("Rename")
+        self.add_new_outcome = self.context_menu.addAction("Add new outcome")
         self.connect_free_sockets = self.context_menu.addAction("Connect free sockets")
 
     def set_name(self, name):
@@ -180,8 +182,12 @@ class GraphicalEditorWidget(QWidget):
         """
         container_name, ok = QInputDialog().getText(self, "Change name", "New name of {}:".format(self.windowTitle()),
                                                     QLineEdit.Normal)
+        # If a name is provided and the OK button is pressed, rename the task configured in this widget
+        # Otherwise just terminate this method
         if container_name and ok:
             self.set_name(container_name)
+        else:
+            return
         # If we try to rename the root, make sure to update the name of the task_config_file
         if self.is_root:
             self.parent().parent().parent().parent().framework_gui.update_task_config_file(container_name)
@@ -222,6 +228,32 @@ class GraphicalEditorWidget(QWidget):
         # Re-enable the execute option
         self.can_be_executed = True
 
+    def add_outcome(self, event_position):
+        """
+            Add a new terminal outcome for the task being currently edited
+
+            @param event_position: QPointF corresponding to where the the action has been triggered by the user
+        """
+        if len(self.container.outcomes) == self.MAX_NUMBER_OUTCOMES:
+            warning_message("Invalid operation", "The maximum number of outcomes has been reached!")
+            return
+        # Ask the user for the name of the new outcome
+        outcome_name, ok = QInputDialog().getText(self, "Outcome name", "Name of the new outcome:", QLineEdit.Normal)
+        # If OK is not pressed, then quit
+        if not ok:
+            return
+        # Make sure we do not have two sockets with the same name
+        if outcome_name in self.container.outcomes:
+            warning_message("Invalid input", "An outcome with the same name already exists!",
+                            "Please retry with a valid name", parent=self)
+            return
+        # Get the position on which the object should be added
+        view_position = self.container.get_view().mapToScene(event_position)
+        # Add a terminal socket to the container
+        self.container.add_terminal_socket(outcome_name, [view_position.x(), view_position.y()])
+        # Store the new content of the container
+        self.container.history.store_current_history()
+
     def contextMenuEvent(self, event):
         """
             Function triggered when right click is pressed to make a context menu appear
@@ -237,6 +269,8 @@ class GraphicalEditorWidget(QWidget):
             self.rename()
         elif action == self.execute_action:
             self.execute_container()
+        elif action == self.add_new_outcome:
+            self.add_outcome(event.pos())
 
     def save_config(self, settings):
         """

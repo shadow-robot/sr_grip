@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,11 +14,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from collections import OrderedDict
 import rospkg
 import ruamel.yaml
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from grip_core.utils.common_paths import INTERNAL_SRC_CORE
+from grip_api.utils.common_dialog_boxes import error_message
 
 
 def is_pose_valid(dictionary, add_frame_id=False, add_reference_frame=True):
@@ -153,4 +156,25 @@ def is_launchfile_valid(file_path):
     if not ros_pkg:
         return False
     # Otherwise retrun True
+    return True
+
+
+def is_state_source_valid(directory_path, parent):
+    """
+        Check whether a provided path pointing to a directory is valid or not
+
+        @param directory_path: Path to a directory that is supposed to contain the source code of additional states
+        @param parent: Parent (QWidget) on top of which an error message might appear
+        @return: True if the directory is valid, False otherwise
+    """
+    # If the path does not exist or is not located where it is supposed to be
+    if not os.path.exists(directory_path) or os.path.dirname(directory_path) != INTERNAL_SRC_CORE:
+        error_message("Cannot import states", "The path {} can't be located or is invalid".format(directory_path),
+                      parent=parent)
+        return False
+    # If not python file is found
+    if not any(any(y.endswith(".py") for y in x[-1]) for x in os.walk(directory_path)):
+        error_message("Error", "No source code for states have been found in the provided directory", parent=parent)
+        return False
+
     return True

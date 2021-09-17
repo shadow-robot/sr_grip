@@ -40,7 +40,7 @@ class WaitFor(smach.State):
         """
         smach.State.__init__(self, outcomes=outcomes, output_keys=output_keys, input_keys=input_keys, io_keys=io_keys)
         self.topic_name = None if not topic_name else topic_name if topic_name.startswith("/") else "/" + topic_name
-        self.timeout = timeout
+        self.timeout = timeout if timeout != "None" else None
         self.outcomes = outcomes
 
     def execute(self, userdata):
