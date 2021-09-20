@@ -157,7 +157,7 @@ class StateContentWidget(QWidget):
 
             @return: Dictionary mapping the name of the parameters of the state to their configured values
         """
-        state_config = OrderedDict()
+        state_config = dict()
         # Extract the different information from the state's content
         for parameter_name, default_config in self.state_info["parameters"].items():
             # Make sure to only extract displayed parameters

@@ -19,6 +19,7 @@ class ContainerHistory(object):
     """
         Object that stores snapshots of the state of a given container at a given time
     """
+
     def __init__(self, container, memory_length=32):
         """
             Initialize the object
@@ -141,5 +142,6 @@ class ContainerHistory(object):
             return
 
         # We need to have the sorted because each value is a list and the order of the elements might change
-        is_different = any(sorted(x) != sorted(y) for x, y in zip(self.initial_snapshot.values(), snapshot.values()))
+        is_different = any(sorted(x, key=lambda k: k["name"]) != sorted(y, key=lambda k: k["name"])
+                           for x, y in zip(self.initial_snapshot.values(), snapshot.values()))
         self.container.editor_widget.hasBeenModified.emit(is_different)

@@ -232,7 +232,7 @@ class State(object):
             socket_id = socket.get_id()
             serialized_output_sockets.append(socket_id)
 
-        return OrderedDict([
+        return dict([
             ('name', self.name),
             ('type', self.type),
             ('pos_x', self.graphics_state.scenePos().x()),

@@ -501,7 +501,7 @@ class Container(object):
         for connector in self.connectors:
             connectors.append(connector.save())
 
-        return OrderedDict([
+        return dict([
             ('terminal_sockets', terminal_sockets),
             ('states', states),
             ('state_machines', state_machines),

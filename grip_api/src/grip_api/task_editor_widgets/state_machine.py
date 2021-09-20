@@ -228,7 +228,7 @@ class StateMachine(object):
         for socket in self.output_sockets:
             output_sockets.append(socket.get_id())
 
-        return OrderedDict([
+        return dict([
             ("name", self.name),
             ("type", self.def_container.type),
             ("pos_x", pos.x()),

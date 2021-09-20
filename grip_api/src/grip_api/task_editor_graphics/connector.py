@@ -58,7 +58,7 @@ class GraphicsConnector(QGraphicsPathItem):
         # Compute the compensation factor required to always have a connector with a consistent proportion wrt states
         self.view = self.connector.container.get_view()
         if self.view.current_zoom < -7:
-                self.pen_width_compensator = self.view.zoom_in_multiplier**(-7 - self.view.current_zoom)
+            self.pen_width_compensator = self.view.zoom_in_multiplier**(-7 - self.view.current_zoom)
         else:
             self.pen_width_compensator = 1
 
@@ -138,8 +138,8 @@ class GraphicsConnector(QGraphicsPathItem):
         before_destination_position = [self.destination_position[0], self.destination_position[1] - 10]
 
         # Format all the points to create the path
-        points = map(lambda x: QPointF(*x), [self.source_position, after_source_position,
-                                             before_destination_position, self.destination_position])
+        points = list(map(lambda x: QPointF(*x), [self.source_position, after_source_position,
+                                                  before_destination_position, self.destination_position]))
         # Start the path from the source
         path = QPainterPath(points[0])
         for index, current_point in enumerate(points[1:-1], 1):

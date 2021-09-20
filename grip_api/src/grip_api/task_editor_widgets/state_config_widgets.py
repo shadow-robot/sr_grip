@@ -413,7 +413,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             currently_known = list()
         # Otherwise update the items
         else:
-            currently_known = self.known_states[msg_type]
+            currently_known = list(self.known_states[msg_type])
             combo_widget.addItems([""] + currently_known)
         is_known = previous_text in currently_known
         was_known = previous_text in all_msgs

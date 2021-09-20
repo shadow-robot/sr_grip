@@ -169,7 +169,7 @@ class TerminalSocket(object):
         """
         # Get the current position of the terminal socket
         current_position = self.graphics_socket.pos()
-        return OrderedDict([
+        return dict([
             ("id", self.id),
             ("name", self.name),
             ("position_x", current_position.x()),

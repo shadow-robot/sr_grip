@@ -36,11 +36,11 @@ class GenericCodeEditor(Qsci.QsciScintilla):
 
             @param parent: parent of the widget
         """
-        super(GenericCodeEditor, self).__init__(parent)
+        super().__init__(parent)
         self.init_ui()
         self.init_backround_markers()
         self.lexer_ = None
-        self.initial_content = OrderedDict()
+        self.initial_content = dict()
         # Will contain the index of the lines wrongly formatted
         self.wrong_format_lines = list()
         # Timer used to check content format and that will be handled by a different thread
@@ -161,7 +161,7 @@ class GenericCodeEditor(Qsci.QsciScintilla):
             Clean the editor (i.e. remove content and reset attributes) but keep it editable
         """
         self.clear()
-        self.initial_content = OrderedDict()
+        self.initial_content = dict()
         self.parse_and_format_editor()
 
     @staticmethod
@@ -200,11 +200,11 @@ class YamlCodeEditor(GenericCodeEditor):
 
             @param parent: parent of the widget
         """
-        super(YamlCodeEditor, self).__init__(parent)
+        super().__init__(parent)
         self.init_symbol_margin()
         self.lexer_ = Qsci.QsciLexerYAML(self)
         # Will contain the parsed content
-        self.parsed_content = OrderedDict()
+        self.parsed_content = dict()
 
     def init_symbol_margin(self):
         """
@@ -247,7 +247,7 @@ class YamlCodeEditor(GenericCodeEditor):
         editor_content = self.text()
         # If the editor has been emptied can just stop the parsing here
         if not editor_content:
-            self.parsed_content = OrderedDict()
+            self.parsed_content = dict()
             self.contentIsModified.emit(self.initial_content != self.parsed_content)
             return
         # Get the text line by line
@@ -265,14 +265,14 @@ class YamlCodeEditor(GenericCodeEditor):
         # Current line number
         line_number = 0
         # Will contain the YAML parsed content of all valid root components of the editor
-        parsed = OrderedDict()
+        parsed = dict()
         # This dictionary is used to recursively fill the different dictionaries.
         # Keys correspond to the depth of the parent of the current element
         # Values correspond to the container of such elements
-        parent_dictionary = OrderedDict([(-1, parsed)])
+        parent_dictionary = dict([(-1, parsed)])
         # Dictionary that will have as keys the content of the line and as value the index of the line of new dicts
         # It includes of course the indices previously computed but also the dicts created at higher levels
-        self.new_dicts_index = OrderedDict()
+        self.new_dicts_index = dict()
         # For each slice corresponding to a root component (depth = 0)
         for slice in self.slices:
             # Expected depth is used to detect wrong indentation
@@ -373,7 +373,7 @@ class YamlCodeEditor(GenericCodeEditor):
                         line_number += 1
                         continue
                     formatted_dict_args = [(self.to_format(x), self.to_format(y)) for x, y in dict_args]
-                    checked_condensed_dict = OrderedDict(formatted_dict_args)
+                    checked_condensed_dict = dict(formatted_dict_args)
 
                 # Parse potential condensed list
                 if condensed_list:
@@ -382,7 +382,7 @@ class YamlCodeEditor(GenericCodeEditor):
                     checked_condensed_list = [self.to_format(element.strip()) for element in elements]
 
                 # Get the name of the parent component and corresponding line
-                parent_name = parent_dictionary[depth - 2].keys()[-1] if depth else ""
+                parent_name = list(parent_dictionary[depth - 2])[-1] if depth else ""
                 parent_line = self.new_dicts_index[parent_name] if depth else -1
 
                 # If the line is at least composed of a keyname and column
@@ -398,14 +398,14 @@ class YamlCodeEditor(GenericCodeEditor):
                     # If no value is provided then create a new empty dictionary that is going to be filled by elements
                     # coming from higher depths
                     else:
-                        new_empty_dict = OrderedDict()
+                        new_empty_dict = dict()
                         parent_dictionary[depth - 1][split_line[0]] = new_empty_dict
                         parent_dictionary[depth] = new_empty_dict
 
                 # If line corresponds to a list
                 elif dash:
                     # Get the object in which we should add the list
-                    object_to_fill = parent_dictionary[depth - 2].values()[-1]
+                    object_to_fill = list(parent_dictionary[depth - 2].values())[-1]
                     # If some text is provided after the dash
                     if list_element:
                         element = list_element.strip()
@@ -423,7 +423,7 @@ class YamlCodeEditor(GenericCodeEditor):
                         if one_elem_dict:
                             key_, value_ = one_elem_dict.groups()
                             formatted_elems = [(self.to_format(key_), self.to_format(value_))]
-                        element_to_add = OrderedDict(formatted_elems) if one_elem_dict else self.to_format(element)
+                        element_to_add = dict(formatted_elems) if one_elem_dict else self.to_format(element)
                     # If a condensed dict is provided
                     elif condensed_dict:
                         element_to_add = checked_condensed_dict
@@ -445,14 +445,14 @@ class YamlCodeEditor(GenericCodeEditor):
                 line_number += 1
         # Get the parsed content
         self.parsed_content = parsed
-        # Emit the singal if it's different than the initial
+        # Emit the signal if it's different than the initial
         self.contentIsModified.emit(self.initial_content != self.parsed_content)
 
     def reset_init_content(self):
         """
             Reset the initial content
         """
-        self.initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else OrderedDict()
+        self.initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else dict()
 
     def mark_component(self, component_name):
         """
@@ -483,6 +483,7 @@ class YamlCodeEditor(GenericCodeEditor):
         for line_index in lines_indices:
             if line_index not in self.wrong_format_lines:
                 self.wrong_format_lines.append(line_index)
+        print(f"In mark components we have {self.wrong_format_lines}")
         self.update_background()
 
     def set_margin_marker(self):
@@ -502,8 +503,8 @@ class YamlCodeEditor(GenericCodeEditor):
         """
             Clean the editor (i.e. remove content and reset attributes) but keep is editable
         """
-        super(YamlCodeEditor, self).reset()
-        self.parsed_content = OrderedDict()
+        super().reset()
+        self.parsed_content = dict()
 
 
 class XmlCodeEditor(GenericCodeEditor):
@@ -518,7 +519,7 @@ class XmlCodeEditor(GenericCodeEditor):
 
             @param parent: parent of the widget
         """
-        super(XmlCodeEditor, self).__init__(parent)
+        super().__init__(parent)
         self.lexer_ = Qsci.QsciLexerXML(self)
         self.initial_content = None
         self.parsed_content = None
@@ -564,7 +565,7 @@ class XmlCodeEditor(GenericCodeEditor):
         """
             Update the markers based on which lines are detected as wrong
         """
-        super(XmlCodeEditor, self).update_background()
+        super().update_background()
         # In case the editor's content in empty notifies that something is wrong
         if self.parsed_content is None and self.isEnabled():
             for line in range(self.lines()):
