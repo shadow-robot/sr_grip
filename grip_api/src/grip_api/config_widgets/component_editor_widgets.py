@@ -45,7 +45,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
             @param parent: parent of the widget
         """
         self.margin_marker = margin_marker
-        super(ComponentEditorWidget, self).__init__(name=name, enabled=enabled, parent=parent)
+        super().__init__(name=name, enabled=enabled, parent=parent)
         # Number of components to integrate
         self.number_components = 0
         # Dictionary gathering all required information to run and call the component
@@ -59,7 +59,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         """
             Create a YAML editor with a marker in the margin to add a new component
         """
-        super(ComponentEditorWidget, self).create_editor()
+        super().create_editor()
         if self.margin_marker:
             self.code_editor.marginClicked.connect(self.on_margin_click)
             self.code_editor.set_margin_marker()
@@ -262,7 +262,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         """
             Loads a configuration file integrating components to the framework
         """
-        super(ComponentEditorWidget, self).load_file()
+        super().load_file()
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
 
@@ -270,7 +270,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         """
             Create a new file for integrating components
         """
-        super(ComponentEditorWidget, self).new_file()
+        super().new_file()
         self.number_components = 0
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
@@ -280,7 +280,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
             Save the content of the editor to the linked file and emit a signal stating that the content of the file has
             been modified
         """
-        super(ComponentEditorWidget, self).save_file()
+        super().save_file()
         # Emit the signal
         self.contentUpdated.emit()
 
@@ -289,7 +289,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
             Reset the editor, unlinks the editor to any file and emit a signal stating that the content of the file has
             been modified
         """
-        super(ComponentEditorWidget, self).close_file()
+        super().close_file()
         # Make sure valid_input is set to None
         self.valid_input = None
         # Emit the signal
@@ -310,7 +310,7 @@ class MoveItPlannerEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(MoveItPlannerEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.planners_info = None
         self.mandatory_fields = ["planner_name", "robot_speed_factor", "number_plan_attempt", "planning_max_time"]
 
@@ -376,7 +376,7 @@ class RosControllersEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(RosControllersEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.controllers_info = None
         self.mandatory_fields = "type"
 
@@ -457,7 +457,7 @@ class JointStateEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(JointStateEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=False, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=False, parent=parent)
         self.valid_input = OrderedDict()
 
     def check_arguments_validity(self, is_different):
@@ -494,7 +494,7 @@ class PoseEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(PoseEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.mandatory_fields = "reference_frame"
         self.poses = OrderedDict()
         self.cartesian_poses = OrderedDict()
@@ -582,7 +582,7 @@ class TrajectoryEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(TrajectoryEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.mandatory_fields = ["name", "interpolate_time", "pause_time"]
         self.known_checkpoints = list()
 
@@ -669,7 +669,7 @@ class SensorEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(SensorEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.mandatory_fields = ["data_topics", "initial_pose", "frame_id"]
         self.known_poses = list()
 

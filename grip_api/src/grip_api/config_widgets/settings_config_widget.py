@@ -35,7 +35,7 @@ class SettingsConfigWidget(QWidget):
 
             @param parent: parent of the widget
         """
-        super(SettingsConfigWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName("Setup config widget")
         # Configuration of the settings config
         self.configuration = SETTINGS_CONFIG.copy()
@@ -96,20 +96,20 @@ class SettingsConfigWidget(QWidget):
         # Since each object has got an unique name, store it in a dictionary
         self.editor_content_changed[self.sender().objectName()] = has_widget_changed
         # Emits the signal. If any of the children widgets has been changed then it tells that settings have changed
-        self.settingsChanged.emit(any(self.editor_content_changed.values()))
+        self.settingsChanged.emit(any(list(self.editor_content_changed.values())))
 
     def update_new_checkpoints(self):
         """
             Set the available joint states defined in the corresponding editor
         """
-        known_checkpoints = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        known_checkpoints = list() if not self.sender().valid_input else list(self.sender().valid_input)
         self.named_trajectories.set_known_checkpoints(known_checkpoints)
 
     def update_new_poses(self):
         """
             Set the available poses defined in the corresponding editor
         """
-        self.sensor_configs.set_known_poses(self.sender().poses.keys())
+        self.sensor_configs.set_known_poses(list(self.sender().poses))
 
     def connect_update(self):
         """

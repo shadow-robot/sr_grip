@@ -36,7 +36,7 @@ class HardwareConfigWidget(QWidget):
             @param hardware_part: String stating whether the widget is meant for an "Arm" or a "Hand"
             @param parent: parent of the widget
         """
-        super(HardwareConfigWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.hardware_part = hardware_part
         self.setObjectName("{} config widget".format(hardware_part))
         # Configuration of the hardware config

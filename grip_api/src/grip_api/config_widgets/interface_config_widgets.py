@@ -37,7 +37,7 @@ class GenericInterfaceConfigWidget(QWidget):
             @param name: Name given to the object. Used to look it up when restoring a configuration
             @param parent: parent of the widget
         """
-        super(GenericInterfaceConfigWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName(name)
         self.init_ui()
 
@@ -64,7 +64,7 @@ class SimulationConfig(GenericInterfaceConfigWidget):
 
             @param parent: parent of the widget
         """
-        super(SimulationConfig, self).__init__("Simulation parameters", parent=parent)
+        super().__init__("Simulation parameters", parent=parent)
         self.initial_checked = True
         # Configuration of the simulation
         self.configuration = SIMU_CONFIG.copy()
@@ -186,7 +186,7 @@ class MoveitConfig(GenericInterfaceConfigWidget):
 
             @param parent: parent of the widget
         """
-        super(MoveitConfig, self).__init__("Moveit parameters", parent=parent)
+        super().__init__("Moveit parameters", parent=parent)
         # Configuration of the moveit interface
         self.configuration = MOVEIT_CONFIG.copy()
         # By default it is valid
@@ -377,7 +377,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
 
             @param parent: parent of the widget
         """
-        super(RobotInterfaceConfig, self).__init__("Robot interface", parent=parent)
+        super().__init__("Robot interface", parent=parent)
         # Configuration of the interface
         self.configuration = INTERFACE_CONFIG.copy()
         # By default it is not valid
@@ -568,7 +568,7 @@ class HardwareSpinBox(QWidget):
             @param name: text to write after the spin box
             @param parent: parent of the widget
         """
-        super(HardwareSpinBox, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName("spin {}".format(name))
         self.init_ui()
         self.original_text = name

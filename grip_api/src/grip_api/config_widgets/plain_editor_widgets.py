@@ -40,7 +40,7 @@ class GenericEditorWidget(QWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(GenericEditorWidget, self).__init__(objectName="Editor {}".format(name), parent=parent)
+        super().__init__(objectName="Editor {}".format(name), parent=parent)
         self.init_ui()
         self.name = name
         self.create_header()
@@ -98,7 +98,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
         self.file_path = None
         self.initial_path = None
-        super(YAMLEditorWidget, self).__init__(name=name, enabled=enabled, parent=parent)
+        super().__init__(name=name, enabled=enabled, parent=parent)
         self.initial_input = OrderedDict()
         self.valid_input = OrderedDict()
         self.update_init_state = False
@@ -116,7 +116,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
             Create the header allowing to create, open, save, and close a new YAML file
         """
-        super(YAMLEditorWidget, self).create_header()
+        super().create_header()
         self.new_button = QPushButton("New")
         # Allows to have button that fit the text width
         self.new_button.setMaximumWidth(self.new_button.fontMetrics().boundingRect(self.new_button.text()).width() + 10)
@@ -348,7 +348,7 @@ class XMLEditorWidget(GenericEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(XMLEditorWidget, self).__init__(name=name, enabled=enabled, parent=parent)
+        super().__init__(name=name, enabled=enabled, parent=parent)
         self.reinitialize_inputs()
 
     def get_formated_arguments(self):

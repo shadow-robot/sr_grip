@@ -35,7 +35,7 @@ class RobotInterfaceWidget(QWidget):
 
             @param parent: parent of the widget
         """
-        super(RobotInterfaceWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName("Robot interface widget")
         self.init_ui()
         self.create_widgets()
