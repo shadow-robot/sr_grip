@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
 from PyQt5.QtWidgets import QListWidget, QAbstractItemView, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QDrag
 from PyQt5.QtCore import Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
-from collections import OrderedDict
-from list_item_widgets import BoxItemContent
 from grip_core.utils.file_parsers import AVAILABLE_STATES, AVAILABLE_STATEMACHINES
 from grip_api.utils.files_specifics import LISTITEM_MIMETYPE
 from grip_core.utils.common_paths import STATE_ICON, STATE_MACHINE_ICON
+from .list_item_widgets import BoxItemContent
 
 
 class CommonDraggableListWidget(QListWidget):

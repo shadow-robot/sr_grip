@@ -18,12 +18,12 @@ import os
 from collections import OrderedDict
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog
 from PyQt5.QtCore import pyqtSignal
-from list_widgets import StateListWidget, StateMachineListWidget
 from grip_core.utils.common_paths import CATKIN_WS, INTERNAL_SRC_CORE
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_core.utils.file_parsers import fill_available_states, fill_available_state_machines
 from grip_api.utils.files_specifics import EDITOR_TO_DESCRIPTION
 from grip_api.utils.common_checks import is_state_source_valid
+from .list_widgets import StateListWidget, StateMachineListWidget
 
 
 class CommonSideDisplayer(QWidget):

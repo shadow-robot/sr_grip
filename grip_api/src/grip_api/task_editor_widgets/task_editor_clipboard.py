@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2021 Shadow Robot Company Ltd.
 #
@@ -15,8 +15,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
-from connector import Connector
-from state_machine import StateMachine
+from .connector import Connector
+from .state_machine import StateMachine
 
 
 class Clipboard(object):

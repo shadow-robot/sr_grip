@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -16,8 +16,8 @@
 
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from PyQt5.QtCore import pyqtSignal
-from plain_editor_widgets import YAMLEditorWidget
-from component_editor_widgets import ComponentEditorWidget, RosControllersEditorWidget, MoveItPlannerEditorWidget
+from .plain_editor_widgets import YAMLEditorWidget
+from .component_editor_widgets import ComponentEditorWidget, RosControllersEditorWidget, MoveItPlannerEditorWidget
 from grip_api.utils.files_specifics import ARM_CONFIG, HAND_CONFIG
 
 

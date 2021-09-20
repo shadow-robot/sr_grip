@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -15,9 +15,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import rospkg
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QToolButton, QFileDialog
 from PyQt5.QtCore import pyqtSignal
-import rospkg
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_api.utils.files_specifics import FILE_TO_EXTENSION
 

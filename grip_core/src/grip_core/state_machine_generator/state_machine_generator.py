@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2019, 2020 Shadow Robot Company Ltd.
 #
@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from config_parser import StateMachineConfigParser
-from templater import StateMachineTemplater
+from .config_parser import StateMachineConfigParser
+from .templater import StateMachineTemplater
 
 
 def generate_state_machines(state_machine_dictionary, state_source, state_machine_sources, target_folder_path,

@@ -18,8 +18,8 @@ from PyQt5.QtWidgets import QMdiArea, QMdiSubWindow, QMenu
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from grip_core.utils.common_paths import RED_CIRCLE, GREEN_CIRCLE
-from graphical_editor_widget import GraphicalEditorWidget
-from task_editor_clipboard import Clipboard
+from .graphical_editor_widget import GraphicalEditorWidget
+from .task_editor_clipboard import Clipboard
 
 
 class TaskEditorMDIArea(QMdiArea):

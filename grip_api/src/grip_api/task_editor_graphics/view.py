@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -17,12 +17,12 @@
 from PyQt5.QtWidgets import QGraphicsView
 from PyQt5.QtCore import Qt, QEvent, pyqtSignal, QPoint
 from PyQt5.QtGui import QPainter, QMouseEvent
-from socket import GraphicsSocket
-from terminal_socket import TerminalGraphicsSocket
 from grip_api.task_editor_widgets.connector import Connector
-from connector import GraphicsConnector
-from state import GraphicsState, GraphicsStateContent
-from state_machine import GraphicsStateMachine
+from .socket import GraphicsSocket
+from .terminal_socket import TerminalGraphicsSocket
+from .connector import GraphicsConnector
+from .state import GraphicsState, GraphicsStateContent
+from .state_machine import GraphicsStateMachine
 
 
 class TaskEditorView(QGraphicsView):

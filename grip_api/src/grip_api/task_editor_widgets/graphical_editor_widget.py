@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -14,18 +14,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import subprocess
 from PyQt5.QtWidgets import QGridLayout, QWidget, QInputDialog, QLineEdit, QMenu
 from PyQt5.QtCore import Qt, QDataStream, QIODevice, pyqtSignal
 from grip_api.task_editor_graphics.view import TaskEditorView
-from container import Container
-from state_machine import StateMachine
 from grip_api.utils.files_specifics import LISTITEM_MIMETYPE
 from grip_core.state_machine_generator.state_machine_generator import generate_state_machines
 from grip_core.utils.common_paths import GENERATED_STATE_MACHINE_FOLDER, BASE_STATE_MACHINE_FOLDER
 from grip_api.utils.common_dialog_boxes import warning_message
-from state import State
-import os
-import subprocess
+from .container import Container
+from .state_machine import StateMachine
+from .state import State
 
 
 class GraphicalEditorWidget(QWidget):

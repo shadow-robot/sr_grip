@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020 Shadow Robot Company Ltd.
 #
@@ -20,7 +20,7 @@ from collections import OrderedDict
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from grip_core.utils.file_parsers import AVAILABLE_STATES, get_import_statement
 from grip_core.utils.common_paths import EXTERNAL_COMPONENT_TEMPLATE, GENERATED_STATES_FOLDER, SENSOR_TEMPLATE
-from state_config_widgets import StateConfigBox, CommanderStateConfigBox, GeneratedStateConfigBox, StateMachineConfigBox
+from .state_config_widgets import StateConfigBox, CommanderStateConfigBox, GeneratedStateConfigBox, StateMachineConfigBox
 
 
 class StateContentWidget(QWidget):

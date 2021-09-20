@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from grip_api.task_editor_graphics.state import GraphicsState
-from state_content_widget import StateContentWidget
-from grip_core.state_machine_generator.state_generator import generate_state
-from socket import Socket
 import os
 from collections import OrderedDict
+from grip_api.task_editor_graphics.state import GraphicsState
+from grip_core.state_machine_generator.state_generator import generate_state
+from .state_content_widget import StateContentWidget
+from .socket import Socket
 
 
 class State(object):

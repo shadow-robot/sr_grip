@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QSpinBox, QHBoxLayout, QCheckBox, QLayout
-from PyQt5.QtCore import pyqtSignal
-from plain_editor_widgets import XMLEditorWidget
-import user_entry_widgets as uew
-from grip_api.utils.files_specifics import SIMU_CONFIG, INTERFACE_CONFIG, MOVEIT_CONFIG
 import os
 import re
 import yaml
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QSpinBox, QHBoxLayout, QCheckBox, QLayout
+from PyQt5.QtCore import pyqtSignal
+from grip_api.utils.files_specifics import SIMU_CONFIG, INTERFACE_CONFIG, MOVEIT_CONFIG
+from .plain_editor_widgets import XMLEditorWidget
+from . import user_entry_widgets as uew
 
 
 class GenericInterfaceConfigWidget(QWidget):

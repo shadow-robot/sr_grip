@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -16,7 +16,7 @@
 
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout
 from PyQt5.QtCore import pyqtSignal
-from interface_config_widgets import RobotInterfaceConfig, SimulationConfig, MoveitConfig
+from .interface_config_widgets import RobotInterfaceConfig, SimulationConfig, MoveitConfig
 
 
 class RobotInterfaceWidget(QWidget):

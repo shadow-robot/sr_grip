@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020 Shadow Robot Company Ltd.
 #
@@ -14,6 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
+import os
+import copy
+import rospkg
 from PyQt5.QtWidgets import QFileDialog, QInputDialog, QLineEdit
 from PyQt5.QtCore import pyqtSignal
 from grip_core.utils.common_paths import CATKIN_WS
@@ -21,11 +25,7 @@ from grip_core.utils.file_parsers import is_def_file_valid
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_api.utils.common_checks import is_pose_valid, is_topic_valid, is_moveit_planner_valid, is_launchfile_valid
 from grip_api.utils.files_specifics import SOCKET_COLORS
-from plain_editor_widgets import YAMLEditorWidget
-from collections import OrderedDict
-import os
-import copy
-import rospkg
+from .plain_editor_widgets import YAMLEditorWidget
 
 
 class ComponentEditorWidget(YAMLEditorWidget):

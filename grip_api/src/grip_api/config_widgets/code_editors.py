@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5 import Qsci
-from PyQt5.QtGui import QColor
-from PyQt5.QtCore import pyqtSignal, QTimer, Qt
 import re
 from collections import OrderedDict
 import copy
+from PyQt5 import Qsci
+from PyQt5.QtGui import QColor
+from PyQt5.QtCore import pyqtSignal, QTimer, Qt
 
 
 class GenericCodeEditor(Qsci.QsciScintilla):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -14,18 +14,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from terminal_socket import TerminalSocket
-from socket import Socket
+import os
+from collections import OrderedDict
 from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_file, AVAILABLE_STATEMACHINES)
 from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
 from grip_api.utils.common_dialog_boxes import error_message, warning_message
-from connector import Connector
-import os
-from state import State
-from state_machine import StateMachine
-from collections import OrderedDict
-from container_history import ContainerHistory
+from .terminal_socket import TerminalSocket
+from .socket import Socket
+from .connector import Connector
+from .state import State
+from .state_machine import StateMachine
+from .container_history import ContainerHistory
 
 
 class Container(object):

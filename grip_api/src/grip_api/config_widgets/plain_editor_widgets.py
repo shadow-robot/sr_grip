@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
+import copy
+import os
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QPushButton, QSpacerItem, QFileDialog
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_api.utils.common_dialog_boxes import can_save_warning_message
-from code_editors import GenericCodeEditor, YamlCodeEditor, XmlCodeEditor
-from collections import OrderedDict
-import copy
-import os
+from .code_editors import GenericCodeEditor, YamlCodeEditor, XmlCodeEditor
 
 
 class GenericEditorWidget(QWidget):

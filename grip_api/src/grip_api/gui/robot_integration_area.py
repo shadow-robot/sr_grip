@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess
+import os
+from collections import OrderedDict
 from PyQt5.QtWidgets import QTabWidget, QPushButton
 from PyQt5.QtCore import pyqtSignal
 from grip_api.config_widgets.robot_interface_widget import RobotInterfaceWidget
@@ -24,9 +27,6 @@ from grip_api.utils.common_checks import create_yaml_file
 from grip_core.launch_file_generator.launch_templater import LaunchFileTemplater
 from grip_core.utils.common_paths import API_PATH
 from grip_core.utils.manager_utils import reinitialise_managers
-import subprocess
-import os
-from collections import OrderedDict
 
 
 class RobotIntegrationArea(QTabWidget):
