@@ -35,7 +35,7 @@ class GraphicsSocket(QGraphicsItem):
         # Store the socket
         self.socket = socket
         # Set the parent as the state's graphical state
-        super(GraphicsSocket, self).__init__(socket.state.graphics_state)
+        super().__init__(socket.state.graphics_state)
         # Depending on the current view, update the transform applied to this object
         self.socket.state.container.get_view().viewScaled.connect(self.update_transform)
         # Initialize all constants for a nice rendering

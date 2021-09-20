@@ -40,7 +40,7 @@ class CommonSideDisplayer(QWidget):
             @param push_button_text: Text that will be set to a push button allowing to add new elements
             @param parent: Parent of the widget
         """
-        super(CommonSideDisplayer, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.init_ui()
         self.list_widget = list_widget
         self.add_widgets(push_button_text)
@@ -90,7 +90,7 @@ class StateMachinesDisplayer(CommonSideDisplayer):
 
             @param parent: Parent of the widget
         """
-        super(StateMachinesDisplayer, self).__init__(StateMachineListWidget(), "Import templates", parent)
+        super().__init__(StateMachineListWidget(), "Import templates", parent)
 
     def on_click(self):
         """
@@ -127,7 +127,7 @@ class StatesDisplayer(CommonSideDisplayer):
 
             @param parent: Parent of the widget
         """
-        super(StatesDisplayer, self).__init__(StateListWidget(), "Import states", parent)
+        super().__init__(StateListWidget(), "Import states", parent)
         # Going to store whether at least one of the hardware part is configured through MoveIt!
         self.commander_configs = dict()
         # Going to store the name of all the components integrated to the framework

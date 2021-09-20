@@ -36,7 +36,7 @@ class CommonDraggableListWidget(QListWidget):
 
             @param parent: Parent of the widget
         """
-        super(CommonDraggableListWidget, self).__init__(parent)
+        super().__init__(parent)
         # By default each element of the list is not associated to any icon
         self.icon = QPixmap(".")
         self.init_ui()
@@ -124,7 +124,7 @@ class StateMachineListWidget(CommonDraggableListWidget):
         """
             Initialize the widget
         """
-        super(StateMachineListWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the icon of each item
         self.icon = QPixmap(STATE_MACHINE_ICON).scaledToHeight(32)
         self.add_items(AVAILABLE_STATEMACHINES)
@@ -143,7 +143,7 @@ class StateMachineListWidget(CommonDraggableListWidget):
             Update the content of the list
         """
         self.clear()
-        super(StateMachineListWidget, self).add_items(AVAILABLE_STATEMACHINES)
+        super().add_items(AVAILABLE_STATEMACHINES)
 
 
 class StateListWidget(CommonDraggableListWidget):
@@ -156,7 +156,7 @@ class StateListWidget(CommonDraggableListWidget):
         """
             Initialize the widget
         """
-        super(StateListWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the icon of all the items
         self.icon = QPixmap(STATE_ICON).scaledToHeight(32)
         # Create the attribute of the class that will store all the different kind of states to be displayed

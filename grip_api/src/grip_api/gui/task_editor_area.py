@@ -34,7 +34,7 @@ class TaskEditorArea(QWidget):
 
             @param parent: Parent of the widget
         """
-        super(TaskEditorArea, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the object name to be able to look it up and restore it
         self.setObjectName("Task editor area")
         self.framework_gui = parent

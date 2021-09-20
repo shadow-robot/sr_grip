@@ -42,7 +42,7 @@ class FrameworkGui(QMainWindow):
         """
             Initialize the class by generating the UI
         """
-        super(FrameworkGui, self).__init__()
+        super().__init__()
         # Load available state machines
         self.load_state_machines()
         # Load available states

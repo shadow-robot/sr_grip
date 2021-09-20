@@ -35,7 +35,7 @@ class TaskEditorMDIArea(QMdiArea):
 
             @param parent: Parent of the widget
         """
-        super(TaskEditorMDIArea, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.init_ui()
         # Will contain the name of each subwindow and whether it can be saved
         self.modifiers = dict()
@@ -202,7 +202,7 @@ class TaskEditorSubWindow(QMdiSubWindow):
             @param state_machine_type: Type of the state machine that will be loaded to the GraphicalEditorWidget
             @param parent: Parent of the widget
         """
-        super(TaskEditorSubWindow, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.init_ui()
         # Set the subwindow icon
         self.setWindowIcon(self.red_icon)

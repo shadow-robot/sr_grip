@@ -33,7 +33,7 @@ class TerminalGraphicsSocket(QGraphicsItem):
             @param socket: Socket linked to this graphical representation
             @param parent: Parent of this widget
         """
-        super(TerminalGraphicsSocket, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.socket = socket
         self.socket.container.get_view().viewScaled.connect(self.update_transform)
         # Check whether the socket is used as the input of a state or not
@@ -149,7 +149,7 @@ class TerminalGraphicsSocket(QGraphicsItem):
 
             @param event: QMouseEvent sent by PyQt5
         """
-        super(TerminalGraphicsSocket, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
         # Socket is being moved
         self.has_moved = True
         # Update all the connectors that are linked to this terminal socket
@@ -162,7 +162,7 @@ class TerminalGraphicsSocket(QGraphicsItem):
 
             @param event: QMouseEvent sent by PyQt5
         """
-        super(TerminalGraphicsSocket, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
         # If the object has been moved
         if self.has_moved:
             # Reset the flag
@@ -207,7 +207,7 @@ class OutcomeTitle(QGraphicsTextItem):
 
             @param parent: Parent of this widget
         """
-        super(OutcomeTitle, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Store the parent TerminalGraphicsSocket the title is linked to
         self.parent = parent
         # Set default visualisation parameters
@@ -272,7 +272,7 @@ class OutcomeTitle(QGraphicsTextItem):
             self.setTextCursor(text_cursor)
         # Otherwise just process the keys as usual
         else:
-            super(OutcomeTitle, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         """
@@ -299,7 +299,7 @@ class OutcomeTitle(QGraphicsTextItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, False)
         self.setTextInteractionFlags(Qt.NoTextInteraction)
         # Call the original behaviour
-        super(OutcomeTitle, self).focusOutEvent(event)
+        super().focusOutEvent(event)
         # Make sure the object is not left with an empty name
         if not self.toPlainText():
             self.setPlainText(self.parent.socket.name)

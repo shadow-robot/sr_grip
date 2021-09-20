@@ -32,7 +32,7 @@ class GraphicsConnector(QGraphicsPathItem):
             @param connector: Connector object corresponding to this graphical representation
             @param parent: Parent of the widget
         """
-        super(GraphicsConnector, self).__init__(parent)
+        super().__init__(parent)
 
         self.connector = connector
         # Initialize the source and destination positions (values set here are arbitrary)

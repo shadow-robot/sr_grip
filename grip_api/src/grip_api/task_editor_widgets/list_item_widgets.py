@@ -34,7 +34,7 @@ class BoxItemContent(QFrame):
             @param is_state: Boolean specifying whether the box displays a state or a state machine
             @param parent: Parent of the widget
         """
-        super(BoxItemContent, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the name of the box (= widget)
         self.name = name
         self.is_state = is_state

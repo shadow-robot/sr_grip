@@ -46,7 +46,7 @@ class GraphicalEditorWidget(QWidget):
             @param container_type: Type of the state machine container to load
             @param parent: Parent of the widget
         """
-        super(GraphicalEditorWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Create the container associated to this widget
         self.container = Container(editor_widget=self, container_type=container_type)
         self.init_ui()

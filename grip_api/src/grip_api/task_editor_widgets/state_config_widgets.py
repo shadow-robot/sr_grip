@@ -34,7 +34,7 @@ class GenericConfigBoxWidget(QGroupBox):
             @param type: Type of the state (string)
             @param parent: Parent of the widget (QWidget)
         """
-        super(GenericConfigBoxWidget, self).__init__(type, parent=parent)
+        super().__init__(type, parent=parent)
         self.init_ui()
         # Number of configuration slots
         self.number_rows = 0
@@ -223,7 +223,7 @@ class StateConfigBox(GenericConfigBoxWidget):
             @param state_parameters: Dictionary containing the parameters of the given state type
             @param parent: Parent (QWidget) of this widget
         """
-        super(StateConfigBox, self).__init__("type: {}".format(source), parent=parent)
+        super().__init__("type: {}".format(source), parent=parent)
         # Initialize the content
         self.initialize_content(state_parameters)
 
@@ -263,7 +263,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             @param state_parameters: Dictionary containing the parameters of the given state type
             @param parent: Parent (QWidget) of this widget
         """
-        super(CommanderStateConfigBox, self).__init__("type: {}".format(source), parent=parent)
+        super().__init__("type: {}".format(source), parent=parent)
         # Get a pointer to the task editor area
         task_editor_area = self.parent().state.container.editor_widget.parent().parent().parent().parent()
         # To access the robot integration area
@@ -482,7 +482,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         if slot_name == "group_name" and len(self.commander_choice) <= 2:
             return self.commander_choice[-1]
 
-        return super(CommanderStateConfigBox, self).get_slot_config(slot_name)
+        return super().get_slot_config(slot_name)
 
 
 class GeneratedStateConfigBox(GenericConfigBoxWidget):
@@ -500,7 +500,7 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
             @param state_parameters: Dictionary containing the parameters of the given state type
             @param parent: Parent (QWidget) of this widget
         """
-        super(GeneratedStateConfigBox, self).__init__("type: {}".format(source), parent=parent)
+        super().__init__("type: {}".format(source), parent=parent)
         # If the state correponds to a sensor, then create an attribute to the class that must be linked to the sensor
         if "sensor_topic" in state_parameters:
             self.topic_mapping = self.parent().state_info["data_topics"]
@@ -654,7 +654,7 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
                                   This parameter matters only for states generated for sensors
             @return: String, list, int or float corresponding to the current config
         """
-        slot_config = super(GeneratedStateConfigBox, self).get_slot_config(slot_name)
+        slot_config = super().get_slot_config(slot_name)
 
         # For the sensor_topic slot we must send the real topic name if requested, otherwise send the remapped one
         if slot_name == "sensor_topic" and return_mapped:
@@ -677,7 +677,7 @@ class StateMachineConfigBox(GenericConfigBoxWidget):
             @param state_machine_parameters: Dictionary containing the parameters of the given state machine type
             @param parent: Parent (QWidget) of this widget
         """
-        super(StateMachineConfigBox, self).__init__("type: {}".format(source), parent=parent)
+        super().__init__("type: {}".format(source), parent=parent)
         # Initialize the content
         self.initialize_content(state_machine_parameters)
 

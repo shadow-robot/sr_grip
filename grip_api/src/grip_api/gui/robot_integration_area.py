@@ -49,7 +49,7 @@ class RobotIntegrationArea(QTabWidget):
 
             @param parent: parent of the widget
         """
-        super(RobotIntegrationArea, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the object name to be able to look it up and restore it
         self.setObjectName("Robot integration area")
         self.config_changed = dict()

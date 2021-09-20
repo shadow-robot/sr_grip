@@ -38,7 +38,7 @@ class StateContentWidget(QWidget):
         """
         # Get the state
         self.state = state
-        super(StateContentWidget, self).__init__(parent)
+        super().__init__(parent)
         # State displayer in which the state is displayed
         state_displayer = self.state.container.editor_widget.parent().parent().parent().parent().state_displayer
         # Get the name of the states to be generated (i.e. corresponding to integrated components)
@@ -199,7 +199,7 @@ class StateMachineContentWidget(QWidget):
         """
         # Store the state machine
         self.state_machine = state_machine
-        super(StateMachineContentWidget, self).__init__(parent)
+        super().__init__(parent)
         # Initialize the UI
         self.init_ui()
 

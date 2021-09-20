@@ -32,7 +32,7 @@ class GraphicsState(QGraphicsItem):
             @param state: State linked to this graphical representation
             @param parent: Parent of this widget
         """
-        super(GraphicsState, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.state = state
         self.init_visu_tools()
         self.init_dimensions()
@@ -161,7 +161,7 @@ class GraphicsState(QGraphicsItem):
 
             @param event: QMouseEvent sent by PyQt5
         """
-        super(GraphicsState, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
         # If the object is selected and is moved, update the connectors linked to this state
         if self.isSelected():
             self.state.update_connectors()
@@ -174,7 +174,7 @@ class GraphicsState(QGraphicsItem):
 
             @param event: QMouseEvent sent by PyQt5
         """
-        super(GraphicsState, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
         # If the object has been moved
         if self.is_moved:
             # Reset the flag
@@ -191,7 +191,7 @@ class GraphicsState(QGraphicsItem):
         # Make sure the clicked state is not overlapped by another one is selected
         self.state.container.z_tracker += 1
         self.setZValue(self.state.container.z_tracker)
-        super(GraphicsState, self).mousePressEvent(event)
+        super().mousePressEvent(event)
 
     def boundingRect(self):
         """
@@ -292,7 +292,7 @@ class StateTitle(QGraphicsTextItem):
 
             @param parent: Parent of this widget
         """
-        super(StateTitle, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Store the parent GraphicsState the title is linked to
         self.parent = parent
         # Set default visualisation parameters
@@ -413,7 +413,7 @@ class StateTitle(QGraphicsTextItem):
             self.setTextCursor(text_cursor)
         # Otherwise just process the keys as usual
         else:
-            super(StateTitle, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def focusOutEvent(self, event):
         """
@@ -430,7 +430,7 @@ class StateTitle(QGraphicsTextItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, False)
         self.setTextInteractionFlags(Qt.NoTextInteraction)
         # Call the original behaviour
-        super(StateTitle, self).focusOutEvent(event)
+        super().focusOutEvent(event)
         # Update the name of the state with the current text
         if self.parent.state.name != self.toPlainText():
             self.parent.state.update_name(self.toPlainText())
@@ -453,7 +453,7 @@ class StateTitle(QGraphicsTextItem):
         if self.parent.scaling_factor < 1:
             painter.setTransform(self.parent.create_unscaled_transform(world_transform))
         # Call the original painter with the updated (or not) painter
-        super(StateTitle, self).paint(painter, QStyleOptionGraphicsItem, widget)
+        super().paint(painter, QStyleOptionGraphicsItem, widget)
         if not self.hasFocus():
             self.adapt_text_length()
 
@@ -471,7 +471,7 @@ class GraphicsStateContent(QGraphicsProxyWidget):
             @param widget: QWidget to be dispalyed in the view
             @param parent: Parent of this widget
         """
-        super(GraphicsStateContent, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the widget
         self.setWidget(widget)
 

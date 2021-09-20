@@ -31,7 +31,7 @@ class GraphicsContainer(QGraphicsScene):
             @param container: Container object this widget represents
             @param parent: Parent of this widget
         """
-        super(GraphicsContainer, self).__init__(parent)
+        super().__init__(parent)
         self.container = container
         # Set background colour
         self.color_background = QColor("#535353")

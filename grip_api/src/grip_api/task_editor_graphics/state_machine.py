@@ -32,7 +32,7 @@ class GraphicsStateMachine(QGraphicsItem):
             @param state_machine: State machine linked to this graphical representation
             @param parent: Parent of this widget
         """
-        super(GraphicsStateMachine, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.state_machine = state_machine
         self.init_visu_tools()
         self.init_dimensions()
@@ -149,7 +149,7 @@ class GraphicsStateMachine(QGraphicsItem):
 
             @param event: QMouseEvent sent by PyQt5
         """
-        super(GraphicsStateMachine, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
         # If the object is selected and is moved, update the connectors linked to this state machine
         if self.isSelected():
             self.state_machine.update_connectors()
@@ -162,7 +162,7 @@ class GraphicsStateMachine(QGraphicsItem):
 
             @param event: QMouseEvent sent by PyQt5
         """
-        super(GraphicsStateMachine, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
         if self.is_moved:
             # Reset the flag
             self.is_moved = False
@@ -178,7 +178,7 @@ class GraphicsStateMachine(QGraphicsItem):
         # Make sure the clicked state is not overlapped by another one is selected
         self.state_machine.container.z_tracker += 1
         self.setZValue(self.state_machine.container.z_tracker)
-        super(GraphicsStateMachine, self).mousePressEvent(event)
+        super().mousePressEvent(event)
 
     def boundingRect(self):
         """
@@ -287,7 +287,7 @@ class StateMachineTitle(QGraphicsTextItem):
 
             @param parent: Parent of this widget
         """
-        super(StateMachineTitle, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Store the parent GraphicsStateMachine the title is linked to
         self.parent = parent
         # Set default visualisation parameters
@@ -408,7 +408,7 @@ class StateMachineTitle(QGraphicsTextItem):
             self.setTextCursor(text_cursor)
         # Otherwise just process the keys as usual
         else:
-            super(StateMachineTitle, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def focusOutEvent(self, event):
         """
@@ -425,7 +425,7 @@ class StateMachineTitle(QGraphicsTextItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, False)
         self.setTextInteractionFlags(Qt.NoTextInteraction)
         # Call the original behaviour
-        super(StateMachineTitle, self).focusOutEvent(event)
+        super().focusOutEvent(event)
         # Direct access to the StateMachine Object
         state_machine = self.parent.state_machine
         # Update the name of the state machine with the current text, making sure 2 items don't have the same name
@@ -452,7 +452,7 @@ class StateMachineTitle(QGraphicsTextItem):
         if self.parent.scaling_factor < 1:
             painter.setTransform(self.parent.create_unscaled_transform(world_transform))
         # Call the original painter with the updated (or not) painter
-        super(StateMachineTitle, self).paint(painter, QStyleOptionGraphicsItem, widget)
+        super().paint(painter, QStyleOptionGraphicsItem, widget)
         if not self.hasFocus():
             self.adapt_text_length()
 
@@ -470,7 +470,7 @@ class GraphicsStateMachineContent(QGraphicsProxyWidget):
             @param widget: QWidget to be dispalyed in the view
             @param parent: Parent of this widget
         """
-        super(GraphicsStateMachineContent, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the widget
         self.setWidget(widget)
 
