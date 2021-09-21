@@ -10,7 +10,7 @@
   <arg name="robot_urdf_file_path" value="{{ launch_parameters.urdf_file }}"/>
 
   <!-- Load the urdf file -->
-  <param name="robot_description" command="xacro '$(arg robot_urdf_file_path)' {{ launch_parameters.urdf_args }}"/>
+  <param name="robot_description" command="xacro $(arg robot_urdf_file_path) {{ launch_parameters.urdf_args }}"/>
 
   <node pkg="grip_core" type="joint_state_manager_server" name="joint_state_manager_server" args="{{ launch_parameters.recorded_joint_state_path }}" output="screen"/>
   <node pkg="grip_core" type="moveit_plan_manager_server" name="moveit_plan_manager_server" output="screen"/>
