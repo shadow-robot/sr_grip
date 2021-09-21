@@ -141,7 +141,14 @@ class ContainerHistory(object):
         if self.initial_snapshot is None:
             return
 
+        # Values of both dictionaries corresponding to elements with names
+        named_elements = zip(list(self.initial_snapshot.values())[:-1], list(snapshot.values())[:-1])
+        # Values of both dictionaries corresponding to the connectors
+        unnamed_elements = zip(list(self.initial_snapshot.values())[-1:], list(snapshot.values())[-1:])
         # We need to have the sorted because each value is a list and the order of the elements might change
-        is_different = any(sorted(x, key=lambda k: k["name"]) != sorted(y, key=lambda k: k["name"])
-                           for x, y in zip(self.initial_snapshot.values(), snapshot.values()))
+        change_in_named_elements = any(sorted(x, key=lambda k: k["name"]) != sorted(y, key=lambda k: k["name"])
+                                       for x, y in named_elements)
+        change_in_unnamed_elements = any(sorted(x, key=lambda k: k["start"]) != sorted(y, key=lambda k: k["start"])
+                                         for x, y in unnamed_elements)
+        is_different = change_in_named_elements or change_in_unnamed_elements
         self.container.editor_widget.hasBeenModified.emit(is_different)
