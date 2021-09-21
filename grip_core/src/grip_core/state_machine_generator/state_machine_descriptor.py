@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 from .state_descriptor import StateDescriptor
 
 
@@ -42,7 +41,7 @@ class StateMachineDescriptor(object):
         # List that will gather the source of the states used to create the state machine
         self.states_source = list()
         # Ordered dictionary containing all the states composing the state machine
-        self.components = OrderedDict()
+        self.components = dict()
         # Load the parameters of the state machine
         self._load_params(state_machine_description)
 

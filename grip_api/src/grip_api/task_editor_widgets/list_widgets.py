@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020 Shadow Robot Company Ltd.
 #
@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 from PyQt5.QtWidgets import QListWidget, QAbstractItemView, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QDrag
 from PyQt5.QtCore import Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
@@ -160,7 +159,7 @@ class StateListWidget(CommonDraggableListWidget):
         # Set the icon of all the items
         self.icon = QPixmap(STATE_ICON).scaledToHeight(32)
         # Create the attribute of the class that will store all the different kind of states to be displayed
-        self.states_to_display = OrderedDict()
+        self.states_to_display = dict()
         # This widget can have different "kind" of states to display, but external and some provided states should
         # always be displayed
         self.add_items("Constant")
@@ -222,7 +221,7 @@ class StateListWidget(CommonDraggableListWidget):
             Store all the "constant" states, i.e. the one that should always be displayed, from the different sources
         """
         # Get all "constant" states, i.e. the one that should always be displayed
-        constant_states = OrderedDict()
+        constant_states = dict()
         for state_name, state_info in AVAILABLE_STATES.items():
             if state_name != "Commander":
                 constant_states[state_name] = state_info

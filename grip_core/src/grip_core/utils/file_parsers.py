@@ -16,11 +16,10 @@
 
 import os
 import re
-from collections import OrderedDict
 from grip_core.utils.common_paths import COMMANDER_FOLDER
 
-AVAILABLE_STATES = OrderedDict()
-AVAILABLE_STATEMACHINES = OrderedDict()
+AVAILABLE_STATES = dict()
+AVAILABLE_STATEMACHINES = dict()
 
 
 def extract_init_from_file(file_path):
@@ -47,9 +46,9 @@ def extract_state_parameters_from_file(file_path):
         Extract the parameters required to initialize a state
 
         @param file_path: Path to the file to parse
-        @return: OrderedDict containing parameters name and potential default values
+        @return: Dictionary containing parameters name and potential default values
     """
-    parameters = OrderedDict()
+    parameters = dict()
     split_parameters = extract_init_from_file(file_path)
 
     for parameter in split_parameters:
@@ -66,9 +65,9 @@ def extract_state_machine_parameters_from_file(file_path):
         Extract the parameters required to initialize a state machine
 
         @param file_path: Path to the file to parse
-        @return: OrderedDict containing parameters name and potential default values
+        @return: Dictionary containing parameters name and potential default values
     """
-    parameters = OrderedDict()
+    parameters = dict()
     split_parameters = extract_init_from_file(file_path)
     # For each argument takes care of the jinja commands
     for parameter in split_parameters:
@@ -147,7 +146,7 @@ def fill_available_states(path_folders):
         for root, dirs, files in os.walk(path_folder):
             # When getting states associated to commanders, create a new dictionary
             if root == COMMANDER_FOLDER:
-                dict_to_fill = OrderedDict()
+                dict_to_fill = dict()
             else:
                 dict_to_fill = AVAILABLE_STATES
 

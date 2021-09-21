@@ -15,7 +15,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from collections import OrderedDict
 from grip_api.task_editor_graphics.state import GraphicsState
 from grip_core.state_machine_generator.state_generator import generate_state
 from .state_content_widget import StateContentWidget

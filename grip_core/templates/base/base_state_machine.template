@@ -19,7 +19,6 @@ from {{ state_to_import[0] }}.{{ state_to_import[1] }} import {{ state_to_import
 {% endfor %}
 import rospy
 import smach
-from collections import OrderedDict
 {% if commanders %}
 from sr_robot_commander.sr_robot_commander import SrRobotCommander
 from moveit_commander.exception import MoveItCommanderException

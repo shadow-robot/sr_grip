@@ -15,7 +15,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from collections import OrderedDict
 import copy
 from PyQt5 import Qsci
 from PyQt5.QtGui import QColor

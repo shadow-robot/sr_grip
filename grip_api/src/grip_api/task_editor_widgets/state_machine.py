@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 from grip_api.task_editor_graphics.state_machine import GraphicsStateMachine
 from .state_content_widget import StateMachineContentWidget
 from .socket import Socket

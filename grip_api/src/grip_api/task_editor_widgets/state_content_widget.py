@@ -16,7 +16,6 @@
 
 import inflection
 import os
-from collections import OrderedDict
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from grip_core.utils.file_parsers import AVAILABLE_STATES, get_import_statement
 from grip_core.utils.common_paths import EXTERNAL_COMPONENT_TEMPLATE, GENERATED_STATES_FOLDER, SENSOR_TEMPLATE
@@ -116,15 +115,15 @@ class StateContentWidget(QWidget):
         if "action/service" in state_info:
             self.state_info["template"] = EXTERNAL_COMPONENT_TEMPLATE
             outcomes = [str(i) for i in range(state_info["number_outcomes"])] + ["state_failure"]
-            self.state_info["parameters"] = OrderedDict([("input", None), ("input_type", None), ("output_type", None),
-                                                         ("output", None), ("outcomes", outcomes)])
+            self.state_info["parameters"] = dict([("input", None), ("input_type", None), ("output_type", None),
+                                                  ("output", None), ("outcomes", outcomes)])
             self.state_info["action/service"] = state_info["action/service"]
             self.state_info["server_name"] = state_info["server_name"]
         elif "data_topics" in state_info:
             self.state_info["template"] = SENSOR_TEMPLATE
             outcomes = ["success", "failure"]
-            self.state_info["parameters"] = OrderedDict([("sensor_topic", None), ("output", None),
-                                                         ("outcomes", outcomes)])
+            self.state_info["parameters"] = dict([("sensor_topic", None), ("output", None),
+                                                  ("outcomes", outcomes)])
             self.state_info["data_topics"] = state_info["data_topics"]
         # Get common values regardless of what kind of state is generated
         self.state_info["filename"] = inflection.underscore(self.state.type)

@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020, 2021 Shadow Robot Company Ltd.
 #
@@ -15,7 +15,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from collections import OrderedDict
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 from grip_core.utils.common_paths import CATKIN_WS, INTERNAL_SRC_CORE
@@ -177,7 +176,7 @@ class StatesDisplayer(CommonSideDisplayer):
         else:
             self.external_sources[self.sender()] = self.sender().valid_input
         # Create a temporary dictionary that contains all the states to display
-        up_to_date_integrated = OrderedDict()
+        up_to_date_integrated = dict()
         for sender, components in self.external_sources.items():
             for component_name, component_params in components.items():
                 # Set the same format as the other states

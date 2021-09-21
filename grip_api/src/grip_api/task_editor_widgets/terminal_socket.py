@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 from grip_api.task_editor_graphics.terminal_socket import TerminalGraphicsSocket
 from grip_api.utils.common_dialog_boxes import warning_message
 

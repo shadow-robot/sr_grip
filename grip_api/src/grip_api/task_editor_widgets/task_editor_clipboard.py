@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 from .connector import Connector
 from .state_machine import StateMachine
 
@@ -69,8 +68,8 @@ class Clipboard(object):
             selected_connectors.remove(connector)
 
         # Store the valid content
-        self.content = OrderedDict([('states', selected_states), ('state_machines', selected_state_machines),
-                                    ('connectors', selected_connectors), ('containers', selected_containers)])
+        self.content = dict([('states', selected_states), ('state_machines', selected_state_machines),
+                             ('connectors', selected_connectors), ('containers', selected_containers)])
         # If required, remove the selected items
         if remove_copied:
             container.get_view().delete_selected()

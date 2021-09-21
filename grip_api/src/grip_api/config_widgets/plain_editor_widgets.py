@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 import copy
 import os
 from PyQt5.QtCore import pyqtSignal
@@ -99,8 +98,8 @@ class YAMLEditorWidget(GenericEditorWidget):
         self.file_path = None
         self.initial_path = None
         super().__init__(name=name, enabled=enabled, parent=parent)
-        self.initial_input = OrderedDict()
-        self.valid_input = OrderedDict()
+        self.initial_input = dict()
+        self.valid_input = dict()
         self.update_init_state = False
         self.should_emit_signal = True
 

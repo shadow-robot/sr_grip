@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 from PyQt5.QtGui import QColor
 
 FILE_TO_EXTENSION = {"Gazebo world file": ["gazebo world", "world", ".world"],
@@ -33,17 +32,17 @@ SIMU_CONFIG = {"simu checkbox": True, "UE Gazebo world file": None, "UE Gazebo m
 MOVEIT_CONFIG = {"UE Moveit package": "", "Editor Move group arguments (optional)": None,
                  "Editor RViz arguments (optional)": None}
 
-ARM_CONFIG = {"Editor Arm hardware connection": OrderedDict(), "Editor ROS controllers": OrderedDict(),
-              "Editor MoveIt! planners": OrderedDict(), "Editor External kinematics": OrderedDict(),
-              "Editor External controllers": OrderedDict(), "Editor External Motion Planners": OrderedDict()}
+ARM_CONFIG = {"Editor Arm hardware connection": dict(), "Editor ROS controllers": dict(),
+              "Editor MoveIt! planners": dict(), "Editor External kinematics": dict(),
+              "Editor External controllers": dict(), "Editor External Motion Planners": dict()}
 
-HAND_CONFIG = {"Editor Hand hardware connection": OrderedDict(), "Editor ROS controllers": OrderedDict(),
-               "Editor MoveIt! planners": OrderedDict(), "Editor External kinematics": OrderedDict(),
-               "Editor External controllers": OrderedDict(), "Editor External Motion Planners": OrderedDict()}
+HAND_CONFIG = {"Editor Hand hardware connection": dict(), "Editor ROS controllers": dict(),
+               "Editor MoveIt! planners": dict(), "Editor External kinematics": dict(),
+               "Editor External controllers": dict(), "Editor External Motion Planners": dict()}
 
-SETTINGS_CONFIG = {"Editor Named joint states": OrderedDict(), "Editor Named poses": OrderedDict(),
-                   "Editor Named trajectories": OrderedDict(), "Editor Sensors config": OrderedDict(),
-                   "Editor Sensor plugins": OrderedDict(), "Editor High level methods": OrderedDict()}
+SETTINGS_CONFIG = {"Editor Named joint states": dict(), "Editor Named poses": dict(),
+                   "Editor Named trajectories": dict(), "Editor Sensors config": dict(),
+                   "Editor Sensor plugins": dict(), "Editor High level methods": dict()}
 
 LISTITEM_MIMETYPE = "application/x-item"
 

@@ -16,7 +16,6 @@
 
 import subprocess
 import os
-from collections import OrderedDict
 from PyQt5.QtWidgets import QTabWidget, QPushButton
 from PyQt5.QtCore import pyqtSignal
 from grip_api.config_widgets.robot_interface_widget import RobotInterfaceWidget
@@ -495,7 +494,7 @@ class RobotIntegrationArea(QTabWidget):
         if all(not x for x in (arm_connection, hand_connection)):
             return
         # Will contain the final hardware connection
-        fused_hardware_connection = OrderedDict()
+        fused_hardware_connection = dict()
         # Set the robot_hardware field
         fused_hardware_connection["robot_hardware"] = list()
         # Merge both files
