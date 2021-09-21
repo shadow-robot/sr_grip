@@ -136,7 +136,7 @@ class TerminalSocket(object):
             @param save_history: Boolean stating if this change should be saved into the container's history
         """
         # If a terminal socket has already the required name, then displays a warning message and stop
-        if new_name in map(lambda x: x.name, self.container.terminal_sockets):
+        if new_name in list(map(lambda x: x.name, self.container.terminal_sockets)):
             warning_message("Invalid name", "An outcome with the same name already exists!")
             return
         # If the name is valid, set it and replace the outcome in the container's attribute

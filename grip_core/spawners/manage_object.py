@@ -134,7 +134,7 @@ def triplet_floats_to_list(string_value):
     # Check that it contains the proper number of elements
     if len(list_float) != 3:
         raise argparse.ArgumentError
-    return map(float, list_float)
+    return list(map(float, list_float))
 
 if __name__ == '__main__':
     # Initialise the node

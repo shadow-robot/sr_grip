@@ -56,8 +56,8 @@ class Clipboard(object):
 
         non_valid_connectors = list()
         # Get the ID of all the sockets that were selected
-        selected_sockets = map(lambda x: x["input_socket"] + x["output_sockets"],
-                               selected_states + selected_state_machines)
+        selected_sockets = list(map(lambda x: x["input_socket"] + x["output_sockets"],
+                                    selected_states + selected_state_machines))
         # Make several lists into a single one
         selected_sockets = [item for sublist in selected_sockets for item in sublist]
         # Remove all the connectors that are not connected on both ends

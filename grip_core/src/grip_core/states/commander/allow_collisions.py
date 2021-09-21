@@ -85,7 +85,7 @@ class AllowCollisions(smach.State):
             group_names.append(self.group_name)
         # For each group, get the associated links
         for group in group_names:
-            robot_links += userdata.commanders.values()[0]._robot_commander.get_link_names(group)
+            robot_links += list(userdata.commanders.values())[0]._robot_commander.get_link_names(group)
 
         # If nothing has been retrieved dispaly and error message and sttop here
         if not robot_links:

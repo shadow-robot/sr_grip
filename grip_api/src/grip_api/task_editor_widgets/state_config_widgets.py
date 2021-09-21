@@ -149,7 +149,7 @@ class GenericConfigBoxWidget(QGroupBox):
         """
         # If the value to set is a list, transform it back to a string so it can be displayed
         if isinstance(value, list):
-            value = map(lambda x: str(x), value)
+            value = list(map(lambda x: str(x), value))
             value = "[" + ", ".join(value) + "]"
         # Transform booleans to strings
         elif not isinstance(value, str):

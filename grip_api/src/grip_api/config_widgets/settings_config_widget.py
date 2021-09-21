@@ -96,7 +96,7 @@ class SettingsConfigWidget(QWidget):
         # Since each object has got an unique name, store it in a dictionary
         self.editor_content_changed[self.sender().objectName()] = has_widget_changed
         # Emits the signal. If any of the children widgets has been changed then it tells that settings have changed
-        self.settingsChanged.emit(any(list(self.editor_content_changed.values())))
+        self.settingsChanged.emit(any(self.editor_content_changed.values()))
 
     def update_new_checkpoints(self):
         """
