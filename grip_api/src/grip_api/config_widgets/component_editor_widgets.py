@@ -77,7 +77,6 @@ class ComponentEditorWidget(YAMLEditorWidget):
             is_dict = isinstance(component_args, OrderedDict)
             # If the argument is not a dict or does not contain the mandatory fields when mark it as wrong
             if not is_dict or not set(self.mandatory_fields).issubset(set(component_args)):
-                print("1)")
                 self.code_editor.mark_component(component_name)
             # If every mandatory field has a non empty and valid value add it to the filtered_input
             elif self.check_fields_format(component_args):
@@ -89,14 +88,12 @@ class ComponentEditorWidget(YAMLEditorWidget):
                     correct_file = self.fill_component(component_name, component_args["file"])
                     correct_action = self.fill_component(component_name, component_args["action/service"], False)
                     if any(not x for x in (correct_file, correct_action)):
-                        print("2)")
                         self.code_editor.mark_component(component_name)
                         continue
                 # If the optional run_node option is specified then update its value
                 if "run_node" in component_args:
                     value_to_set = component_args["run_node"]
                     if not isinstance(value_to_set, bool):
-                        print("3)")
                         self.code_editor.mark_component(component_name)
                         continue
                     else:
@@ -111,13 +108,11 @@ class ComponentEditorWidget(YAMLEditorWidget):
                     error_message("Error message",
                                   "A component can have a maximum of {} outcomes".format(self.max_number_outcomes),
                                   parent=self)
-                    print("4)")
                     self.code_editor.mark_component(component_name)
                 # Otherwise store the information
                 else:
                     self.components[component_name]["number_outcomes"] = number_outcomes
             else:
-                print("5)")
                 self.code_editor.mark_component(component_name)
         self.handle_valid_input_change(filtered_input, is_different)
 

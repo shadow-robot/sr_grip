@@ -483,7 +483,6 @@ class YamlCodeEditor(GenericCodeEditor):
         for line_index in lines_indices:
             if line_index not in self.wrong_format_lines:
                 self.wrong_format_lines.append(line_index)
-        print(f"In mark components we have {self.wrong_format_lines}")
         self.update_background()
 
     def set_margin_marker(self):

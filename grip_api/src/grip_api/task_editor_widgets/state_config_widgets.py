@@ -405,7 +405,6 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         previous_text = combo_widget.currentText()
         # Get all the items of the widget
         all_msgs = [combo_widget.itemText(i) for i in range(combo_widget.count())]
-        print(all_msgs)
         # Remove everything
         combo_widget.clear()
         # If msg type is empty, then set the new msgs to known
