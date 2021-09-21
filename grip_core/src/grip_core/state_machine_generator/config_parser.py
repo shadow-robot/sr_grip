@@ -58,7 +58,7 @@ class StateMachineConfigParser(object):
         # The "states" key is a list of dictionaries. So each state is a dictionary with an unique key
         for state in self.state_machine_content["states"]:
             # Get the name provided to the state
-            state_name = state.keys()[0]
+            state_name = list(state.keys())[0]
             # Get the associated description
             state_description = state[state_name]
             # Register a new state to the current state machine

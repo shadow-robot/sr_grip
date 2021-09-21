@@ -81,8 +81,8 @@ class ComputePlan(smach.State):
         """
         if isinstance(joint_state, dict):
             joint_state_message = JointState()
-            joint_state_message.name = joint_state.keys()
-            joint_state_message.position = joint_state.values()
+            joint_state_message.name = list(joint_state.keys())
+            joint_state_message.position = list(joint_state.values())
         else:
             joint_state_message = joint_state
         moveit_robot_state = RobotState()

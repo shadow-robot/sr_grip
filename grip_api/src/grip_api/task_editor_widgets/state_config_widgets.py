@@ -271,11 +271,11 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         # Get access to the settings configuration
         settings_config = robot_integration_area.settings_config_widget
         # Initialize the choice for commander
-        self.commander_choice = [""] + sorted(robot_integration_area.commander_config.keys())
+        self.commander_choice = [""] + sorted(list(robot_integration_area.commander_config.keys()))
         # Initialize the list of registered poses, joint states and trajectories
-        self.known_states = {"pose": settings_config.named_poses.poses.keys(),
-                             "joint state": settings_config.named_joint_states.valid_input.keys(),
-                             "trajectory": settings_config.named_trajectories.valid_input.keys()}
+        self.known_states = {"pose": list(settings_config.named_poses.poses.keys()),
+                             "joint state": list(settings_config.named_joint_states.valid_input.keys()),
+                             "trajectory": list(settings_config.named_trajectories.valid_input.keys())}
         # Connect the signal coming from the robot integration area re. the commander configs
         robot_integration_area.commanderUpdated.connect(self.update_commander_choice)
         # Connect the signals coming from the poses joint states and trajectories editors
@@ -292,7 +292,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         """
             Update available poses defined in the corresponding editor
         """
-        self.known_states["pose"] = self.sender().poses.keys()
+        self.known_states["pose"] = list(self.sender().poses.keys())
         # Dynamically update the content of the combo boxes that are part of the graphical representation
         combo_boxes = self.findChildren(QComboBox, self.regex)
         # For each box with a potential ComboBox
@@ -306,7 +306,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         """
             Update the available joint states defined in the corresponding editor
         """
-        known_js = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        known_js = list() if not self.sender().valid_input else list(self.sender().valid_input.keys())
         self.known_states["joint state"] = known_js
         # Dynamically update the content of the combo boxes that are part of the graphical representation
         combo_boxes = self.findChildren(QComboBox, self.regex)
@@ -319,7 +319,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         """
             Update the available trajectories defined in the corresponding editor
         """
-        known_trajectories = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        known_trajectories = list() if not self.sender().valid_input else list(self.sender().valid_input.keys())
         self.known_states["trajectory"] = known_trajectories
         # Dynamically update the content of the only combo box that displays trajectories
         combo_boxes = self.findChildren(QComboBox, self.regex)
@@ -405,6 +405,7 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
         previous_text = combo_widget.currentText()
         # Get all the items of the widget
         all_msgs = [combo_widget.itemText(i) for i in range(combo_widget.count())]
+        print(all_msgs)
         # Remove everything
         combo_widget.clear()
         # If msg type is empty, then set the new msgs to known
@@ -417,9 +418,10 @@ class CommanderStateConfigBox(GenericConfigBoxWidget):
             combo_widget.addItems([""] + currently_known)
         is_known = previous_text in currently_known
         was_known = previous_text in all_msgs
+
         # If the previous text was in the previous items but is not anymore, then it should not be displayed.
         # If the text was not part of the items and is still not, it means that it can be one from the userdata
-        if combo_widget.isEditable() and (is_known and was_known or not is_known and not was_known):
+        if combo_widget.isEditable() and (is_known and was_known or not is_known and not was_known) or is_known:
             combo_widget.setCurrentText(previous_text)
 
     def initialize_content(self, state_parameters):
@@ -512,9 +514,9 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
             # Get access to the settings configuration
             settings_config = robot_integration_area.settings_config_widget
             # Initialize the list of registered msgs in GRIP's editors
-            self.known_msgs = {"pose": settings_config.named_poses.poses.keys(),
-                               "joint state": settings_config.named_joint_states.valid_input.keys(),
-                               "trajectory": settings_config.named_trajectories.valid_input.keys(),
+            self.known_msgs = {"pose": list(settings_config.named_poses.poses.keys()),
+                               "joint state": list(settings_config.named_joint_states.valid_input.keys()),
+                               "trajectory": list(settings_config.named_trajectories.valid_input.keys()),
                                "plan": list()}
             # Connect the signals coming from the different editors
             settings_config.named_poses.contentUpdated.connect(self.update_known_poses)
@@ -538,7 +540,7 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
             elif key == "output_type" or key == "input_type":
                 self.add_choice_slot(key, ALL_MANAGER_TYPE_CHOICE)
             elif key == "sensor_topic":
-                self.add_choice_slot(key, self.topic_mapping.keys())
+                self.add_choice_slot(key, list(self.topic_mapping.keys()))
             elif key == "input":
                 self.add_choice_slot(key, [""], True)
             else:
@@ -613,14 +615,14 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         """
             Update available poses defined in the corresponding editor
         """
-        self.known_msgs["pose"] = self.sender().poses.keys()
+        self.known_msgs["pose"] = list(self.sender().poses.keys())
         self.update_input_slot("pose")
 
     def update_known_joint_states(self):
         """
             Update the available joint states defined in the corresponding editor
         """
-        known_js = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        known_js = list() if not self.sender().valid_input else list(self.sender().valid_input.keys())
         self.known_msgs["joint state"] = known_js
         self.update_input_slot("joint state")
 
@@ -628,7 +630,7 @@ class GeneratedStateConfigBox(GenericConfigBoxWidget):
         """
             Update the available trajectories defined in the corresponding editor
         """
-        known_traj = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        known_traj = list() if not self.sender().valid_input else list(self.sender().valid_input.keys())
         self.known_msgs["trajectory"] = known_traj
         self.update_input_slot("trajectory")
 

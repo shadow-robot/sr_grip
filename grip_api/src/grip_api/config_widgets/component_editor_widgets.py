@@ -352,7 +352,7 @@ class MoveItPlannerEditorWidget(ComponentEditorWidget):
         """
             Add a component to the editor
         """
-        items_to_display = self.planners_info.keys() if self.planners_info else [""]
+        items_to_display = list(self.planners_info.keys()) if self.planners_info else [""]
 
         component_name, ok = QInputDialog().getItem(self, "Input name", "Name of the group:", items_to_display)
         if not (component_name and ok):
@@ -416,7 +416,7 @@ class RosControllersEditorWidget(ComponentEditorWidget):
         """
             Add a controller to the editor
         """
-        items_to_display = self.controllers_info.keys() if self.controllers_info else [""]
+        items_to_display = list(self.controllers_info.keys()) if self.controllers_info else [""]
 
         component_name, ok = QInputDialog().getItem(self, "Input name", "Name of the controller:", items_to_display)
         if not (component_name and ok):

@@ -219,7 +219,7 @@ class GraphicalEditorWidget(QWidget):
                                 commanders_config)
         # Get the name of the root file
         python_file_to_run = os.path.join(GENERATED_STATE_MACHINE_FOLDER, parsed_container["name"] + ".py")
-        self.launch_process = subprocess.Popen(['python -B {}'.format(python_file_to_run)], shell=True)
+        self.launch_process = subprocess.Popen(['python3 {}'.format(python_file_to_run)], shell=True)
         # While running the execute option is disabled
         self.can_be_executed = False
         self.launch_process.communicate()
