@@ -236,6 +236,14 @@ bool ACMManager::_modify_acm(grip_core::ModifyACMRequest& request, grip_core::Mo
           return true;
       }
     }
+    // If the current_acm_ attribute needs to be reinitialised or set to the initial ACM
+    if (!is_updated_)
+    {
+        current_acm_ = initial_acm_;
+        // Update the number of entries
+        number_entries_ = current_acm_.entry_names.size();
+        is_updated_ = true;
+    }
     // Extract the boolean to set in the ACM to allow or disallow collisions
     bool is_allowed = request.allow_collision;
     // Extract the kind of modification to bring to the ACM
@@ -246,7 +254,7 @@ bool ACMManager::_modify_acm(grip_core::ModifyACMRequest& request, grip_core::Mo
     std::vector<int> indices_to_modify;
     // Iterator allowing to find elements in configured maps
     std::map<std::string, int>::iterator it;
-    // Out of all the links part of the initial ACM, extract only hte one part of the request
+    // Out of all the links part of the initial ACM, extract only the one part of the request
     for (size_t index_link_request = 0; index_link_request < robot_links.size(); index_link_request++)
     {
       it = robot_links_map_.find(robot_links[index_link_request]);
