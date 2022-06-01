@@ -9,6 +9,7 @@ settings:
     tag: xenial-kinetic
   template_project_name: template_unit_tests_and_code_coverage
   toolset:
+    branch: legacy
     modules:
       - check_cache
       - code_coverage
@@ -20,7 +21,6 @@ trunks:
       - name: style_check
         settings:
           toolset:
-            branch: legacy
             modules:
               - code_style_check
               - check_license
