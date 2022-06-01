@@ -20,6 +20,7 @@ trunks:
       - name: style_check
         settings:
           toolset:
+            branch: legacy
             modules:
               - code_style_check
               - check_license
