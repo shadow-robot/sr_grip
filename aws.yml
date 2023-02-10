@@ -3,7 +3,7 @@ settings:
   ubuntu:
     version: xenial
   ros:
-    release: kinetic
+    release: noetic
   docker:
     image: public.ecr.aws/shadowrobot/build-tools
     tag: xenial-kinetic
@@ -15,7 +15,7 @@ settings:
       - code_coverage
 
 trunks:
-  - name: kinetic-devel
+  - name: noetic-devel
     jobs:
       - name: code_coverage
       - name: style_check
