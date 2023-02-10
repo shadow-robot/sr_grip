@@ -64,7 +64,7 @@
   </include>
   {% else %}
   <!-- REAL ROBOTS -->
-  {% if launch_parameters.hardware_connection %}<rosparam command="load" file="{{ launch_parameters.hardware_connection}}"/>{% endif %}
+  {% if launch_parameters.hardware_connection %}  <rosparam command="load" file="{{ launch_parameters.hardware_connection}}"/>{% endif %}
 
   <include file="$(find ros_ethercat_model)/launch/joint_state_publisher.launch"/>
 
