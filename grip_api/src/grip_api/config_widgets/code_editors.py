@@ -36,12 +36,15 @@ class GenericCodeEditor(Qsci.QsciScintilla):
             @param parent: parent of the widget
         """
         super().__init__(parent)
+        self.is_lexed = False
         self.init_ui()
         self.init_backround_markers()
         self.lexer_ = None
-        self.initial_content = dict()
+        self.initial_content = {}
+        # Dictionary that will have as keys the content of the line and as value the index of the line of new dicts
+        self._new_dicts_index = {}
         # Will contain the index of the lines wrongly formatted
-        self.wrong_format_lines = list()
+        self.wrong_format_lines = []
         # Timer used to check content format and that will be handled by a different thread
         self.timer = QTimer()
         # Set it to single shot (i.e. does not run continuously)
@@ -51,6 +54,27 @@ class GenericCodeEditor(Qsci.QsciScintilla):
         self.timer.timeout.connect(self.parse_and_format_editor)
         # Each time a new character is inserted in the editor, restart the timer
         self.textChanged.connect(self.start_timer)
+
+    @property
+    def is_lexed(self):
+        """
+            Return a boolean stating wheter the editor is lexed or not
+
+            @return: Boolean indicting if the editor is lexed or not        
+        """
+        return self._is_lexed
+
+    @is_lexed.setter
+    def is_lexed(self, boolean_value):
+        """
+            Set the boolean indicating whether the editor is lexed or not
+
+            @param boolean_value: Boolean indicating if the editor is lexed or not
+        """
+        if not isinstance(boolean_value, bool):
+            raise TypeError("The input value for 'is_lexed' must be a boolean")
+        # Assing the input value if everything is all right
+        self._is_lexed = boolean_value
 
     def init_ui(self):
         """
@@ -71,7 +95,6 @@ class GenericCodeEditor(Qsci.QsciScintilla):
         self.setAutoIndent(True)
         # Cannot be edited by the user
         self.setReadOnly(True)
-        self.is_lexed = False
         # Remove some of the standard shortcut embedded in QScintilla
         commands = self.standardCommands()
         commands.boundTo(Qt.ControlModifier | Qt.Key_L).setKey(0)
@@ -160,31 +183,30 @@ class GenericCodeEditor(Qsci.QsciScintilla):
             Clean the editor (i.e. remove content and reset attributes) but keep it editable
         """
         self.clear()
-        self.initial_content = dict()
+        self.initial_content = {}
         self.parse_and_format_editor()
 
     @staticmethod
-    def to_format(input):
+    def to_format(input_string):
         """
-            Turn the string input to the intended format (string, int, float or boolean)
+            Turn the input string to the intended format (string, int, float or boolean)
 
             @param input: String to convert
             @return: Either a string, an int, a float or a boolean
         """
         try:
-            return int(input)
+            return int(input_string)
         except (TypeError, ValueError):
             pass
         try:
-            return float(input)
+            return float(input_string)
         except (TypeError, ValueError):
             pass
-        if input in ("true", "True"):
+        if input_string in ("true", "True"):
             return True
-        elif input in ("false", "False"):
+        if input_string in ("false", "False"):
             return False
-        else:
-            return str(input)
+        return str(input_string)
 
 
 class YamlCodeEditor(GenericCodeEditor):
@@ -203,7 +225,7 @@ class YamlCodeEditor(GenericCodeEditor):
         self.init_symbol_margin()
         self.lexer_ = Qsci.QsciLexerYAML(self)
         # Will contain the parsed content
-        self.parsed_content = dict()
+        self.parsed_content = {}
 
     def init_symbol_margin(self):
         """
@@ -242,19 +264,19 @@ class YamlCodeEditor(GenericCodeEditor):
             Parse the current editor's content and store the valid content in the parsed_content attribute
         """
         # Reinitialize the list of wrong lines
-        self.wrong_format_lines = list()
+        self.wrong_format_lines = []
         editor_content = self.text()
         # If the editor has been emptied can just stop the parsing here
         if not editor_content:
-            self.parsed_content = dict()
+            self.parsed_content = {}
             self.contentIsModified.emit(self.initial_content != self.parsed_content)
             return
         # Get the text line by line
         split_content = editor_content.split("\n")
         # Get indices of all lines starting without any space or \n (so lines defining a new root component)
-        zero_depth_indices = [i for i, x in enumerate(split_content) if re.search("^(\w+)", x) is not None]
+        zero_depth_indices = [i for i, x in enumerate(split_content) if re.search(r"^(\w+)", x) is not None]
         # If nothing has been found (meaning that all the content is wrong), set all the lines in a single list
-        if not len(zero_depth_indices):
+        if not zero_depth_indices:
             self.slices = [split_content]
         # If at least one is found, create slices from these indices (without forgetting from line 0 to first index)
         else:
@@ -264,22 +286,22 @@ class YamlCodeEditor(GenericCodeEditor):
         # Current line number
         line_number = 0
         # Will contain the YAML parsed content of all valid root components of the editor
-        parsed = dict()
+        parsed = {}
         # This dictionary is used to recursively fill the different dictionaries.
         # Keys correspond to the depth of the parent of the current element
         # Values correspond to the container of such elements
         parent_dictionary = dict([(-1, parsed)])
-        # Dictionary that will have as keys the content of the line and as value the index of the line of new dicts
-        # It includes of course the indices previously computed but also the dicts created at higher levels
-        self.new_dicts_index = dict()
+        # Make sure to start from a clean and empty dictionary
+        # Make sure includes of course the indices previously computed but also the dicts created at higher levels
+        self._new_dicts_index = {}
         # For each slice corresponding to a root component (depth = 0)
-        for slice in self.slices:
+        for slice_ in self.slices:
             # Expected depth is used to detect wrong indentation
             expected_depth = 0
             # For each line of the given slice
-            for line in slice:
+            for line in slice_:
                 # Search for spaces at the beginning of the line
-                starting_spaces = re.search("(^\s{1,})", line)
+                starting_spaces = re.search(r"(^\s{1,})", line)
                 # Get the number of spaces out of the search
                 number_space = len(starting_spaces.group(1)) if starting_spaces else 0
                 # As depth increases byt two spaces computes it
@@ -296,9 +318,9 @@ class YamlCodeEditor(GenericCodeEditor):
                 # Remove any trailing space from the line
                 clean = line.strip()
                 # Use a regex to extract all kind of information that can be part of a line
-                split_line = re.search("([^\#\:\s\-\{\}]*)(\s?\:\s?)?(?(2)([^\[\{\:\s\#]*)|)?(\-\s?)?"
-                                       "(?(4)([^\{\[\#]*)|)?(\{[^\#\[\{\(\]\}\)]*\})?(\[[^\#\:\[\{\]\}\(\)]*\])?"
-                                       "(\s*\#.*)?(.*)?", clean).groups()
+                split_line = re.search(r"([^\#\:\s\-\{\}]*)(\s?\:\s?)?(?(2)([^\[\{\:\s\#]*)|)?(\-\s?)?"
+                                       r"(?(4)([^\{\[\#]*)|)?(\{[^\#\[\{\(\]\}\)]*\})?(\[[^\#\:\[\{\]\}\(\)]*\])?"
+                                       r"(\s*\#.*)?(.*)?", clean).groups()
                 # Unstack all the information contained in the line into different variables
                 key_name, column, value, dash, list_element, condensed_dict, condensed_list, comment, trash = split_line
                 # If there are unexpected stuff on the line then continue and go to the next line
@@ -324,10 +346,10 @@ class YamlCodeEditor(GenericCodeEditor):
                     line_number += 1
                     continue
                 # If we have only a keyword and a column, mark the line as wrong as we don't know what's following
-                # However add the element to new_dicts_index
+                # However add the element to self._new_dicts_index
                 if key_name and column and all(not x for x in split_line[2:-1]):
                     self.wrong_format_lines.append(line_number)
-                    self.new_dicts_index[key_name] = line_number
+                    self._new_dicts_index[key_name] = line_number
                     # Since it might be the beginning of another subelement, increment expected_depth
                     expected_depth += 1
                 # If a root component is a list or a condensed element, it is signaled as invalid and go to next line
@@ -354,8 +376,8 @@ class YamlCodeEditor(GenericCodeEditor):
                 # Start parsing the content
                 # Parse potential condensed dictionary
                 if condensed_dict:
-                    content = re.search("\{(.*)\}", condensed_dict).group(1)
-                    dict_args = re.findall("([^\:\s\{\,]*)\s?:\s?([^\:\s\}\,]*)", condensed_dict)
+                    content = re.search(r"\{(.*)\}", condensed_dict).group(1)
+                    dict_args = re.findall(r"([^\:\s\{\,]*)\s?:\s?([^\:\s\}\,]*)", condensed_dict)
                     # If there is some text but not properly formatted mark the line as wrong and go to the next one
                     if not dict_args and content:
                         self.wrong_format_lines.append(line_number)
@@ -376,13 +398,13 @@ class YamlCodeEditor(GenericCodeEditor):
 
                 # Parse potential condensed list
                 if condensed_list:
-                    content = re.search("\[(.*)\]", condensed_list).group(1)
-                    elements = content.split(",") if content else list()
+                    content = re.search(r"\[(.*)\]", condensed_list).group(1)
+                    elements = content.split(",") if content else []
                     checked_condensed_list = [self.to_format(element.strip()) for element in elements]
 
                 # Get the name of the parent component and corresponding line
                 parent_name = list(parent_dictionary[depth - 2])[-1] if depth else ""
-                parent_line = self.new_dicts_index[parent_name] if depth else -1
+                parent_line = self._new_dicts_index[parent_name] if depth else -1
 
                 # If the line is at least composed of a keyname and column
                 if key_name and column:
@@ -397,7 +419,7 @@ class YamlCodeEditor(GenericCodeEditor):
                     # If no value is provided then create a new empty dictionary that is going to be filled by elements
                     # coming from higher depths
                     else:
-                        new_empty_dict = dict()
+                        new_empty_dict = {}
                         parent_dictionary[depth - 1][split_line[0]] = new_empty_dict
                         parent_dictionary[depth] = new_empty_dict
 
@@ -409,7 +431,7 @@ class YamlCodeEditor(GenericCodeEditor):
                     if list_element:
                         element = list_element.strip()
                         # look for a potential one element dictionary such as - a : b
-                        one_elem_dict = re.search("([^\:\s]*)\s?:\s?([^\:\s]*)", element)
+                        one_elem_dict = re.search(r"([^\:\s]*)\s?:\s?([^\:\s]*)", element)
                         # If the list_element starts with a space or the one element search found something incomplete
                         # make the line wrong and go the next one
                         is_list_wrong = list_element.startswith(" ") or "," in list_element
@@ -451,7 +473,7 @@ class YamlCodeEditor(GenericCodeEditor):
         """
             Reset the initial content
         """
-        self.initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else dict()
+        self.initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else {}
 
     def mark_component(self, component_name):
         """
@@ -459,16 +481,16 @@ class YamlCodeEditor(GenericCodeEditor):
         """
         # Get which slice it is
         slice_index = 0
-        for slice in self.slices:
-            if slice[0].startswith(component_name):
+        for slice_ in self.slices:
+            if slice_[0].startswith(component_name):
                 break
             slice_index += 1
         # Get the starting line
         begin_line = 0
         # If the element is part of new_dicts_index then get the beginning line from the dict
         potential_key = self.slices[slice_index][0].strip(":").strip() if slice_index < len(self.slices) else -1
-        if potential_key in self.new_dicts_index:
-            begin_line = self.new_dicts_index[potential_key]
+        if potential_key in self._new_dicts_index:
+            begin_line = self._new_dicts_index[potential_key]
         # Otherwise it means it is a "complete" element and needs to get he beginning line
         else:
             for i in range(slice_index):
@@ -502,7 +524,7 @@ class YamlCodeEditor(GenericCodeEditor):
             Clean the editor (i.e. remove content and reset attributes) but keep is editable
         """
         super().reset()
-        self.parsed_content = dict()
+        self.parsed_content = {}
 
 
 class XmlCodeEditor(GenericCodeEditor):
@@ -526,7 +548,7 @@ class XmlCodeEditor(GenericCodeEditor):
         """
             Parse the XML file to capture correctly formatted arguments
         """
-        self.wrong_format_lines = list()
+        self.wrong_format_lines = []
         editor_content = self.text()
 
         if not editor_content:
@@ -534,7 +556,7 @@ class XmlCodeEditor(GenericCodeEditor):
             self.contentIsModified.emit(self.initial_content != self.parsed_content)
             return
 
-        raw_arguments = re.search("\<include file=.*?\>(.*?)\<\/include\>", editor_content, re.DOTALL)
+        raw_arguments = re.search(r"\<include file=.*?\>(.*?)\<\/include\>", editor_content, re.DOTALL)
         if raw_arguments is None:
             self.parsed_content = None
             self.contentIsModified.emit(self.initial_content != self.parsed_content)
@@ -548,10 +570,10 @@ class XmlCodeEditor(GenericCodeEditor):
         editor_list = re.split("\n", editor_content.strip())
         filtered_editor = [x.strip() for x in editor_list if x]
 
-        self.parsed_content = list()
+        self.parsed_content = []
 
         for argument in filtered_arguments:
-            template_search = re.search("\<arg name\s?=\s?(.*?) value\s?=\s?(.*?)\s?\/\>", argument)
+            template_search = re.search(r"\<arg name\s?=\s?(.*?) value\s?=\s?(.*?)\s?\/\>", argument)
             if template_search is None:
                 self.wrong_format_lines.append(filtered_editor.index(argument))
             else:
