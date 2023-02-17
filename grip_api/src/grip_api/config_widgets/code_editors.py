@@ -60,7 +60,7 @@ class GenericCodeEditor(Qsci.QsciScintilla):
         """
             Return a boolean stating wheter the editor is lexed or not
 
-            @return: Boolean indicting if the editor is lexed or not        
+            @return: Boolean indicating if the editor is lexed
         """
         return self._is_lexed
 
