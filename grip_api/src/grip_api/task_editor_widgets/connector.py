@@ -147,4 +147,4 @@ class Connector(object):
 
             @return: Dictionary containing the id of the two sockets the connector links
         """
-        return dict([('start', self.start_socket.id), ('end', self.end_socket.id)])
+        return dict([('start', self.start_socket.socket_id), ('end', self.end_socket.socket_id)])

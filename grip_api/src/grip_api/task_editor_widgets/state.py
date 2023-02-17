@@ -49,9 +49,9 @@ class State(object):
         # Parametrize the spacing between sockets
         self.socket_spacing = 80
         # Will contain the input socket, set a list to make the update easier (see update_connectors)
-        self.input_socket = list()
+        self.input_socket = []
         # Will contain all the output sockets
-        self.output_sockets = list()
+        self.output_sockets = []
         # Create the sockets
         self.init_sockets()
         # Add the state to the container
@@ -151,9 +151,9 @@ class State(object):
         # Will contain the configuration of the state (i.e. source, outcomes, parameters and transitions)
         # But for now just get the configuration of the state
         state_config = self.content.get_config()
-        state_config["input_keys"] = list()
+        state_config["input_keys"] = []
         # If some values needs to be set as an input key of the state
-        for config_name, user_config in state_config.items():
+        for _, user_config in state_config.items():
             if user_config in self.container.output_userdata:
                 state_config["input_keys"].append(user_config)
 
@@ -185,7 +185,7 @@ class State(object):
         # Get the import statement
         state_config["import_statement"] = self.content.state_info["import_statement"]
         # Extract the transitions
-        transitions = dict()
+        transitions = {}
         # For each output socket, extract the transition between this state and the following element
         for socket in self.output_sockets:
             # If it is connected to a terminal socket of the container, then refer to its name directly, otherwise get
@@ -223,7 +223,7 @@ class State(object):
             @return: Dictionary containing the id, name, type, position, sockets and content of the state
         """
         # Get lists containing the serialized input and outputs sockets
-        serialized_input_socket, serialized_output_sockets = list(), list()
+        serialized_input_socket, serialized_output_sockets = [], []
         for socket in self.input_socket:
             socket_id = socket.get_id()
             serialized_input_socket.append(socket_id)
@@ -266,12 +266,12 @@ class State(object):
                 new_sockets[data["output_sockets"][ind_socket]] = self.output_sockets[ind_socket].get_id()
         # Otherwise, restore the ID of the sockets of this object
         else:
-            self.input_socket[0].set_id(data["input_socket"][0], socket_mapping)
+            self.input_socket[0].set_socket_id(data["input_socket"][0], socket_mapping)
             # Get the number of output sockets
             number_output_socket = len(data["output_sockets"])
             for ind_socket, socket in enumerate(self.output_sockets):
                 # Make sure not to break if there is any discrepancy between the current configuration and the saved one
                 if ind_socket < number_output_socket:
-                    socket.set_id(data["output_sockets"][ind_socket], socket_mapping)
+                    socket.set_socket_id(data["output_sockets"][ind_socket], socket_mapping)
         # Restore the content of the state
         self.content.set_config(data["content"])

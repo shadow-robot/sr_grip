@@ -247,9 +247,9 @@ class StateMachine(object):
         # Set the position
         self.set_position(properties["pos_x"], properties["pos_y"])
         # Set the id of the input socket
-        self.input_socket[0].set_id(properties["input_socket"][0], socket_mapping)
+        self.input_socket[0].set_socket_id(properties["input_socket"][0], socket_mapping)
         # Update all the sockets
         for ind_socket, socket in enumerate(self.output_sockets):
-            socket.set_id(properties["output_sockets"][ind_socket], socket_mapping)
+            socket.set_socket_id(properties["output_sockets"][ind_socket], socket_mapping)
         # Link this object to the container in which the state machine is defined
         self.def_container.set_state_like(self)
