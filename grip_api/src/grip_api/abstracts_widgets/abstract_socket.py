@@ -16,6 +16,7 @@
 
 from abc import ABC, abstractmethod
 
+
 class AbstractSocket(ABC):
 
     """
@@ -81,7 +82,7 @@ class AbstractSocket(ABC):
 
             @return: True if the socket contains at least a connector, otherwise False
         """
-        return not not self.connectors
+        return bool(self.connectors)
 
     def remove_all_connectors(self):
         """
