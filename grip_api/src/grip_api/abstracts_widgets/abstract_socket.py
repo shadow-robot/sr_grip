@@ -51,7 +51,7 @@ class AbstractSocket(ABC):
         pass
 
     @abstractmethod
-    def update_name(self):
+    def update_name(self, name):
         pass
 
     @abstractmethod

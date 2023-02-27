@@ -167,4 +167,4 @@ class Socket(AbstractSocket):
 
             @param socket_mapping: Dictionary
         """
-        socket_mapping[self.id] = self
+        socket_mapping[self.socket_id] = self

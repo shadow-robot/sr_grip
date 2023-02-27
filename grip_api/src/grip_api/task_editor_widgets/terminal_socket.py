@@ -87,7 +87,7 @@ class TerminalSocket(AbstractSocket):
         position = self.graphics_socket.pos()
         return [position.x(), position.y()]
 
-    def update_position(self, position_x, position_y):
+    def update_position(self, position_x, position_y): # pylint: disable=W0221
         """
             Set the position of the object in the scene
 
@@ -98,7 +98,7 @@ class TerminalSocket(AbstractSocket):
         # Since we set the position of the object, the container is fully initialized
         self.container.is_complete = True
 
-    def update_name(self, new_name, save_history=True):
+    def update_name(self, new_name, save_history=True): # pylint: disable=W0221
         """
             Update the name of this object
 
