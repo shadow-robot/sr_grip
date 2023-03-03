@@ -27,7 +27,7 @@ from .state_machine import StateMachine
 from .container_history import ContainerHistory
 
 
-class Container():
+class Container:
 
     """
         Object keeping record of which widgets are currently composing a state machine.
@@ -52,7 +52,7 @@ class Container():
         # Store the different states present in the container
         self.states = []
         # Get specific list of states that need to be generated
-        self.states_to_generate = [[]]
+        self.states_to_generate = []
         # Store the different connectors present in the container
         self.connectors = []
         # Store the different state machines added to this container
@@ -114,12 +114,13 @@ class Container():
         """
         # Add the new name ot the outcome attribute
         self.outcomes.append(outcome_name)
-        # Create the terminal socket
-        new_terminal_socket = TerminalSocket(container=self, socket_name=outcome_name, index=len(self.outcomes) - 1)
+        # Create the terminal socket. All terminal sockets added by this function are deletable
+        new_terminal_socket = TerminalSocket(container=self,
+                                             socket_name=outcome_name,
+                                             index=len(self.outcomes) - 1,
+                                             is_deletable = True)
         # Set its position from the the input argument
         new_terminal_socket.update_position(*position)
-        # All terminal sockets added by this function are deletable
-        new_terminal_socket.is_deletable = True
         # Add socket to terminal sockets
         self.terminal_sockets.append(new_terminal_socket)
         # Add the graphical socket to the graphical representation so it can be rendered

@@ -21,7 +21,7 @@ from .state_content_widget import StateContentWidget
 from .socket import Socket
 
 
-class State():
+class State:
 
     """
         Object that gathers all the logic necessary to handle states

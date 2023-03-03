@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from grip_api.abstracts_widgets.abstract_socket import AbstractSocket
+from grip_api.abstract_widgets.abstract_socket import AbstractSocket
 from grip_api.task_editor_graphics.socket import GraphicsSocket
 
 
@@ -32,7 +32,7 @@ class Socket(AbstractSocket):
             @param multi_connections: Boolean stating if the socket accepts multiple connections
             @param count_on_this_side: Total number of sockets on this side of the node
         """
-        super().__init__(socket_name, index, multi_connections)
+        super().__init__(socket_name, index, multi_connections, is_terminal=False)
         # Store all the information
         self._state = state
         # Create and store the graphical socket to be displayed
@@ -49,7 +49,7 @@ class Socket(AbstractSocket):
         if hasattr(state_object, "graphics_state"):
             self._state = state_object
         else:
-            raise TypeError('state must be object of type State')
+            raise TypeError("The attribute 'state' must be an object of type State")
 
     @property
     def count_on_this_side(self):
@@ -57,24 +57,10 @@ class Socket(AbstractSocket):
 
     @count_on_this_side.setter
     def count_on_this_side(self, value):
-        if isinstance(value, int):
+        if isinstance(value, int) and value > 0:
             self._count_on_this_side = value
         else:
-            raise TypeError('count_on_this_side must be an int')
-
-    @property
-    def position(self):
-        return self._position
-
-    @position.setter
-    def position(self, position_x_y):
-        if isinstance(position_x_y, list) and len(position_x_y) == 2:
-            if isinstance(position_x_y[0], (int, float)) and isinstance(position_x_y[1], (int, float)):
-                self._position = position_x_y
-            else:
-                raise ValueError('position values must be floats')
-        else:
-            raise TypeError('position must be list with elements position_x and position_y')
+            raise TypeError("The attribute 'count_on_this_side' must be a positive integer")
 
     def get_position(self):
         """
@@ -111,7 +97,7 @@ class Socket(AbstractSocket):
 
         return [position_x, position_y]
 
-    def update_position(self, count_on_side):
+    def update_position(self, count_on_side): # pylint: disable=W0221
         """
             Update the position of the socket with respect to the box-like representation
 
@@ -124,13 +110,13 @@ class Socket(AbstractSocket):
         # Change the position of the graphical representation
         self.graphics_socket.setPos(*self.position)
 
-    def update_name(self, name):
+    def update_name(self, new_name):
         """
             Set the name of the socket and update the text displayed by the graphical ToolTip
 
-            @param name: String corresponding to the new name of the socket
+            @param new_name: String corresponding to the new name of the socket
         """
-        self.name = name
+        self.name = new_name
         self.graphics_socket.setToolTip(self.name)
 
     def remove(self):

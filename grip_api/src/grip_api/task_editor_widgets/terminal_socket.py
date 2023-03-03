@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from grip_api.abstracts_widgets.abstract_socket import AbstractSocket
-# from grip_api.task_editor_widgets.container import Container
+from grip_api.abstract_widgets.abstract_socket import AbstractSocket
 from grip_api.task_editor_graphics.terminal_socket import TerminalGraphicsSocket
 from grip_api.utils.common_dialog_boxes import warning_message
 
@@ -24,7 +23,7 @@ class TerminalSocket(AbstractSocket):
     """
         Object gathering the logic and graphical representation of a Terminal Socket
     """
-    def __init__(self, container, socket_name, index, multi_connections=True):
+    def __init__(self, container, socket_name, index, multi_connections=True, is_deletable=False):
         """
             Initialize the object
 
@@ -33,14 +32,13 @@ class TerminalSocket(AbstractSocket):
             @param index: Index of the socket
             @param multi_connections: Indicate whether the socket can host several connectors. Default to True
         """
-        super().__init__(socket_name, index, multi_connections)
+        super().__init__(socket_name, index, multi_connections, is_terminal=True)
         # Store the Container the socket is added to
         self.container = container
-        self.name = socket_name
         # Store whether this terminal socket is the one marking the beginning of the state machine or not
         self.is_starting = self.name == "Start"
         # By default a terminal socket can't be deleted from the container
-        self.is_deletable = False
+        self.is_deletable = is_deletable
         # Create and store the graphical socket to be displayed
         self.graphics_socket = TerminalGraphicsSocket(self)
 
@@ -54,7 +52,7 @@ class TerminalSocket(AbstractSocket):
         if hasattr(container_object, "graphics_container"):
             self._container = container_object
         else:
-            raise TypeError('container must be object of type Container')
+            raise TypeError("The attribute 'container' must be a 'Container' object")
 
     @property
     def is_starting(self):
@@ -65,7 +63,7 @@ class TerminalSocket(AbstractSocket):
         if isinstance(value, bool):
             self._is_starting = value
         else:
-            raise TypeError('is_starting must be boolean')
+            raise TypeError("The attribute 'is_starting' must be a boolean")
 
     @property
     def is_deletable(self):
@@ -76,7 +74,7 @@ class TerminalSocket(AbstractSocket):
         if isinstance(value, bool):
             self._is_deletable = value
         else:
-            raise TypeError('is_deletable must be boolean')
+            raise TypeError("The attribute 'is_deletable' must be a boolean")
 
     def get_position(self):
         """
