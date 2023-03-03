@@ -29,6 +29,7 @@ class MetaTextEditor(type(Qsci.QsciScintilla), abc.ABCMeta):
     # Amount of time (in ms) to wait since the last text edition to trigger parsing and validity checks
     TIME_BEFORE_PARSING = 600
 
+
 class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
     """
         QScintilla-based abstract text editor
