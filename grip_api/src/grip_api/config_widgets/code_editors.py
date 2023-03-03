@@ -215,7 +215,7 @@ class YamlCodeEditor(BaseTextEditor):
                         continue
                     # If we reach here, it means that the condensed dictionary is actually valid, and therefore store it
                     # in a dedicated dictionary
-                    checked_condensed_dict = {self.to_format(parsed_key) : self.to_format(parsed_value)
+                    checked_condensed_dict = {self.to_format(parsed_key): self.to_format(parsed_value)
                                               for parsed_key, parsed_value in dict_args}
 
                 # Parse potential condensed list
@@ -248,7 +248,8 @@ class YamlCodeEditor(BaseTextEditor):
                 # If the line corresponds to a list
                 elif dash:
                     # Get the object in which we should add the list
-                    object_to_fill = list(parent_dictionary[depth - 2].values())[-1]
+                    object_to_fill = list(
+                        parent_dictionary[depth - 2].values())[-1]
                     # If some text is provided after the dash
                     if list_element:
                         element = list_element.strip()
@@ -295,7 +296,8 @@ class YamlCodeEditor(BaseTextEditor):
         """
             Reset the initial content
         """
-        self.initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else {}
+        self.initial_content = copy.deepcopy(
+            self.parsed_content) if self.parsed_content else {}
 
     def mark_component(self, component_name):
         """
@@ -310,7 +312,10 @@ class YamlCodeEditor(BaseTextEditor):
         # Get the starting line
         begin_line = 0
         # If the element is part of new_dicts_index then get the beginning line from the dict
-        potential_key = self._sliced_root_components[slice_index][0].strip(":").strip() if slice_index < len(self._sliced_root_components) else -1
+        if slice_index < len(self._sliced_root_components):
+            potential_key = self._sliced_root_components[slice_index][0].strip(":").strip()
+        else:
+            potential_key = -1
         if potential_key in self._new_dict_lines:
             begin_line = self._new_dict_lines[potential_key]
         # Otherwise it means it is a complete element
@@ -353,7 +358,7 @@ class YamlCodeEditor(BaseTextEditor):
 class XmlCodeEditor(BaseTextEditor):
 
     """
-        QScintilla-based widget allowing to create a XML code editor
+        QScintilla-based XML code editor
     """
 
     def __init__(self, parent=None):
@@ -374,41 +379,42 @@ class XmlCodeEditor(BaseTextEditor):
         self.wrong_format_lines = []
         editor_content = self.text()
 
+        # If there's no text in the editor
         if not editor_content:
             self.parsed_content = None
-            self.contentIsModified.emit(
-                self.initial_content != self.parsed_content)
+            self.contentIsModified.emit(self.initial_content != self.parsed_content)
             return
 
-        raw_arguments = re.search(
-            r"\<include file=.*?\>(.*?)\<\/include\>", editor_content, re.DOTALL)
+        # As of now (03/23) the only XML editors used are for launch files so we are certain that the following
+        # statement must be in the editor for the latter to be valid
+        raw_arguments = re.search(r"\<include file=.*?\>(.*?)\<\/include\>", editor_content, re.DOTALL)
+        # If no valid argument can be parsed from the above line
         if raw_arguments is None:
             self.parsed_content = None
-            self.contentIsModified.emit(
-                self.initial_content != self.parsed_content)
+            self.contentIsModified.emit(self.initial_content != self.parsed_content)
             return
 
-        raw_arguments = re.sub(
-            "<!-- You can add any options you want to the file -->", "", raw_arguments.group(1))
+        # Subtract the comment that is added to guide the user
+        raw_arguments = re.sub("<!-- You can add any options you want to the file -->", "", raw_arguments.group(1))
         # Strip is used to remove possible spaces at the head and tail of the string
         arguments_list = re.split("\n", raw_arguments.strip())
-        filtered_arguments = [x.strip() for x in arguments_list if x]
-
+        # Only extract non empty elements
+        filtered_arguments = [argument.strip() for argument in arguments_list if argument]
+        # Get all the lines (spaces are cleared) from the editors
         editor_list = re.split("\n", editor_content.strip())
-        filtered_editor = [x.strip() for x in editor_list if x]
+        filtered_editor = [element.strip() for element in editor_list if element]
 
         self.parsed_content = []
-
+        # For each argument that we have found
         for argument in filtered_arguments:
-            template_search = re.search(
-                r"\<arg name\s?=\s?(.*?) value\s?=\s?(.*?)\s?\/\>", argument)
+            # Parse the values from the known format that each argument should follow
+            template_search = re.search(r"\<arg name\s?=\s?(.*?) value\s?=\s?(.*?)\s?\/\>", argument)
             if template_search is None:
+                # Mark the line as wrong if nothing has been found
                 self.wrong_format_lines.append(filtered_editor.index(argument))
             else:
                 self.parsed_content.append(argument)
-
-        self.contentIsModified.emit(
-            self.initial_content != self.parsed_content)
+        self.contentIsModified.emit(self.initial_content != self.parsed_content)
 
     def update_background(self):
         """
