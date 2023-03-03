@@ -68,7 +68,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         # By default, make the editor non editable
         self.make_uneditable()
         # Set the background color with the corresponding color when the editor is empty
-        self.setPaper(MetaTextEditor.empty_color)
+        self.setPaper(MetaTextEditor.EMPTY_COLOR)
         # Set the tab width to 2 to save space
         self.setTabWidth(2)
         # Change tabs to spaces
@@ -160,7 +160,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         """
         self.clear()
         self.make_uneditable()
-        self.setPaper(self.empty_color)
+        self.setPaper(MetaTextEditor.EMPTY_COLOR)
         self.markerDeleteAll()
 
     def remove_text(self):
