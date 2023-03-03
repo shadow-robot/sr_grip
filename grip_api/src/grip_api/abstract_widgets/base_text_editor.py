@@ -24,11 +24,14 @@ class MetaTextEditor(type(Qsci.QsciScintilla), abc.ABCMeta):
     """
         Meta class that allows for creating abstract base classes for text editors, inherited from Scintilla
     """
-
+    # When the text editor is empty (i.e. no new page or anything), define the background color as grey
+    EMPTY_COLOR = QColor("#cccccc")
+    # Amount of time (in ms) to wait since the last text edition to trigger parsing and validity checks
+    TIME_BEFORE_PARSING = 600
 
 class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
     """
-        QScintilla-based widget allowing to create a generic code editor
+        QScintilla-based abstract text editor
     """
     # Signal sent when the parsed content changes
     contentIsModified = pyqtSignal(bool)
@@ -40,55 +43,32 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
             @param parent: parent of the widget
         """
         super().__init__(parent)
-        self.is_lexed = False
-        self.init_ui()
-        self.init_backround_markers()
-        self.lexer_ = None
+        self.text_lexer = None
+        self._init_ui()
+        # Initial content of the editor (i.e. text it is initialized with)
         self.initial_content = {}
-        # Dictionary that will have as keys the content of the line and as value the index of the line of new dicts
-        self._new_dicts_index = {}
+        # Dictionary that will contain the name of new dictionaries (keys) and the line of their definition (values)
+        self._new_dict_lines = {}
         # Will contain the index of the lines wrongly formatted
         self.wrong_format_lines = []
         # Timer used to check content format and that will be handled by a different thread
-        self.timer = QTimer()
+        self._timer = QTimer()
         # Set it to single shot (i.e. does not run continuously)
-        self.timer.setSingleShot(True)
+        self._timer.setSingleShot(True)
         # Once the timer is timing out then starts the check
         # We do this to avoid having stuff signaled as wrong while editing
-        self.timer.timeout.connect(self.parse_and_format_editor)
-        # Each time a new character is inserted in the editor, restart the timer
-        self.textChanged.connect(self.start_timer)
+        self._timer.timeout.connect(self.parse_and_format_editor)
+        # Each time a new character is inserted in the editor (signal coming from QScintilla), restart the timer
+        self.textChanged.connect(self._start_timer)
 
-    @property
-    def is_lexed(self):
-        """
-            Return a boolean stating wheter the editor is lexed or not
-
-            @return: Boolean indicating if the editor is lexed
-        """
-        return self._is_lexed
-
-    @is_lexed.setter
-    def is_lexed(self, boolean_value):
-        """
-            Set the boolean indicating whether the editor is lexed or not
-
-            @param boolean_value: Boolean indicating if the editor is lexed or not
-        """
-        if not isinstance(boolean_value, bool):
-            raise TypeError("The input value for 'is_lexed' must be a boolean")
-        # Assing the input value if everything is all right
-        self._is_lexed = boolean_value
-
-    def init_ui(self):
+    def _init_ui(self):
         """
             Initialize the editor
         """
-        # By default no lexer is set
-        self.setLexer(None)
-        # Set a grayish colour
-        self.empty_color = QColor("#cccccc")
-        self.setPaper(self.empty_color)
+        # By default, make the editor non editable
+        self.make_uneditable()
+        # Set the background color with the corresponding color when the editor is empty
+        self.setPaper(MetaTextEditor.empty_color)
         # Set the tab width to 2 to save space
         self.setTabWidth(2)
         # Change tabs to spaces
@@ -97,17 +77,11 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         self.setIndentationGuides(True)
         # Set auto indentation
         self.setAutoIndent(True)
-        # Cannot be edited by the user
-        self.setReadOnly(True)
         # Remove some of the standard shortcut embedded in QScintilla
         commands = self.standardCommands()
         commands.boundTo(Qt.ControlModifier | Qt.Key_L).setKey(0)
         commands.boundTo(Qt.ControlModifier | Qt.Key_T).setKey(0)
-
-    def init_backround_markers(self):
-        """
-            Define markers to highlight lines not properly formatted using a red-ish colour
-        """
+        # Define markers to highlight lines not properly formatted using a red-ish color
         self.markerDefine(Qsci.QsciScintilla.Background, 0)
         self.setMarkerBackgroundColor(QColor("#40FF0000"), 0)
 
@@ -120,73 +94,78 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         # Make the background of wrongly formatted lines red-ish
         self.update_background()
 
-    def start_timer(self):
+    def _start_timer(self):
         """
             Start the timer that triggers the content's format checking
         """
-        # The timer would timeout after 600 ms meaning that the check would happend 600ms after the last text edit
-        self.timer.start(600)
+        # The timer would timeout after 600 ms meaning that the checks would happen 600 ms after the last text edit
+        self._timer.start(MetaTextEditor.TIME_BEFORE_PARSING)
 
-    def stop_timer(self):
+    def _stop_timer(self):
         """
             Stop the timer that triggers the content's format checking. After running this function, the content that
             will be set to the editor WON'T be automatically parsed and checked.
         """
-        self.timer.stop()
+        self._timer.stop()
 
-    def set_text_and_trigger_checks(self, content):
+    def set_text_and_trigger_checks(self, input_text):
         """
-            Set the content of the editor and immedialty trigger checks about its validity
+            Set some input text to the editor and immediately trigger checks about its validity
 
-            @param content: String to be displayed in the editor
+            @param input_text: String to be written to the editor
         """
         # Stop the timer (so we can trigger checks without having to wait for 600 ms)
-        self.stop_timer()
+        self._stop_timer()
         # Set the text and immediately trigger the checks
-        self.setText(content)
+        self.setText(input_text)
         self.parse_and_format_editor()
         # Restart the timer so that when the users interact with the editor, things don't turn red too quickly
-        self.start_timer()
+        self._start_timer()
 
     def update_background(self):
         """
             Update the markers based on which lines are detected as wrong
         """
         self.markerDeleteAll(0)
+        # List of indices of the lines wrongly formatted
         lines = self.wrong_format_lines
-        for line in lines:
-            self.markerAdd(line, 0)
+        # Add markers
+        for line_index in lines:
+            self.markerAdd(line_index, 0)
 
     @abc.abstractmethod
     def parse_content(self):
         """
             Parse the content of the editor
         """
-        raise NotImplementedError(
-            "The method 'parse content' has not been implemented!")
+        raise NotImplementedError("The method 'parse content' has not been implemented!")
 
-    def set_lexer(self):
+    def make_editable(self):
         """
             Allow the user to edit the object
         """
-        self.setLexer(self.lexer_)
+        self.setLexer(self.text_lexer)
         self.setReadOnly(False)
-        self.is_lexed = True
+
+    def make_uneditable(self):
+        """
+            Make sure the user cannot modify the current state of the text editor
+        """
+        self.setLexer(None)
+        self.setReadOnly(True)
 
     def reinitialize(self):
         """
-            Set the editor to its initial state (uneditable with empty background)
+            Reinitialize the text editor to its initial state, i.e. uneditable with empty background
         """
         self.clear()
-        self.setLexer(None)
-        self.is_lexed = False
-        self.setReadOnly(True)
+        self.make_uneditable()
         self.setPaper(self.empty_color)
         self.markerDeleteAll()
 
-    def reset(self):
+    def remove_text(self):
         """
-            Clean the editor (i.e. remove content and reset attributes) but keep it editable
+            Clear the editor (i.e. remove text and reset attributes) but keep it editable
         """
         self.clear()
         self.initial_content = {}
@@ -197,7 +176,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         """
             Turn the input string to the intended format (string, int, float or boolean)
 
-            @param input: String to convert
+            @param input_string: String to convert
             @return: Either a string, an int, a float or a boolean
         """
         try:
