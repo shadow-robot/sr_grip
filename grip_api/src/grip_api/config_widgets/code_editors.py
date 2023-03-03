@@ -17,13 +17,13 @@
 import re
 import copy
 from PyQt5 import Qsci
-from grip_api.src.grip_api.abstract_widgets.base_text_editor import BaseCodeEditor
+from grip_api.abstract_widgets.base_text_editor import BaseTextEditor
 
 
-class YamlCodeEditor(BaseCodeEditor):
+class YamlCodeEditor(BaseTextEditor):
 
     """
-        QScintilla-based widget allowing to create a YAML code editor
+        QScintilla-based YAML code editor
     """
 
     def __init__(self, parent=None):
@@ -33,36 +33,40 @@ class YamlCodeEditor(BaseCodeEditor):
             @param parent: parent of the widget
         """
         super().__init__(parent)
-        self.init_symbol_margin()
-        self.lexer_ = Qsci.QsciLexerYAML(self)
+        self._initialize_margin()
+        # Store the lexer to be used
+        self.text_lexer = Qsci.QsciLexerYAML(self)
         # Will contain the parsed content
         self.parsed_content = {}
+        # Each list of this list will contain the lines that are supposed to correspond to a top-level component
+        self._sliced_root_components = []
 
-    def init_symbol_margin(self):
+    def _initialize_margin(self):
         """
-            Initialize the margin with a symbol allowing to help integrating a given component
+            Initialize the margin with a symbol, that if clicked, helps with the definition of a new entry in the editor
         """
         # Give the ability to set symbols in the margin
         self.setMarginType(1, Qsci.QsciScintilla.SymbolMargin)
         # Make sure the margin does not become too large
         self.setMarginWidth(1, "00")
-        # Define a plus marker (index 0)
+        # Define a plus marker, which is index with 1 since index 0 is used to highlight wrongly formatted lines
         self.markerDefine(Qsci.QsciScintilla.Plus, 1)
         # Make the margin clickable
         self.setMarginSensitivity(1, True)
 
-    def set_autocompletion(self, items):
+    def set_autocompletion(self, words_to_autocomplete):
         """
-            Allow the strings contained in items to be autocompleted after two characters
+            Allow the strings contained in the input list to be autocompleted after two characters
 
-            @param items: List of strings containing the words to propose for autocompletion
+            @param words_to_autocomplete: List of strings corresponding to the words to be proposed for autocompletion
         """
         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
         self.setAutoCompletionThreshold(2)
-        self.api = Qsci.QsciAPIs(self.lexer_)
-        for item in items:
-            self.api.add(item)
-        self.api.prepare()
+        api = Qsci.QsciAPIs(self.text_lexer)
+        for word in words_to_autocomplete:
+            api.add(word)
+        # Need to call this method so that the added words get accounted for
+        api.prepare()
 
     def turn_off_autocompletion(self):
         """
@@ -70,46 +74,50 @@ class YamlCodeEditor(BaseCodeEditor):
         """
         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsNone)
 
-    def parse_content(self):
+    def parse_content(self):  # pylint: disable=R0912, R0914, R0915
         """
-            Parse the current editor's content and store the valid content in the parsed_content attribute
+            Parse the editor's content and store ONLY the valid content in the parsed_content attribute
         """
         # Reinitialize the list of wrong lines
         self.wrong_format_lines = []
         editor_content = self.text()
-        # If the editor has been emptied can just stop the parsing here
+        # If there's no text inside the editor, we can just stop the parsing here
         if not editor_content:
             self.parsed_content = {}
-            self.contentIsModified.emit(
-                self.initial_content != self.parsed_content)
+            # Emit a signal re. whether the text has been modified or not
+            self.contentIsModified.emit(self.initial_content != self.parsed_content)
             return
-        # Get the text line by line
+        # Split the text line by line
         split_content = editor_content.split("\n")
-        # Get indices of all lines starting without any space or \n (so lines defining a new root component)
-        zero_depth_indices = [i for i, x in enumerate(
-            split_content) if re.search(r"^(\w+)", x) is not None]
+        # Get indices of all lines starting without any space or \n (so lines potentially defining a new root component)
+        zero_depth_indices = [line_index for line_index, line_value in enumerate(split_content)
+                              if re.search(r"^(\w+)", line_value) is not None]
         # If nothing has been found (meaning that all the content is wrong), set all the lines in a single list
         if not zero_depth_indices:
-            self.slices = [split_content]
-        # If at least one is found, create slices from these indices (without forgetting from line 0 to first index)
+            self._sliced_root_components = [split_content]
+        # If at least one potential root component is found, create slices of lines that are supposed to correspond to
+        # each component
         else:
-            self.slices = [split_content[:zero_depth_indices[0]]
-                           ] if zero_depth_indices[0] else []
-            self.slices += [split_content[zero_depth_indices[i]:zero_depth_indices[i + 1]]
-                            for i in range(len(zero_depth_indices) - 1)] + [split_content[zero_depth_indices[-1]:]]
+            # Condition ensuring we don't forget any text that could be written above the first candidate root component
+            self._sliced_root_components = [split_content[:zero_depth_indices[0]]] if zero_depth_indices[0] else []
+            # For each potential root component, extract the following lines, up to a potential new root component
+            self._sliced_root_components += [split_content[zero_depth_indices[i]:zero_depth_indices[i + 1]]
+                                             for i in range(len(zero_depth_indices) - 1)]
+            # Take all the lines after the last potential root component
+            self._sliced_root_components += [split_content[zero_depth_indices[-1]:]]
         # Current line number
         line_number = 0
         # Will contain the YAML parsed content of all valid root components of the editor
-        parsed = {}
-        # This dictionary is used to recursively fill the different dictionaries.
-        # Keys correspond to the depth of the parent of the current element
-        # Values correspond to the container of such elements
-        parent_dictionary = dict([(-1, parsed)])
+        parsed_and_valid = {}
+        # the following dictionary is used to recursively fill the other dictionaries.
+        # Keys correspond to the depth of the parent of the current element and values correspond to the container of
+        # such elements
+        parent_dictionary = {-1: parsed_and_valid}
         # Make sure to start from a clean and empty dictionary
-        # Make sure includes of course the indices previously computed but also the dicts created at higher levels
-        self._new_dicts_index = {}
+        # Make sure it includes of course the indices previously computed but also the dicts created at higher levels
+        self._new_dict_lines = {}
         # For each slice corresponding to a root component (depth = 0)
-        for slice_ in self.slices:
+        for slice_ in self._sliced_root_components:
             # Expected depth is used to detect wrong indentation
             expected_depth = 0
             # For each line of the given slice
@@ -117,25 +125,22 @@ class YamlCodeEditor(BaseCodeEditor):
                 # Search for spaces at the beginning of the line
                 starting_spaces = re.search(r"(^\s{1,})", line)
                 # Get the number of spaces out of the search
-                number_space = len(starting_spaces.group(1)
-                                   ) if starting_spaces else 0
-                # As depth increases byt two spaces computes it
-                # To be valid the number of space should be even. If it's not the case set depth to a higher value
+                number_space = len(starting_spaces.group(1)) if starting_spaces else 0
+                # To be valid the number of space should be even. In other word, incrementing the depth by one is
+                # equivalent to inserting two spaces. If it's not the case set depth to a higher value
                 depth = number_space / 2 if number_space % 2 == 0 else expected_depth + 1
                 # If depth is higher than expected_depth it means that the indentation is wrong
                 if depth > expected_depth and line.strip():
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
-                # If depth is smaller than the expected one update the expected to detect potential future wrong depth
+                # If depth is smaller than the expected one, update the latter to detect potential future wrong depth
                 if depth < expected_depth and depth:
                     expected_depth = depth
-                # Remove any trailing space from the line
-                clean = line.strip()
-                # Use a regex to extract all kind of information that can be part of a line
+                # Use a regex to extract all kind of information that can be part of a line without any trailing space
                 split_line = re.search(r"([^\#\:\s\-\{\}]*)(\s?\:\s?)?(?(2)([^\[\{\:\s\#]*)|)?(\-\s?)?"
                                        r"(?(4)([^\{\[\#]*)|)?(\{[^\#\[\{\(\]\}\)]*\})?(\[[^\#\:\[\{\]\}\(\)]*\])?"
-                                       r"(\s*\#.*)?(.*)?", clean).groups()
+                                       r"(\s*\#.*)?(.*)?", line.strip()).groups()
                 # Unstack all the information contained in the line into different variables
                 key_name, column, value, dash, list_element, condensed_dict, condensed_list, comment, trash = split_line
                 # If there are unexpected stuff on the line then continue and go to the next line
@@ -143,29 +148,28 @@ class YamlCodeEditor(BaseCodeEditor):
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
-                # Otherwise remove the last element for further tests
-                else:
-                    split_line = split_line[:-1]
-                # If it's an empty line then continue to the next line
-                if all(not x for x in split_line):
+                # Otherwise remove the last element as we know it's empty
+                split_line = split_line[:-1]
+                # If it's an empty line then skip to the next line
+                if all(not element for element in split_line):
                     line_number += 1
                     continue
                 # If we have only a comment on the line then go to the next line
-                if comment and all(not x for x in split_line[:-1]):
+                if comment and all(not element for element in split_line[:-1]):
                     line_number += 1
                     continue
                 # If only text is present on the line (without :) then it is invalid
-                if key_name and all(not x for x in split_line[1:-1]):
+                if key_name and all(not element for element in split_line[1:-1]):
                     # Add the line to wrong format so that it appears in red-ish
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
                 # If we have only a keyword and a column, mark the line as wrong as we don't know what's following
-                # However add the element to self._new_dicts_index
-                if key_name and column and all(not x for x in split_line[2:-1]):
+                # However get eh corresponding line and record it into self._new_dict_lines
+                if key_name and column and all(not element for element in split_line[2:-1]):
                     self.wrong_format_lines.append(line_number)
-                    self._new_dicts_index[key_name] = line_number
-                    # Since it might be the beginning of another subelement, increment expected_depth
+                    self._new_dict_lines[key_name] = line_number
+                    # Since it might be the beginning of another sub-element, increment expected_depth
                     expected_depth += 1
                 # If a root component is a list or a condensed element, it is signaled as invalid and go to next line
                 if not depth and not key_name and (dash or condensed_dict or condensed_list):
@@ -188,12 +192,12 @@ class YamlCodeEditor(BaseCodeEditor):
                     line_number += 1
                     continue
 
-                # Start parsing the content
                 # Parse potential condensed dictionary
                 if condensed_dict:
                     content = re.search(r"\{(.*)\}", condensed_dict).group(1)
-                    dict_args = re.findall(
-                        r"([^\:\s\{\,]*)\s?:\s?([^\:\s\}\,]*)", condensed_dict)
+                    # Extract both keys and values from the dictionary as a list of tuples, i.e.
+                    # [(key1, value1), (key2, value2), ...]
+                    dict_args = re.findall(r"([^\:\s\{\,]*)\s?:\s?([^\:\s\}\,]*)", condensed_dict)
                     # If there is some text but not properly formatted mark the line as wrong and go to the next one
                     if not dict_args and content:
                         self.wrong_format_lines.append(line_number)
@@ -205,62 +209,54 @@ class YamlCodeEditor(BaseCodeEditor):
                         line_number += 1
                         continue
                     # If one of the value of the condensed dict is empty
-                    if any(not x or not y for x, y in dict_args):
+                    if any(not parsed_key or not parsed_value for parsed_key, parsed_value in dict_args):
                         self.wrong_format_lines.append(line_number)
                         line_number += 1
                         continue
-                    formatted_dict_args = [
-                        (self.to_format(x), self.to_format(y)) for x, y in dict_args]
-                    checked_condensed_dict = dict(formatted_dict_args)
+                    # If we reach here, it means that the condensed dictionary is actually valid, and therefore store it
+                    # in a dedicated dictionary
+                    checked_condensed_dict = {self.to_format(parsed_key) : self.to_format(parsed_value)
+                                              for parsed_key, parsed_value in dict_args}
 
                 # Parse potential condensed list
                 if condensed_list:
                     content = re.search(r"\[(.*)\]", condensed_list).group(1)
                     elements = content.split(",") if content else []
-                    checked_condensed_list = [self.to_format(
-                        element.strip()) for element in elements]
+                    checked_condensed_list = [self.to_format(element.strip()) for element in elements]
 
                 # Get the name of the parent component and corresponding line
-                parent_name = list(
-                    parent_dictionary[depth - 2])[-1] if depth else ""
-                parent_line = self._new_dicts_index[parent_name] if depth else -1
+                parent_name = list(parent_dictionary[depth - 2])[-1] if depth else ""
+                parent_line = self._new_dict_lines[parent_name] if depth else -1
 
-                # If the line is at least composed of a keyname and column
+                # If the line is at least composed of a key name and column
                 if key_name and column:
                     # If a value is provided
                     if value:
-                        parent_dictionary[depth - 1][split_line[0]
-                                                     ] = self.to_format(split_line[2])
+                        parent_dictionary[depth - 1][key_name] = self.to_format(value)
                     # If a condensed dictionary is provided
                     elif condensed_dict:
-                        parent_dictionary[depth - 1][split_line[0]
-                                                     ] = checked_condensed_dict
+                        parent_dictionary[depth - 1][key_name] = checked_condensed_dict
                     elif condensed_list:
-                        parent_dictionary[depth - 1][split_line[0]
-                                                     ] = checked_condensed_list
+                        parent_dictionary[depth - 1][key_name] = checked_condensed_list
                     # If no value is provided then create a new empty dictionary that is going to be filled by elements
                     # coming from higher depths
                     else:
                         new_empty_dict = {}
-                        parent_dictionary[depth -
-                                          1][split_line[0]] = new_empty_dict
+                        parent_dictionary[depth - 1][key_name] = new_empty_dict
                         parent_dictionary[depth] = new_empty_dict
 
-                # If line corresponds to a list
+                # If the line corresponds to a list
                 elif dash:
                     # Get the object in which we should add the list
-                    object_to_fill = list(
-                        parent_dictionary[depth - 2].values())[-1]
+                    object_to_fill = list(parent_dictionary[depth - 2].values())[-1]
                     # If some text is provided after the dash
                     if list_element:
                         element = list_element.strip()
-                        # look for a potential one element dictionary such as - a : b
-                        one_elem_dict = re.search(
-                            r"([^\:\s]*)\s?:\s?([^\:\s]*)", element)
+                        # Look for a potential one element dictionary such as - a : b
+                        one_elem_dict = re.search(r"([^\:\s]*)\s?:\s?([^\:\s]*)", element)
                         # If the list_element starts with a space or the one element search found something incomplete
                         # make the line wrong and go the next one
-                        is_list_wrong = list_element.startswith(
-                            " ") or "," in list_element
+                        is_list_wrong = list_element.startswith(" ") or "," in list_element
                         if is_list_wrong or (one_elem_dict and not all(one_elem_dict.groups())):
                             self.wrong_format_lines.append(line_number)
                             line_number += 1
@@ -268,11 +264,9 @@ class YamlCodeEditor(BaseCodeEditor):
                         # Otherwise process it
                         # Get either the simple element of the list or create a one element dictionary
                         if one_elem_dict:
-                            key_, value_ = one_elem_dict.groups()
-                            formatted_elems = [
-                                (self.to_format(key_), self.to_format(value_))]
-                        element_to_add = dict(
-                            formatted_elems) if one_elem_dict else self.to_format(element)
+                            key, value_ = one_elem_dict.groups()
+                            formatted_elements = [(self.to_format(key), self.to_format(value_))]
+                        element_to_add = dict(formatted_elements) if one_elem_dict else self.to_format(element)
                     # If a condensed dict is provided
                     elif condensed_dict:
                         element_to_add = checked_condensed_dict
@@ -284,9 +278,8 @@ class YamlCodeEditor(BaseCodeEditor):
                         object_to_fill.append(element_to_add)
                     # Otherwise turns it to a list with the element inside
                     else:
-                        parent_dictionary[depth -
-                                          2][parent_name] = [element_to_add]
-                        # Delete the dictionary that was created in the parents before hand
+                        parent_dictionary[depth - 2][parent_name] = [element_to_add]
+                        # Delete the dictionary that was created in the parents beforehand
                         del parent_dictionary[depth - 1]
 
                 # Remove the parent line as wrong if possible
@@ -294,50 +287,46 @@ class YamlCodeEditor(BaseCodeEditor):
                     self.wrong_format_lines.remove(parent_line)
                 line_number += 1
         # Get the parsed content
-        self.parsed_content = parsed
-        # Emit the signal if it's different than the initial
-        self.contentIsModified.emit(
-            self.initial_content != self.parsed_content)
+        self.parsed_content = parsed_and_valid
+        # Emit the signal if the parsed content is different than the initial
+        self.contentIsModified.emit(self.initial_content != self.parsed_content)
 
-    def reset_init_content(self):
+    def reset_initial_content(self):
         """
             Reset the initial content
         """
-        self.initial_content = copy.deepcopy(
-            self.parsed_content) if self.parsed_content else {}
+        self.initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else {}
 
     def mark_component(self, component_name):
         """
-            Mark all lines belonging to dictionary named component_name as wrongly formatted
+            Mark all of the lines that belong to the component "component_name" as wrongly formatted
         """
-        # Get which slice it is
+        # Get the index of the list in which the component to be marked is
         slice_index = 0
-        for slice_ in self.slices:
-            if slice_[0].startswith(component_name):
+        for sliced_root_lines in self._sliced_root_components:
+            if sliced_root_lines[0].startswith(component_name):
                 break
             slice_index += 1
         # Get the starting line
         begin_line = 0
         # If the element is part of new_dicts_index then get the beginning line from the dict
-        potential_key = self.slices[slice_index][0].strip(
-            ":").strip() if slice_index < len(self.slices) else -1
-        if potential_key in self._new_dicts_index:
-            begin_line = self._new_dicts_index[potential_key]
-        # Otherwise it means it is a "complete" element and needs to get he beginning line
+        potential_key = self._sliced_root_components[slice_index][0].strip(":").strip() if slice_index < len(self._sliced_root_components) else -1
+        if potential_key in self._new_dict_lines:
+            begin_line = self._new_dict_lines[potential_key]
+        # Otherwise it means it is a complete element
         else:
-            for i in range(slice_index):
-                begin_line += len(self.slices[i])
+            for index in range(slice_index):
+                begin_line += len(self._sliced_root_components[index])
         # Remove all trailing spaces of each element of the slice
-        striped_slice = list(
-            map(lambda x: x.strip(), self.slices[slice_index]))
+        striped_slice = list(map(lambda x: x.strip(), self._sliced_root_components[slice_index]))
         # Get the ending line
-        end_line = begin_line + \
-            len(self.slices[slice_index]) - striped_slice.count("")
+        end_line = begin_line + len(self._sliced_root_components[slice_index]) - striped_slice.count("")
         # For all these lines mark them as bad
         lines_indices = range(begin_line, end_line)
         for line_index in lines_indices:
             if line_index not in self.wrong_format_lines:
                 self.wrong_format_lines.append(line_index)
+        # Call an update of the background color (i.e to flag wrong lines as red)
         self.update_background()
 
     def set_margin_marker(self):
@@ -348,20 +337,20 @@ class YamlCodeEditor(BaseCodeEditor):
 
     def display_margin_marker(self):
         """
-            Update the margin marker allowing to add components
+            Update the margin marker (the + symbol) that helps the user adding new elements to the editor
         """
         self.markerDeleteAll(1)
         self.markerAdd(0, 1)
 
-    def reset(self):
+    def remove_text(self):
         """
-            Clean the editor (i.e. remove content and reset attributes) but keep is editable
+            Clear the editor (i.e. remove content and reset attributes) but keep is editable
         """
-        super().reset()
+        super().remove_text()
         self.parsed_content = {}
 
 
-class XmlCodeEditor(BaseCodeEditor):
+class XmlCodeEditor(BaseTextEditor):
 
     """
         QScintilla-based widget allowing to create a XML code editor
@@ -374,7 +363,7 @@ class XmlCodeEditor(BaseCodeEditor):
             @param parent: parent of the widget
         """
         super().__init__(parent)
-        self.lexer_ = Qsci.QsciLexerXML(self)
+        self.text_lexer = Qsci.QsciLexerXML(self)
         self.initial_content = None
         self.parsed_content = None
 
