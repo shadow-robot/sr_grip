@@ -19,8 +19,8 @@ import pytest
 from grip_api.abstract_widgets.base_text_editor import BaseTextEditor
 from grip_api.config_widgets.code_editors import YamlCodeEditor
 
-# need to add this pylint disabler due to the nature of the pytest fixtures
-# pylint: disable=W0621
+# Need to add these pylint disabler due to the nature of pytest fixtures and the mandatory qt's plugin fixture qtbot
+# pylint: disable=W0621, W0613
 
 
 @pytest.fixture
