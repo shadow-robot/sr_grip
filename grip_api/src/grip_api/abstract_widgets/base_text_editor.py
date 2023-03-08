@@ -28,6 +28,8 @@ class MetaTextEditor(type(Qsci.QsciScintilla), abc.ABCMeta):
     EMPTY_COLOR = QColor("#cccccc")
     # Amount of time (in ms) to wait since the last text edition to trigger parsing and validity checks
     TIME_BEFORE_PARSING = 600
+    # Color of the background set to the lines that are wrongly formatted
+    WRONG_FORMAT_COLOR = QColor("#40FF0000")
 
 
 class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
@@ -37,17 +39,15 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
     # Signal sent when the parsed content changes
     contentIsModified = pyqtSignal(bool)
 
-    def __init__(self, parent=None):
+    def __init__(self):
         """
             Initialize the class by setting up the editor
-
-            @param parent: parent of the widget
         """
-        super().__init__(parent)
+        super().__init__()
         self.text_lexer = None
         self._init_ui()
         # Initial content of the editor (i.e. text it is initialized with)
-        self.initial_content = {}
+        self._initial_content = {}
         # Dictionary that will contain the name of new dictionaries (keys) and the line of their definition (values)
         self._new_dict_lines = {}
         # Will contain the index of the lines wrongly formatted
@@ -84,16 +84,16 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         commands.boundTo(Qt.ControlModifier | Qt.Key_T).setKey(0)
         # Define markers to highlight lines not properly formatted using a red-ish color
         self.markerDefine(Qsci.QsciScintilla.Background, 0)
-        self.setMarkerBackgroundColor(QColor("#40FF0000"), 0)
+        self.setMarkerBackgroundColor(MetaTextEditor.WRONG_FORMAT_COLOR, 0)
 
     def parse_and_format_editor(self):
         """
             Run the parser on the editor's content and signal which lines are not well formatted
         """
         # Parse the content of the editor
-        self.parse_content()
+        self._parse_content()
         # Make the background of wrongly formatted lines red-ish
-        self.update_background()
+        self._update_background()
 
     def _start_timer(self):
         """
@@ -123,19 +123,17 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         # Restart the timer so that when the users interact with the editor, things don't turn red too quickly
         self._start_timer()
 
-    def update_background(self):
+    def _update_background(self):
         """
             Update the markers based on which lines are detected as wrong
         """
         self.markerDeleteAll(0)
-        # List of indices of the lines wrongly formatted
-        lines = self.wrong_format_lines
         # Add markers
-        for line_index in lines:
+        for line_index in self.wrong_format_lines:
             self.markerAdd(line_index, 0)
 
     @abc.abstractmethod
-    def parse_content(self):
+    def _parse_content(self):
         """
             Parse the content of the editor
         """
@@ -169,7 +167,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
             Clear the editor (i.e. remove text and reset attributes) but keep it editable
         """
         self.clear()
-        self.initial_content = {}
+        self._initial_content = {}
         self.parse_and_format_editor()
 
     @staticmethod

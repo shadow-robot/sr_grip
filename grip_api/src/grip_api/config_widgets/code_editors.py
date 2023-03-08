@@ -26,13 +26,11 @@ class YamlCodeEditor(BaseTextEditor):
         QScintilla-based YAML code editor
     """
 
-    def __init__(self, parent=None):
+    def __init__(self):
         """
             Initialize the class by setting up the editor
-
-            @param parent: parent of the widget
         """
-        super().__init__(parent)
+        super().__init__()
         self._initialize_margin()
         # Store the lexer to be used
         self.text_lexer = Qsci.QsciLexerYAML(self)
@@ -40,6 +38,10 @@ class YamlCodeEditor(BaseTextEditor):
         self.parsed_content = {}
         # Each list of this list will contain the lines that are supposed to correspond to a top-level component
         self._sliced_root_components = []
+        # List that will contain the index of each line wrongly formatted
+        self.wrong_format_lines = []
+        # Dictionary that contains the newly parsed dictionaries
+        self._new_dict_lines = {}
 
     def _initialize_margin(self):
         """
@@ -74,7 +76,7 @@ class YamlCodeEditor(BaseTextEditor):
         """
         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsNone)
 
-    def parse_content(self):  # pylint: disable=R0912, R0914, R0915
+    def _parse_content(self):  # pylint: disable=R0912, R0914, R0915
         """
             Parse the editor's content and store ONLY the valid content in the parsed_content attribute
         """
@@ -85,7 +87,7 @@ class YamlCodeEditor(BaseTextEditor):
         if not editor_content:
             self.parsed_content = {}
             # Emit a signal re. whether the text has been modified or not
-            self.contentIsModified.emit(self.initial_content != self.parsed_content)
+            self.contentIsModified.emit(self._initial_content != self.parsed_content)
             return
         # Split the text line by line
         split_content = editor_content.split("\n")
@@ -143,27 +145,32 @@ class YamlCodeEditor(BaseTextEditor):
                                        r"(\s*\#.*)?(.*)?", line.strip()).groups()
                 # Unstack all the information contained in the line into different variables
                 key_name, column, value, dash, list_element, condensed_dict, condensed_list, comment, trash = split_line
+                print(f"Split line is {split_line}")
                 # If there are unexpected stuff on the line then continue and go to the next line
                 if trash:
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
+                print("1")
                 # Otherwise remove the last element as we know it's empty
                 split_line = split_line[:-1]
                 # If it's an empty line then skip to the next line
                 if all(not element for element in split_line):
                     line_number += 1
                     continue
+                print("2")
                 # If we have only a comment on the line then go to the next line
                 if comment and all(not element for element in split_line[:-1]):
                     line_number += 1
                     continue
+                print("3")
                 # If only text is present on the line (without :) then it is invalid
                 if key_name and all(not element for element in split_line[1:-1]):
                     # Add the line to wrong format so that it appears in red-ish
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
+                print("4")
                 # If we have only a keyword and a column, mark the line as wrong as we don't know what's following
                 # However get eh corresponding line and record it into self._new_dict_lines
                 if key_name and column and all(not element for element in split_line[2:-1]):
@@ -176,16 +183,19 @@ class YamlCodeEditor(BaseTextEditor):
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
+                print("5")
                 # If a dash is not followed by anything valid then make the line wrong and go to the next one
                 if dash and not (list_element or condensed_list or condensed_dict):
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
+                print("6")
                 # If the line contains too many things like key_name: value -/[]/{} make it wrong and got to the next
                 if all(split_line[:3]) and any(split_line[3:-1]):
                     self.wrong_format_lines.append(line_number)
                     line_number += 1
                     continue
+                print("7")
                 # If trying to add anything that is not a list after a list
                 if depth - 1 not in parent_dictionary and not dash:
                     self.wrong_format_lines.append(line_number)
@@ -247,6 +257,7 @@ class YamlCodeEditor(BaseTextEditor):
 
                 # If the line corresponds to a list
                 elif dash:
+                    print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
                     # Get the object in which we should add the list
                     object_to_fill = list(
                         parent_dictionary[depth - 2].values())[-1]
@@ -290,14 +301,13 @@ class YamlCodeEditor(BaseTextEditor):
         # Get the parsed content
         self.parsed_content = parsed_and_valid
         # Emit the signal if the parsed content is different than the initial
-        self.contentIsModified.emit(self.initial_content != self.parsed_content)
+        self.contentIsModified.emit(self._initial_content != self.parsed_content)
 
     def reset_initial_content(self):
         """
             Reset the initial content
         """
-        self.initial_content = copy.deepcopy(
-            self.parsed_content) if self.parsed_content else {}
+        self._initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else {}
 
     def mark_component(self, component_name):
         """
@@ -332,7 +342,7 @@ class YamlCodeEditor(BaseTextEditor):
             if line_index not in self.wrong_format_lines:
                 self.wrong_format_lines.append(line_index)
         # Call an update of the background color (i.e to flag wrong lines as red)
-        self.update_background()
+        self._update_background()
 
     def set_margin_marker(self):
         """
@@ -361,18 +371,19 @@ class XmlCodeEditor(BaseTextEditor):
         QScintilla-based XML code editor
     """
 
-    def __init__(self, parent=None):
+    def __init__(self):
         """
             Initialize the class by setting up the editor
 
             @param parent: parent of the widget
         """
-        super().__init__(parent)
+        super().__init__()
         self.text_lexer = Qsci.QsciLexerXML(self)
-        self.initial_content = None
+        self._initial_content = None
         self.parsed_content = None
+        self.wrong_format_lines = []
 
-    def parse_content(self):
+    def _parse_content(self):
         """
             Parse the XML file to capture correctly formatted arguments
         """
@@ -382,7 +393,7 @@ class XmlCodeEditor(BaseTextEditor):
         # If there's no text in the editor
         if not editor_content:
             self.parsed_content = None
-            self.contentIsModified.emit(self.initial_content != self.parsed_content)
+            self.contentIsModified.emit(self._initial_content != self.parsed_content)
             return
 
         # As of now (03/23) the only XML editors used are for launch files so we are certain that the following
@@ -391,7 +402,7 @@ class XmlCodeEditor(BaseTextEditor):
         # If no valid argument can be parsed from the above line
         if raw_arguments is None:
             self.parsed_content = None
-            self.contentIsModified.emit(self.initial_content != self.parsed_content)
+            self.contentIsModified.emit(self._initial_content != self.parsed_content)
             return
 
         # Subtract the comment that is added to guide the user
@@ -414,9 +425,9 @@ class XmlCodeEditor(BaseTextEditor):
                 self.wrong_format_lines.append(filtered_editor.index(argument))
             else:
                 self.parsed_content.append(argument)
-        self.contentIsModified.emit(self.initial_content != self.parsed_content)
+        self.contentIsModified.emit(self._initial_content != self.parsed_content)
 
-    def update_background(self):
+    def _update_background(self):
         """
             Update the markers based on which lines are detected as wrong
         """
