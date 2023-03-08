@@ -20,7 +20,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QPushButton, QSpacerItem, QFileDialog
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_api.utils.common_dialog_boxes import can_save_warning_message
-from .code_editors import GenericCodeEditor, YamlCodeEditor, XmlCodeEditor
+from grip_api.config_widgets.code_editors import YamlCodeEditor, XmlCodeEditor
 
 
 class GenericEditorWidget(QWidget):
@@ -65,7 +65,7 @@ class GenericEditorWidget(QWidget):
         """
             Initialize the code editor. Will be used by the derivated classes
         """
-        self.code_editor = GenericCodeEditor()
+        pass
 
     def set_editor_content(self, content):
         """
@@ -74,8 +74,8 @@ class GenericEditorWidget(QWidget):
             @param content: String to be displayed in the editor
         """
         # Make sure the editor is lexed before setting any text
-        if not self.code_editor.is_lexed:
-            self.code_editor.set_lexer()
+        if self.code_editor.lexer() is None:
+            self.code_editor.make_editable()
         self.code_editor.set_text_and_trigger_checks(content)
         self.code_editor.setReadOnly(False)
         self.setEnabled(True)
@@ -182,7 +182,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
             Set the current state of the widget as the initial one
         """
-        self.code_editor.reset_init_content()
+        self.code_editor.reset_initial_content()
         self.update_init_state = False
         self.title.setText(self.name)
 
@@ -257,8 +257,8 @@ class YAMLEditorWidget(GenericEditorWidget):
             elif should_save is None:
                 return
         if self.save_file_path("Save new configuration file as"):
-            self.code_editor.set_lexer()
-            self.code_editor.reset()
+            self.code_editor.make_editable()
+            self.code_editor.remove_text()
 
     def close_file(self):
         """
@@ -272,7 +272,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
             Reset the editor and unlinks any file from the editor
         """
-        self.code_editor.reset()
+        self.code_editor.remove_text()
         self.file_path = None
         self.title.setText(self.name)
 
@@ -328,7 +328,7 @@ class YAMLEditorWidget(GenericEditorWidget):
             self.file_path = settings.value("file_path")
             self.load_file()
         else:
-            self.code_editor.reset()
+            self.code_editor.remove_text()
         self.setEnabled(settings.value("enabled", type=bool))
         settings.endGroup()
 
