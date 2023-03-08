@@ -66,7 +66,6 @@ class GenericEditorWidget(QWidget):
             Initialize the code editor. Will be used by the derivated classes
         """
         pass
-        # self.code_editor = GenericCodeEditor()
 
     def set_editor_content(self, content):
         """
