@@ -20,7 +20,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QPushButton, QSpacerItem, QFileDialog
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_api.utils.common_dialog_boxes import can_save_warning_message
-from .code_editors import GenericCodeEditor, YamlCodeEditor, XmlCodeEditor
+from grip_api.config_widgets.code_editors import YamlCodeEditor, XmlCodeEditor
 
 
 class GenericEditorWidget(QWidget):
@@ -65,7 +65,8 @@ class GenericEditorWidget(QWidget):
         """
             Initialize the code editor. Will be used by the derivated classes
         """
-        self.code_editor = GenericCodeEditor()
+        pass
+        # self.code_editor = GenericCodeEditor()
 
     def set_editor_content(self, content):
         """
@@ -75,7 +76,7 @@ class GenericEditorWidget(QWidget):
         """
         # Make sure the editor is lexed before setting any text
         if not self.code_editor.is_lexed:
-            self.code_editor.set_lexer()
+            self.code_editor.make_editable()
         self.code_editor.set_text_and_trigger_checks(content)
         self.code_editor.setReadOnly(False)
         self.setEnabled(True)
@@ -87,7 +88,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         Widget containing the header and editor required to work with YAML files.
     """
 
-    def __init__(self, name, enabled=False, parent=None):
+    def __init__(self, name, enabled=True, parent=None):
         """
             Initialize the class by setting up the layout and the widgets
 
@@ -257,8 +258,8 @@ class YAMLEditorWidget(GenericEditorWidget):
             elif should_save is None:
                 return
         if self.save_file_path("Save new configuration file as"):
-            self.code_editor.set_lexer()
-            self.code_editor.reset()
+            self.code_editor.make_editable()
+            self.code_editor.remove_text()
 
     def close_file(self):
         """
