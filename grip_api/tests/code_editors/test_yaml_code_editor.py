@@ -19,6 +19,9 @@ import pytest
 from grip_api.abstract_widgets.base_text_editor import BaseTextEditor
 from grip_api.config_widgets.code_editors import YamlCodeEditor
 
+# need to add this pylint disabler due to the nature of the pytest fixtures
+# pylint: disable=W0621
+
 
 @pytest.fixture
 def yaml_editor(qtbot):
@@ -131,15 +134,28 @@ def test_editor_parsing_lists(yaml_editor, input_text, wrong_lines, parsed_dict)
 
 @pytest.mark.parametrize("input_text,wrong_lines,parsed_dict",
                          [("key: {subkey1 : value, subkey2 : -1.5, subkey3 : False , sub: [-1, 2.6, True], -8: test}",
-                           [], {"key": {"subkey1": "value", "subkey2": -1.5, "subkey3": False, "sub": [-1, 2.6, True], -8: "test"}}),
-                          ("key:\n  subkey1 : value\n  subkey2 : -1.5\n  subkey3 : False\n  sub: [-1, 2.6, True]\n  -8: test", [], {"key": {"subkey1": "value", "subkey2": -1.5, "subkey3": False, "sub": [-1, 2.6, True], -8: "test"}})])
+                           [], {"key": {"subkey1": "value", "subkey2": -1.5, "subkey3": False, "sub": [-1, 2.6, True],
+                                        -8: "test"}}),
+                          ("key:\n  subkey1 : value\n  subkey2 : -1.5\n  subkey3 : False\n  sub: [-1, 2.6, True]\n"
+                           "  -8: test", [], {"key": {"subkey1": "value", "subkey2": -1.5, "subkey3": False,
+                                                      "sub": [-1, 2.6, True], -8: "test"}})])
 def test_editor_parsing_dictionaries(yaml_editor, input_text, wrong_lines, parsed_dict):
     """
 
     """
     set_text_and_check_parsing_result(yaml_editor, input_text, wrong_lines, parsed_dict)
 
-# Add same as above but with wrong indentations
+
+@pytest.mark.parametrize("input_text,wrong_lines,parsed_dict",
+                         [("key: {subkey1 : value subkey2 : -1.5, subkey3 : False , sub: [-1, 2.6, True], -8: test}",
+                           [0], {}),
+                          ("key:\n subkey1 : value\n  subkey2 : -1.5\n  subkey3 : False\n  sub: [-1, 2.6, True]\n"
+                           "  -8: test", [1], {})])
+def test_editor_parsing_invalid_dictionaries(yaml_editor, input_text, wrong_lines, parsed_dict):
+    """
+
+    """
+    set_text_and_check_parsing_result(yaml_editor, input_text, wrong_lines, parsed_dict)
 
 
 @pytest.mark.parametrize("pre_reset_text", ["Invalid text", "key: -1.5"])
