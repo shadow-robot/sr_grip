@@ -16,6 +16,7 @@
 
 import re
 import copy
+from typing import List
 from PyQt5 import Qsci
 from grip_api.abstract_widgets.base_text_editor import BaseTextEditor
 
@@ -26,7 +27,7 @@ class YamlCodeEditor(BaseTextEditor):
         QScintilla-based YAML code editor
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
             Initialize the class by setting up the editor
         """
@@ -43,7 +44,7 @@ class YamlCodeEditor(BaseTextEditor):
         # Dictionary that contains the newly parsed dictionaries
         self._new_dict_lines = {}
 
-    def _initialize_margin(self):
+    def _initialize_margin(self) -> None:
         """
             Initialize the margin with a symbol, that if clicked, helps with the definition of a new entry in the editor
         """
@@ -56,7 +57,8 @@ class YamlCodeEditor(BaseTextEditor):
         # Make the margin clickable
         self.setMarginSensitivity(1, True)
 
-    def set_autocompletion(self, words_to_autocomplete):
+    # Note that for Python 3.9+ we won't need to import the List from typing and will be able to use list[str]
+    def set_autocompletion(self, words_to_autocomplete: List[str]) -> None:
         """
             Allow the strings contained in the input list to be autocompleted after two characters
 
@@ -70,13 +72,13 @@ class YamlCodeEditor(BaseTextEditor):
         # Need to call this method so that the added words get accounted for
         api.prepare()
 
-    def turn_off_autocompletion(self):
+    def turn_off_autocompletion(self) -> None:
         """
             Turn off autocompletion
         """
         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsNone)
 
-    def _parse_content(self):  # pylint: disable=R0912, R0914, R0915
+    def _parse_content(self) -> None:  # pylint: disable=R0912, R0914, R0915
         """
             Parse the editor's content and store ONLY the valid content in the parsed_content attribute
         """
@@ -294,15 +296,17 @@ class YamlCodeEditor(BaseTextEditor):
         # Emit the signal if the parsed content is different than the initial
         self.contentIsModified.emit(self._initial_content != self.parsed_content)
 
-    def reset_initial_content(self):
+    def reset_initial_content(self) -> None:
         """
             Reset the initial content
         """
         self._initial_content = copy.deepcopy(self.parsed_content) if self.parsed_content else {}
 
-    def mark_component(self, component_name):
+    def mark_component(self, component_name: str) -> None:
         """
             Mark all of the lines that belong to the component "component_name" as wrongly formatted
+
+            @param component_name: Name of the root component for which all elements should be marked as wrong
         """
         # Get the index of the list in which the component to be marked is
         slice_index = 0
@@ -335,20 +339,20 @@ class YamlCodeEditor(BaseTextEditor):
         # Call an update of the background color (i.e to flag wrong lines as red)
         self._update_background()
 
-    def set_margin_marker(self):
+    def set_margin_marker(self) -> None:
         """
             Make a symbol appears in the margin of the editor and update it when text is typed
         """
         self.textChanged.connect(self.display_margin_marker)
 
-    def display_margin_marker(self):
+    def display_margin_marker(self) -> None:
         """
             Update the margin marker (the + symbol) that helps the user adding new elements to the editor
         """
         self.markerDeleteAll(1)
         self.markerAdd(0, 1)
 
-    def remove_text(self):
+    def remove_text(self) -> None:
         """
             Clear the editor (i.e. remove content and reset attributes) but keep is editable
         """
@@ -362,11 +366,9 @@ class XmlCodeEditor(BaseTextEditor):
         QScintilla-based XML code editor
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
             Initialize the class by setting up the editor
-
-            @param parent: parent of the widget
         """
         super().__init__()
         self.text_lexer = Qsci.QsciLexerXML(self)
@@ -374,7 +376,7 @@ class XmlCodeEditor(BaseTextEditor):
         self.parsed_content = None
         self.wrong_format_lines = []
 
-    def _parse_content(self):
+    def _parse_content(self) -> None:
         """
             Parse the XML file to capture correctly formatted arguments
         """
@@ -418,17 +420,17 @@ class XmlCodeEditor(BaseTextEditor):
                 self.parsed_content.append(argument)
         self.contentIsModified.emit(self._initial_content != self.parsed_content)
 
-    def _update_background(self):
+    def _update_background(self) -> None:
         """
             Update the markers based on which lines are detected as wrong
         """
-        super().update_background()
+        super()._update_background()
         # In case the editor's content in empty notifies that something is wrong
         if self.parsed_content is None and self.isEnabled():
-            for line in range(self.lines()):
-                self.markerAdd(line, 0)
+            for line_index in range(self.lines()):
+                self.markerAdd(line_index, 0)
 
-    def reinitialize(self):
+    def reinitialize(self) -> None:
         """
             Set the editor to its initial state
         """

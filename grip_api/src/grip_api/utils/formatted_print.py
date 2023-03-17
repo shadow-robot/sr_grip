@@ -36,13 +36,13 @@ class Color(Enum):
     COLOR_RESET = '\033[0m'
 
 
-def get_color_formatted_string(text, color, message_type):
+def get_color_formatted_string(text, color: Color, message_type: str) -> str:
     """
-        Return a string formatted in a way that it can be coloured when printed to a terminal
+        Return a coloured formatted string compatible with most terminals
 
-        @param text: String corresponding to the message to be printed
+        @param text: Text to be printed
         @param color: Element from the Color enum
-        @param message_type: String to display the type of message that will be displayed
+        @param message_type: Text describing the type of message that will be displayed
         @return: Formatted string
     """
     if not isinstance(color, Color):
@@ -50,58 +50,59 @@ def get_color_formatted_string(text, color, message_type):
     return f"{color.value}[{message_type}]: {text}{Color.COLOR_RESET.value}"
 
 
-def print_error(text):
+def print_error(text: str) -> None:
     """
         Print a red-coloured error message
 
-        @param text: String corresponding to the message to be printed
+        @param text: Text to be printed
     """
     print(get_color_formatted_string(text, Color.RED, "ERROR"))
 
 
-def format_raise_string(text):
+def format_raise_string(text: str) -> str:
     """
-        Return a coloured version of a given string so the user can directly understand a custom message associated to
-        a raised error
+        Return a coloured version of a given string so the user can directly understand that the given message relates
+        to a raised error
 
-        @param text: String corresponding to the message to be printed
+        @param text: Text to be printed
+        @return: Formatted string
     """
     return f"{Color.LIGHT_RED.value}{text}{Color.COLOR_RESET.value}"
 
 
-def print_success(text):
+def print_success(text: str) -> None:
     """
         Print a green-coloured error message
 
-        @param text: String corresponding to the message to be printed
+        @param text: Text to be printed
     """
     print(get_color_formatted_string(text, Color.GREEN, "SUCCESS"))
 
 
-def print_progress(text):
+def print_progress(text: str) -> None:
     """
         Print a light cyan-coloured progress message
 
-        @param text: String corresponding to the message to be printed
+        @param text: Text to be printed
     """
     print(get_color_formatted_string(text, Color.LIGHT_CYAN, "PROGRESS"))
 
 
-def print_warning(text):
+def print_warning(text: str) -> None:
     """
         Print a yellow-coloured warning message
 
-        @param text: String corresponding to the message to be printed
+        @param text: Text to be printed
     """
     print(get_color_formatted_string(text, Color.YELLOW, "WARNING"))
 
 
-def interactive_dialog(text):
+def interactive_dialog(text: str) -> str:
     """
-        Print a light blue-coloured interactive input message
+        Return a light blue-coloured interactive input message
 
-        @param text: String corresponding to the message to be printed
-        @return: String corresponding to the user's input
+        @param text: Text to be printed
+        @return: Formatted string corresponding to the user's input
     """
     response = input(get_color_formatted_string(text, Color.LIGHT_BLUE, "USER INPUT"))
     return response

@@ -15,6 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import abc
+from typing import Union
 from PyQt5 import Qsci
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import pyqtSignal, QTimer, Qt
@@ -39,7 +40,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
     # Signal sent when the parsed content changes
     contentIsModified = pyqtSignal(bool)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
             Initialize the class by setting up the editor
         """
@@ -62,7 +63,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         # Each time a new character is inserted in the editor (signal coming from QScintilla), restart the timer
         self.textChanged.connect(self._start_timer)
 
-    def _init_ui(self):
+    def _init_ui(self) -> None:
         """
             Initialize the editor
         """
@@ -86,7 +87,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         self.markerDefine(Qsci.QsciScintilla.Background, 0)
         self.setMarkerBackgroundColor(MetaTextEditor.WRONG_FORMAT_COLOR, 0)
 
-    def parse_and_format_editor(self):
+    def parse_and_format_editor(self) -> None:
         """
             Run the parser on the editor's content and signal which lines are not well formatted
         """
@@ -95,7 +96,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         # Make the background of wrongly formatted lines red-ish
         self._update_background()
 
-    def _start_timer(self):
+    def _start_timer(self) -> None:
         """
             Start the timer that triggers the content's format checking
         """
@@ -109,11 +110,11 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         """
         self._timer.stop()
 
-    def set_text_and_trigger_checks(self, input_text):
+    def set_text_and_trigger_checks(self, input_text: str) -> None:
         """
             Set some input text to the editor and immediately trigger checks about its validity
 
-            @param input_text: String to be written to the editor
+            @param input_text: Raw text to be written to the editor
         """
         # Stop the timer (so we can trigger checks without having to wait for 600 ms)
         self._stop_timer()
@@ -123,7 +124,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         # Restart the timer so that when the users interact with the editor, things don't turn red too quickly
         self._start_timer()
 
-    def _update_background(self):
+    def _update_background(self) -> None:
         """
             Update the markers based on which lines are detected as wrong
         """
@@ -133,27 +134,27 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
             self.markerAdd(line_index, 0)
 
     @abc.abstractmethod
-    def _parse_content(self):
+    def _parse_content(self) -> None:
         """
             Parse the content of the editor
         """
         raise NotImplementedError("The method 'parse content' has not been implemented!")
 
-    def make_editable(self):
+    def make_editable(self) -> None:
         """
             Allow the user to edit the object
         """
         self.setLexer(self.text_lexer)
         self.setReadOnly(False)
 
-    def make_uneditable(self):
+    def make_uneditable(self) -> None:
         """
             Make sure the user cannot modify the current state of the text editor
         """
         self.setLexer(None)
         self.setReadOnly(True)
 
-    def reinitialize(self):
+    def reinitialize(self) -> None:
         """
             Reinitialize the text editor to its initial state, i.e. uneditable with empty background
         """
@@ -162,7 +163,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         self.setPaper(MetaTextEditor.EMPTY_COLOR)
         self.markerDeleteAll()
 
-    def remove_text(self):
+    def remove_text(self) -> None:
         """
             Clear the editor (i.e. remove text and reset attributes) but keep it editable
         """
@@ -171,7 +172,8 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         self.parse_and_format_editor()
 
     @staticmethod
-    def to_format(input_string):
+    # Note that in Python 3.10+, output could be hinted as type1 | type2 | type3
+    def to_format(input_string: str) -> Union[int, float, bool, str]:
         """
             Turn the input string to the intended format (string, int, float or boolean)
 

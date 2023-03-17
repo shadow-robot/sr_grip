@@ -23,7 +23,7 @@ class ParentWidgetTypeError(TypeError):
         Custom error raised when the type of the input parent of a QWidget is not valid
     """
 
-    def __init__(self, parent_type):
+    def __init__(self, parent_type) -> None:
         """
             Customize the message output by the exception
 
