@@ -22,6 +22,7 @@ from grip_api.config_widgets.code_editors import XmlCodeEditor
 # Need to add these pylint disabler due to the nature of pytest fixtures and the mandatory qt's plugin fixture qtbot
 # pylint: disable=W0621, W0613
 
+
 @pytest.fixture
 def xml_editor(qtbot):
     """
@@ -41,7 +42,7 @@ def test_editor_initialization(xml_editor) -> None:
     assert isinstance(xml_editor, BaseTextEditor)
 
 
-def set_text_and_check_result(xml_code_editor: Type[XmlCodeEditor], text: str, wrong_line_indices: List[int])-> None:
+def set_text_and_check_result(xml_code_editor: Type[XmlCodeEditor], text: str, wrong_line_indices: List[int]) -> None:
     """
         Convenience function that gathers the core, i.e. setting text to an editor and checking that some of its
         attributes are properly set

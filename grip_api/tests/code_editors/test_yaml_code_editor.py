@@ -107,7 +107,7 @@ def test_editor_parsing_multi_line(yaml_editor, input_text: str, wrong_lines: Li
                           ("key: false", [], {"key": False}), ("key: False", [], {"key": False})
                           ])
 def test_editor_parsing_format_value(yaml_editor, input_text: str, wrong_lines: List[int],
-                                   parsed_dict: Dict[str, Union[int, float, bool, str, List, Dict]]) -> None:
+                                     parsed_dict: Dict[str, Union[int, float, bool, str, List, Dict]]) -> None:
     """
         Test whether the editor is capable of correctly parsing non-condensed values in dictionaries
 
@@ -140,7 +140,7 @@ def test_editor_parsing_format_key(yaml_editor, input_text: str, wrong_lines: Li
                          [("- first_element\n- second_element", [0, 1], {}), ("-number_one\n-number_two", [0, 1], {}),
                           ("-number_one\n- 8", [0, 1], {})])
 def test_editor_parsing_root_explicit_lists(yaml_editor, input_text: str, wrong_lines: List[int],
-                                   parsed_dict: Dict[str, Union[int, float, bool, str, List, Dict]]) -> None:
+                                            parsed_dict: Dict[str, Union[int, float, bool, str, List, Dict]]) -> None:
     """
         Test if top level (i.e. root) lists come out as wrongly formatted (as they should) since not mapped to a key
 
@@ -219,7 +219,7 @@ def test_editor_parsing_lists(yaml_editor, input_text: str, wrong_lines: List[in
                           ("key: {subkey1 : value subkey2 : -1.5, subkey3 : False , sub: [-1, 2.6, True], -8: test}",
                            [0], {})])
 def test_editor_parsing_dictionaries(yaml_editor, input_text: str, wrong_lines: List[int],
-                              parsed_dict: Dict[str, Union[int, float, bool, str, List, Dict]]) -> None:
+                                     parsed_dict: Dict[str, Union[int, float, bool, str, List, Dict]]) -> None:
     """
         Test that dictionary parsing works as expected, especially with wrong indentations or wrong format of the keys
 
