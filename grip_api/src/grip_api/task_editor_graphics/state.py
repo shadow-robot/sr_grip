@@ -150,8 +150,7 @@ class GraphicsState(QGraphicsItem):
         self.state.graphics_state.init_dimensions()
         # Update the position of the sockets
         for socket in (self.state.input_socket + self.state.output_sockets):
-            socket.position = socket.get_position()
-            socket.graphics_socket.setPos(*socket.position)
+            socket.update_position()
         #  Update the connectors that are linked to this state
         self.state.update_connectors()
 

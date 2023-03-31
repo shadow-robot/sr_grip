@@ -105,12 +105,12 @@ class Container:
         # Since the terminal sockets have not been properly located yet, the initialisation of the container is not done
         self.is_complete = False
 
-    def add_terminal_socket(self, outcome_name, position):
+    def add_terminal_socket(self, outcome_name, position_):
         """
             Add a terminal socket to the container, which represents a new outcome of the task
 
             @param outcome_name: Name given to the new terminal socket
-            @param position: List containing the scene coordinates (x, y) of where the socket should be located
+            @param position_: List containing the scene coordinates (x, y) of where the socket should be located
         """
         # Add the new name ot the outcome attribute
         self.outcomes.append(outcome_name)
@@ -120,7 +120,7 @@ class Container:
                                              index=len(self.outcomes) - 1,
                                              is_deletable = True)
         # Set its position from the the input argument
-        new_terminal_socket.update_position(*position)
+        new_terminal_socket.position = *position_
         # Add socket to terminal sockets
         self.terminal_sockets.append(new_terminal_socket)
         # Add the graphical socket to the graphical representation so it can be rendered

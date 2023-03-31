@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List, Union
 from grip_api.abstract_widgets.abstract_socket import AbstractSocket
 from grip_api.task_editor_graphics.terminal_socket import TerminalGraphicsSocket
+from grip_api.utils.formatted_print import format_raise_string
 from grip_api.utils.common_dialog_boxes import warning_message
 
 
@@ -42,6 +44,39 @@ class TerminalSocket(AbstractSocket):
         # Create and store the graphical socket to be displayed
         self.graphics_socket = TerminalGraphicsSocket(self)
 
+    @graphics_socket.setter
+    def graphics_socket(self, graphical_socket: TerminalGraphicsSocket) -> None:
+        """
+            Set the graphical representation of the socket
+
+            @param graphical_socket: Instance of the TerminalGraphicsSocket class
+        """
+        if not isinstance(graphical_socket, TerminalGraphicsSocket):
+            raise TypeError(format_raise_string("The property 'graphics_socket' must be a TerminalGraphicsSocket")) 
+        self._graphics_socket = graphical_socket
+
+    @property
+    def position(self) -> List[float]:
+        """
+            Return the position of the socket in the graphical view
+
+            @return: Current position of the socket in the following format [x, y]
+        """
+        graphical_position = self._graphics_socket.pos()
+        return [graphical_position.x(), graphical_position.y()]
+
+    @position.setter
+    def position(self, position_x_y: List[Union[int, float]]) -> None:
+        """
+            Set the position of the object in the graphical view
+
+            @param position_x: x coordinate in the scene coordinates
+            @param position_y: y coordinate in the scene coordinates        
+        """
+        # todo: ADDc check about type
+        self.graphics_socket.setPos(*position_x_y)
+        # Since we set the position of the object, the container is fully initialized
+        self.container.is_complete = True
 
     @property
     def container(self):
@@ -75,26 +110,6 @@ class TerminalSocket(AbstractSocket):
             self._is_deletable = value
         else:
             raise TypeError("The attribute 'is_deletable' must be a boolean")
-
-    def get_position(self):
-        """
-            Return a list of two elements corresponding to the position of this widget in the scene
-
-            @return: List of two floats (x, y), which are the coordinates of the widget in the scene coordinates
-        """
-        position = self.graphics_socket.pos()
-        return [position.x(), position.y()]
-
-    def update_position(self, position_x, position_y): # pylint: disable=W0221
-        """
-            Set the position of the object in the scene
-
-            @param position_x: Float or integer, corresponding to the x coordinate in the scene coordinates
-            @param position_y: Float or integer, corresponding to the y coordinate in the scene coordinates
-        """
-        self.graphics_socket.setPos(position_x, position_y)
-        # Since we set the position of the object, the container is fully initialized
-        self.container.is_complete = True
 
     def update_name(self, new_name, save_history=True): # pylint: disable=W0221
         """

@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List
 from grip_api.abstract_widgets.abstract_socket import AbstractSocket
 from grip_api.task_editor_graphics.socket import GraphicsSocket
+from grip_api.utils.formatted_print import format_raise_string
 
 
 class Socket(AbstractSocket):
@@ -38,35 +40,25 @@ class Socket(AbstractSocket):
         # Create and store the graphical socket to be displayed
         self.count_on_this_side = count_on_this_side
         self.graphics_socket = GraphicsSocket(self)
-        self.update_position(count_on_this_side)
+        self.position = count_on_this_side
 
-    @property
-    def state(self):
-        return self._state
-
-    @state.setter
-    def state(self, state_object):
-        if hasattr(state_object, "graphics_state"):
-            self._state = state_object
-        else:
-            raise TypeError("The attribute 'state' must be an object of type State")
-
-    @property
-    def count_on_this_side(self):
-        return self._count_on_this_side
-
-    @count_on_this_side.setter
-    def count_on_this_side(self, value):
-        if isinstance(value, int) and value > 0:
-            self._count_on_this_side = value
-        else:
-            raise TypeError("The attribute 'count_on_this_side' must be a positive integer")
-
-    def get_position(self):
+    @graphics_socket.setter
+    def graphics_socket(self, graphical_socket: GraphicsSocket) -> None:
         """
-            Get the position of the socket
+            Set the graphical representation of the socket
 
-            @return: List (position_x,position_y) of the position of the socket
+            @param graphical_socket: Instance of the GraphicsSocket class
+        """
+        if not isinstance(graphical_socket, GraphicsSocket):
+            raise TypeError(format_raise_string("The property 'graphics_socket' must be an instance of GraphicsSocket"))
+        self._graphics_socket = graphical_socket
+
+    @property
+    def position(self) -> List[float]:
+        """
+            Return the position of the socket in the graphical view
+
+            @return: Current position of the socket in the following format [x, y]
         """
         # Since we can zoom out even after the state gets to its minimal size, we need to get a compensation factor
         # to keep the distance between the sockets constant
@@ -97,18 +89,39 @@ class Socket(AbstractSocket):
 
         return [position_x, position_y]
 
-    def update_position(self, count_on_side): # pylint: disable=W0221
+    @position.setter
+    def position(self, count_on_side: int) -> None:
         """
-            Update the position of the socket with respect to the box-like representation
+            Update the position of the socket in the graphical view
 
-            @param count_on_side: New number of sockets on the given side of the state
+            @param count_on_side: Number of sockets that are on the same side of the state than this object
         """
         # Update the object's attribute
         self.count_on_this_side = count_on_side
         # Recompute position of the socket
-        self.position = self.get_position()
-        # Change the position of the graphical representation
-        self.graphics_socket.setPos(*self.position)
+        self.update_position()
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, state_object):
+        if hasattr(state_object, "graphics_state"):
+            self._state = state_object
+        else:
+            raise TypeError("The attribute 'state' must be an object of type State")
+
+    @property
+    def count_on_this_side(self):
+        return self._count_on_this_side
+
+    @count_on_this_side.setter
+    def count_on_this_side(self, value):
+        if isinstance(value, int) and value > 0:
+            self._count_on_this_side = value
+        else:
+            raise TypeError("The attribute 'count_on_this_side' must be a positive integer")
 
     def update_name(self, new_name):
         """
