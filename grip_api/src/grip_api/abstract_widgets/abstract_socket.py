@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from grip_api.utils.formatted_print import format_raise_string
 from grip_api.abstract_graphics import AbstractGraphicsSocket
+from grip_api.task_editor_widgets.connector import Connector
 
 
 class AbstractSocket(ABC):
@@ -119,11 +120,19 @@ class AbstractSocket(ABC):
         raise NotImplementedError(format_raise_string("The setter of 'graphics_socket' must be implemented!"))
 
     @abstractmethod
-    def update_name(self, new_name):
+    def update_name(self, new_name: str) -> None:
+        """
+            Update the name of the socket
+
+            @param new_name: New name to be given to the socket
+        """
         raise NotImplementedError("The method 'update_name' from AbstractSocket must be implemented!")
 
     @abstractmethod
-    def remove(self):
+    def remove(self) -> None:
+        """
+            Remove the socket from its container
+        """
         raise NotImplementedError("The method 'remove' from AbstractSocket must be implemented!")
 
     def update_position(self) -> None:
@@ -132,25 +141,25 @@ class AbstractSocket(ABC):
         """
         self._graphics_socket.setPos(*self.position)
 
-    def add_connector(self, connector):
+    def add_connector(self, connector: Connector) -> None:
         """
             Add a provided connector to this socket
 
-            @param connector: Connector object to be added to the attribute connectors
+            @param connector: Object, instanciated from the Connector class to be added to the attribute connectors
         """
         self.connectors.append(connector)
 
-    def remove_connector(self, connector):
+    def remove_connector(self, connector: Connector) -> None:
         """
             Remove a provided connector from this socket
 
-            @param connector: Connector object to be removed from the attribute connectors
+            @param connector: Object, instanciated from the Connector class to be removed from the attribute connectors
         """
         # Make sure it is part of the socket to avoid any exception
         if connector in self.connectors:
             self.connectors.remove(connector)
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
             Return a boolean stating if the socket currently hosts a connector
 
@@ -158,7 +167,7 @@ class AbstractSocket(ABC):
         """
         return bool(self.connectors)
 
-    def remove_all_connectors(self):
+    def remove_all_connectors(self) -> None:
         """
             Remove all the connectors associated to this socket
         """
