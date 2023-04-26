@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Dict
 from grip_api.abstract_widgets.abstract_socket import AbstractSocket
+from grip_api.task_editor_widgets.state import State
+from grip_api.task_editor_widgets.state_socket import StateSocket
 from grip_api.task_editor_graphics.socket import GraphicsSocket
 from grip_api.utils.formatted_print import format_raise_string
 
@@ -24,14 +26,15 @@ class StateSocket(AbstractSocket):
     """
         Object gathering all the logic related to sockets that are directly linked to a State
     """
-    def __init__(self, state, socket_name, index=0, multi_connections=True, count_on_this_side=1):
+    def __init__(self, state: State, socket_name: str, index: int = 0, multi_connections: bool = True,
+                 count_on_this_side: int = 1) -> None:
         """
             Initialize the widget and set the graphical representation
 
-            @param state: Object (State) on which this widget is set
-            @param socket_name: Name of the socket (string)
-            @param index: Integer, stating the index of the socket on this side of the node
-            @param multi_connections: Boolean stating if the socket accepts multiple connections
+            @param state: Object instanciated from the class State that will contain this socket
+            @param socket_name: Name of the socket
+            @param index: Index of the socket on the side of the state
+            @param multi_connections: Whether the socket accepts multiple connections or not
             @param count_on_this_side: Total number of sockets on this side of the node
         """
         super().__init__(socket_name, index, multi_connections, is_terminal=False)
@@ -102,28 +105,28 @@ class StateSocket(AbstractSocket):
         self.update_position()
 
     @property
-    def state(self):
+    def state(self) -> State:
         return self._state
 
     @state.setter
-    def state(self, state_object):
+    def state(self, state_object: State) -> None:
         if hasattr(state_object, "graphics_state"):
             self._state = state_object
         else:
             raise TypeError("The attribute 'state' must be an object of type State")
 
     @property
-    def count_on_this_side(self):
+    def count_on_this_side(self) -> int:
         return self._count_on_this_side
 
     @count_on_this_side.setter
-    def count_on_this_side(self, value):
+    def count_on_this_side(self, value: int) -> None:
         if isinstance(value, int) and value > 0:
             self._count_on_this_side = value
         else:
             raise TypeError("The attribute 'count_on_this_side' must be a positive integer")
 
-    def update_name(self, new_name):
+    def update_name(self, new_name: str) -> None:
         """
             Set the name of the socket and update the text displayed by the graphical ToolTip
 
@@ -132,7 +135,7 @@ class StateSocket(AbstractSocket):
         self.name = new_name
         self.graphics_socket.setToolTip(self.name)
 
-    def remove(self):
+    def remove(self) -> None:
         """
             Remove this object from the graphics container
         """
@@ -142,7 +145,7 @@ class StateSocket(AbstractSocket):
         self.state.container.graphics_container.removeItem(self.graphics_socket)
         self.graphics_socket = None
 
-    def get_id(self):
+    def get_id(self) -> id:
         """
             Return the ID of the socket (required for restoring the connectors)
 
@@ -150,7 +153,7 @@ class StateSocket(AbstractSocket):
         """
         return self.socket_id
 
-    def set_socket_id(self, socket_id, socket_mapping):
+    def set_socket_id(self, socket_id: id, socket_mapping: Dict[id, StateSocket]) -> None:
         """
             Set the ID of the socket and updates the provided socket_mapping object
 
@@ -160,7 +163,7 @@ class StateSocket(AbstractSocket):
         self.socket_id = socket_id
         self.register_id(socket_mapping)
 
-    def register_id(self, socket_mapping):
+    def register_id(self, socket_mapping: Dict[id, StateSocket]) -> None:
         """
             Add an entry to the input dictionary with the ID of the object as key and a pointer to this object as value
 
