@@ -24,7 +24,7 @@ from grip_api.task_editor_widgets.connector import Connector
 class AbstractSocket(ABC):
 
     """
-        Abstract Socket class with set of variables and methods common to Socket and TerminalSocket
+        Abstract socket class with set of variables and methods common to StateSocket and TerminalSocket
     """
 
     def __init__(self, socket_name: str, index: Optional[int] = 0, multi_connections: Optional[bool] = True,

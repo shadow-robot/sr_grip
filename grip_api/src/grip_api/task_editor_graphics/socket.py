@@ -26,16 +26,16 @@ class GraphicsSocket(QGraphicsItem):
         Graphical representation of sockets that are set on State objects
     """
 
-    def __init__(self, socket):
+    def __init__(self, state_socket):
         """
             Initialize the widget
 
-            @param socket: Socket object this QGraphicsItem relates to
+            @param socket: StateSocket object this QGraphicsItem relates to
         """
         # Store the socket
-        self.socket = socket
+        self.socket = state_socket
         # Set the parent as the state's graphical state
-        super().__init__(socket.state.graphics_state)
+        super().__init__(state_socket.state.graphics_state)
         # Depending on the current view, update the transform applied to this object
         self.socket.state.container.get_view().viewScaled.connect(self.update_transform)
         # Initialize all constants for a nice rendering

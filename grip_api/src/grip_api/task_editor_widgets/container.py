@@ -20,7 +20,7 @@ from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
 from grip_api.utils.common_dialog_boxes import error_message, warning_message
 from .terminal_socket import TerminalSocket
-from .socket import Socket
+from grip_api.task_editor_widgets.state_socket import StateSocket
 from .connector import Connector
 from .state import State
 from .state_machine import StateMachine
@@ -424,7 +424,7 @@ class Container:
             ordered_components.append(oldest_component)
             connected_states = []
             for socket in oldest_component.output_sockets:
-                if isinstance(socket.connectors[0].end_socket, Socket):
+                if isinstance(socket.connectors[0].end_socket, StateSocket):
                     state = socket.connectors[0].end_socket.state
                     # Check that this state is not already registered
                     if state not in ordered_components:

@@ -20,7 +20,7 @@ from grip_api.task_editor_graphics.socket import GraphicsSocket
 from grip_api.utils.formatted_print import format_raise_string
 
 
-class Socket(AbstractSocket):
+class StateSocket(AbstractSocket):
     """
         Object gathering all the logic related to sockets that are directly linked to a State
     """

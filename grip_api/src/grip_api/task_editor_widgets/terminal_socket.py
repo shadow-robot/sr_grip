@@ -23,7 +23,7 @@ from grip_api.utils.common_dialog_boxes import warning_message
 
 class TerminalSocket(AbstractSocket):
     """
-        Object gathering the logic and graphical representation of a Terminal Socket
+        Object gathering the logic and graphical representation of a TerminalSocket
     """
     def __init__(self, container, socket_name, index, multi_connections=True, is_deletable=False):
         """

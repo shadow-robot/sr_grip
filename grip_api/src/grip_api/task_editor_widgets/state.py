@@ -18,7 +18,7 @@ import os
 from grip_api.task_editor_graphics.state import GraphicsState
 from grip_core.state_machine_generator.state_generator import generate_state
 from .state_content_widget import StateContentWidget
-from .socket import Socket
+from grip_api.task_editor_widgets.state_socket import StateSocket
 
 
 class State:
@@ -94,12 +94,12 @@ class State:
             Create the sockets associated to the state
         """
         # Create a socket for input
-        self.input_socket.append(Socket(state=self, socket_name="input"))
+        self.input_socket.append(StateSocket(state=self, socket_name="input"))
         # Get the initial outcomes
         outcomes = self.content.get_outcomes()
         # Create a socket for each outcome
         for counter, item in enumerate(outcomes):
-            self.output_sockets.append(Socket(state=self, index=counter, socket_name=item, multi_connections=False,
+            self.output_sockets.append(StateSocket(state=self, index=counter, socket_name=item, multi_connections=False,
                                               count_on_this_side=len(outcomes)))
 
     def update_connectors(self):

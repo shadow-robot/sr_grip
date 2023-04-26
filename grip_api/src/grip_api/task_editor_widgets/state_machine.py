@@ -16,7 +16,7 @@
 
 from grip_api.task_editor_graphics.state_machine import GraphicsStateMachine
 from .state_content_widget import StateMachineContentWidget
-from .socket import Socket
+from grip_api.task_editor_widgets.state_socket import StateSocket
 
 
 class StateMachine(object):
@@ -81,12 +81,12 @@ class StateMachine(object):
             Create the sockets associated to the state machine
         """
         # Create a socket for input
-        self.input_socket.append(Socket(state=self, socket_name="input"))
+        self.input_socket.append(StateSocket(state=self, socket_name="input"))
         # Get the initial outcomes
         outcomes = self.def_container.outcomes
         # Create a socket for each outcome
         for counter, item in enumerate(outcomes):
-            self.output_sockets.append(Socket(state=self, index=counter, socket_name=item, multi_connections=False,
+            self.output_sockets.append(StateSocket(state=self, index=counter, socket_name=item, multi_connections=False,
                                               count_on_this_side=len(outcomes)))
 
     def update_sockets_position(self):
@@ -103,7 +103,7 @@ class StateMachine(object):
         for outcome_index, outcome_name in enumerate(new_outcomes):
             # If one outcome was not registered previously, create a new socket
             if outcome_index >= current_number_outcomes:
-                self.output_sockets.append(Socket(state=self, index=outcome_index, socket_name=outcome_name,
+                self.output_sockets.append(StateSocket(state=self, index=outcome_index, socket_name=outcome_name,
                                                   multi_connections=False, count_on_this_side=new_number_outcomes))
             # Otherwise update the socket's position
             else:

@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from grip_api.task_editor_graphics.connector import GraphicsConnector
-from .socket import Socket
+from grip_api.task_editor_widgets.state_socket import StateSocket
 
 
 class Connector(object):
@@ -52,7 +52,7 @@ class Connector(object):
         """
             Return the start socket
 
-            @return: Socket object set as the starting one for this connector
+            @return: Object inheriting from AbstractSocket and that is set as the starting one for this connector
         """
         return self._start_socket
 
@@ -61,7 +61,7 @@ class Connector(object):
         """
             Return the end socket
 
-            @return: Socket object set as the ending one for this connector
+            @return: Object inheriting from AbstractSocket and that is set as the ending one for this connector
         """
         return self._end_socket
 
@@ -70,7 +70,7 @@ class Connector(object):
         """
             Set the start socket to a provided one
 
-            @param socket: Socket object to set as starting socket for this connector
+            @param socket: Object inheriting from AbstractSocket to set as starting socket for this connector
         """
         # If the connector was previously assigned to another starting socket, delete it from the old socket
         if self._start_socket is not None:
@@ -87,7 +87,7 @@ class Connector(object):
         """
             Set the end socket to a provided one
 
-            @param socket: Socket object to set as ending socket for this connector
+            @param socket: Object inheriting from AbstractSocket to set as ending socket for this connector
         """
         # If the connector was previously assigned to another socket, delete it from the old socket
         if self._end_socket is not None:
@@ -107,7 +107,7 @@ class Connector(object):
         source_pos = self.start_socket.get_position()
         # If we have a socket, we need to add the offset of the parent (i.e. graphical representation of the state).
         # For the TerminalSocket, the function directly sends the coordinates in the scene's reference.
-        if isinstance(self.start_socket, Socket):
+        if isinstance(self.start_socket, StateSocket):
             source_pos[0] += self.start_socket.state.graphics_state.pos().x()
             source_pos[1] += self.start_socket.state.graphics_state.pos().y()
         # Set it to the graphical representation
@@ -115,8 +115,8 @@ class Connector(object):
         # If the connector is not being dragged, do the same of the destination position
         if self.end_socket is not None:
             end_pos = self.end_socket.get_position()
-            # The end pos can either be another Socket or a TerminalSocket
-            if isinstance(self.end_socket, Socket):
+            # The end pos can either be another StateSocket or a TerminalSocket
+            if isinstance(self.end_socket, StateSocket):
                 end_pos[0] += self.end_socket.state.graphics_state.pos().x()
                 end_pos[1] += self.end_socket.state.graphics_state.pos().y()
             self.graphics_connector.set_destination(*end_pos)
