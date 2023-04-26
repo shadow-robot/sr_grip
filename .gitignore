@@ -39,3 +39,6 @@ CMakeLists.txt.user
 #Eclipse
 .project
 .pydevproject
+
+#VSCode
+.vscode
