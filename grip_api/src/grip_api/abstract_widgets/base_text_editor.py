@@ -19,6 +19,7 @@ from typing import Union
 from PyQt5 import Qsci
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import pyqtSignal, QTimer, Qt
+from grip_api.utils.formatted_print import format_raise_string
 
 
 class MetaTextEditor(type(Qsci.QsciScintilla), abc.ABCMeta):
@@ -45,7 +46,7 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
             Initialize the class by setting up the editor
         """
         super().__init__()
-        self.text_lexer = None
+        self._text_lexer = None
         self._init_ui()
         # Initial content of the editor (i.e. text it is initialized with)
         self._initial_content = {}
@@ -144,7 +145,9 @@ class BaseTextEditor(Qsci.QsciScintilla, abc.ABC, metaclass=MetaTextEditor):
         """
             Allow the user to edit the object
         """
-        self.setLexer(self.text_lexer)
+        if self._text_lexer is None:
+            raise ValueError(format_raise_string("The lexer has not been set!"))
+        self.setLexer(self._text_lexer)
         self.setReadOnly(False)
 
     def make_uneditable(self) -> None:
