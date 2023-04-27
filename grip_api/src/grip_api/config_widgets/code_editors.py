@@ -34,7 +34,7 @@ class YamlCodeEditor(BaseTextEditor):
         super().__init__()
         self._initialize_margin()
         # Store the lexer to be used
-        self.text_lexer = Qsci.QsciLexerYAML(self)
+        self._text_lexer = Qsci.QsciLexerYAML(self)
         # Will contain the parsed content
         self.parsed_content = {}
         # Each list of this list will contain the lines that are supposed to correspond to a top-level component
@@ -66,7 +66,7 @@ class YamlCodeEditor(BaseTextEditor):
         """
         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
         self.setAutoCompletionThreshold(2)
-        api = Qsci.QsciAPIs(self.text_lexer)
+        api = Qsci.QsciAPIs(self._text_lexer)
         for word in words_to_autocomplete:
             api.add(word)
         # Need to call this method so that the added words get accounted for
@@ -88,7 +88,7 @@ class YamlCodeEditor(BaseTextEditor):
         # If there's no text inside the editor, we can just stop the parsing here
         if not editor_content:
             self.parsed_content = {}
-            # Emit a signal re. whether the text has been modified or not
+            # Emit a signal indicating whether the text has been modified or not
             self.contentIsModified.emit(self._initial_content != self.parsed_content)
             return
         # Split the text line by line
@@ -105,15 +105,16 @@ class YamlCodeEditor(BaseTextEditor):
             # Condition ensuring we don't forget any text that could be written above the first candidate root component
             self._sliced_root_components = [split_content[:zero_depth_indices[0]]] if zero_depth_indices[0] else []
             # For each potential root component, extract the following lines, up to a potential new root component
-            self._sliced_root_components += [split_content[zero_depth_indices[i]:zero_depth_indices[i + 1]]
-                                             for i in range(len(zero_depth_indices) - 1)]
+            self._sliced_root_components += [split_content[zero_depth_indices[line_index]:
+                                                           zero_depth_indices[line_index + 1]]
+                                             for line_index in range(len(zero_depth_indices) - 1)]
             # Take all the lines after the last potential root component
             self._sliced_root_components += [split_content[zero_depth_indices[-1]:]]
         # Current line number
         line_number = 0
         # Will contain the YAML parsed content of all valid root components of the editor
         parsed_and_valid = {}
-        # the following dictionary is used to recursively fill the other dictionaries.
+        # The following dictionary is used to recursively fill the other dictionaries.
         # Keys correspond to the depth of the parent of the current element and values correspond to the container of
         # such elements
         parent_dictionary = {-1: parsed_and_valid}
@@ -371,7 +372,7 @@ class XmlCodeEditor(BaseTextEditor):
             Initialize the class by setting up the editor
         """
         super().__init__()
-        self.text_lexer = Qsci.QsciLexerXML(self)
+        self._text_lexer = Qsci.QsciLexerXML(self)
         self._initial_content = None
         self.parsed_content = None
         self.wrong_format_lines = []

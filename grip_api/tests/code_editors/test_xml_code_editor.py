@@ -47,7 +47,7 @@ def set_text_and_check_result(xml_code_editor: Type[XmlCodeEditor], text: str, w
         Convenience function that gathers the core, i.e. setting text to an editor and checking that some of its
         attributes are properly set
 
-        @param yaml_code_editor: Instance of a YamlCodeEditor that is the subject of the test
+        @param xml_code_editor: Instance of an XmlCodeEditor that is the subject of the test
         @param text: Text to set to the code editor and that will be parsed
         @param wrong_line_indices: List of the indices of the lines wrongly formatted
         @param parsed_text_as_dict: Dictionary only containing the parsed version of the properly formatted components

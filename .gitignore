@@ -40,5 +40,5 @@ CMakeLists.txt.user
 .project
 .pydevproject
 
-#VSCode
+# VScode
 .vscode
