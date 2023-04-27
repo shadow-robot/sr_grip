@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List
 from grip_api.utils.formatted_print import format_raise_string
 from grip_api.abstract_graphics import AbstractGraphicsSocket
 from grip_api.task_editor_widgets.connector import Connector
@@ -27,8 +27,8 @@ class AbstractSocket(ABC):
         Abstract socket class with set of variables and methods common to StateSocket and TerminalSocket
     """
 
-    def __init__(self, socket_name: str, index: Optional[int] = 0, multi_connections: Optional[bool] = True,
-                 is_terminal: Optional[bool] = False) -> None:
+    def __init__(self, socket_name: str, index: int = 0, multi_connections: bool = True,
+                 is_terminal: bool = False) -> None:
         """
             Abstract widget initialisation
 
