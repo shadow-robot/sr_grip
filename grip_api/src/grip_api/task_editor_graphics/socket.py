@@ -53,13 +53,13 @@ class GraphicsSocket(QGraphicsItem):
         # Outline width of the socket
         self.outline_width = 1.0
         # Input sockets always have the same colour
-        if self.socket.index == 0 and self.socket.count_on_this_side == 1:
+        if self.socket.index == 0 and self.socket.is_starting:
             self.color_background = DEDICATED_SOCKET_COLORS[0]
         # Make sure that the colors used for the state representation match the color used for terminal sockets
         elif hasattr(self.socket.state, "def_container") or not self.socket.state.to_generate:
             self.color_background = TERMINAL_SOCKET_COLORS[self.socket.index]
         # Make sure the last outcome of generated state is red (for state_failure)
-        elif self.socket.index == self.socket.count_on_this_side - 1:
+        elif self.socket.index == len(self.socket.outcomes) - 1:
             self.color_background = SOCKET_COLORS[-1]
         # Use specific colors for generated states
         else:

@@ -17,8 +17,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 from grip_api.utils.formatted_print import format_raise_string
-from grip_api.abstract_graphics import AbstractGraphicsSocket
-from grip_api.task_editor_widgets.connector import Connector
+from grip_api.abstract_graphics.abstract_socket import AbstractGraphicsSocket
 
 
 class AbstractSocket(ABC):
@@ -28,13 +27,15 @@ class AbstractSocket(ABC):
     """
 
     def __init__(self, socket_name: str, index: int = 0, multi_connections: bool = True,
-                 is_terminal: bool = False) -> None:
+                 is_terminal: bool = False, is_starting: bool = False) -> None:
         """
             Abstract widget initialisation
 
             @param socket_name: Name of the socket
             @param index: Index of the socket
             @param multi_connections: If the socket accepts multiple connections or not
+            @param is_terminal: If the socket is a TerminalSocket or not
+            @param is_starting: If the socket is a starting socket or not
         """
         # Store the id of the object
         self.socket_id = id(self)
@@ -46,6 +47,9 @@ class AbstractSocket(ABC):
         self.connectors = []
         # Allows for recognizing terminal sockets from others when releasing edges
         self.is_terminal = is_terminal
+        # Indicates if the socket marks the beginning of the object it is attached to.
+        # For a StateSocket, if set to True, then the object corresponds to an input socket
+        self.is_starting = is_starting
         # Initialise the graphics socket to be nothing at first
         self._graphics_socket = None
 
@@ -141,7 +145,7 @@ class AbstractSocket(ABC):
         """
         self._graphics_socket.setPos(*self.position)
 
-    def add_connector(self, connector: Connector) -> None:
+    def add_connector(self, connector: 'Connector') -> None:
         """
             Add a provided connector to this socket
 
@@ -149,7 +153,7 @@ class AbstractSocket(ABC):
         """
         self.connectors.append(connector)
 
-    def remove_connector(self, connector: Connector) -> None:
+    def remove_connector(self, connector: 'Connector') -> None:
         """
             Remove a provided connector from this socket
 

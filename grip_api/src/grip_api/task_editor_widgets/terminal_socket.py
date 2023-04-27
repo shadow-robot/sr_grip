@@ -34,11 +34,9 @@ class TerminalSocket(AbstractSocket):
             @param index: Index of the socket
             @param multi_connections: Indicate whether the socket can host several connectors. Default to True
         """
-        super().__init__(socket_name, index, multi_connections, is_terminal=True)
+        super().__init__(socket_name, index, multi_connections, is_terminal=True, is_starting=socket_name == "Start")
         # Store the Container the socket is added to
         self.container = container
-        # Store whether this terminal socket is the one marking the beginning of the state machine or not
-        self.is_starting = self.name == "Start"
         # By default a terminal socket can't be deleted from the container
         self.is_deletable = is_deletable
         # Create and store the graphical socket to be displayed

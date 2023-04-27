@@ -86,8 +86,8 @@ class StateMachine(object):
         outcomes = self.def_container.outcomes
         # Create a socket for each outcome
         for counter, item in enumerate(outcomes):
-            self.output_sockets.append(StateSocket(state=self, index=counter, socket_name=item, multi_connections=False,
-                                              count_on_this_side=len(outcomes)))
+            self.output_sockets.append(StateSocket(state=self, index=counter, socket_name=item,
+                                                   multi_connections=False))
 
     def update_sockets_position(self):
         """
@@ -95,7 +95,7 @@ class StateMachine(object):
             to define the state machine
         """
         # Get the new outcomes of the definition container
-        new_outcomes = self.def_container.outcomes[:]
+        new_outcomes = self.outcomes = self.def_container.outcomes[:]
         new_number_outcomes = len(new_outcomes)
         # Get the current nuumber of outcomes
         current_number_outcomes = len(self.output_sockets)
@@ -104,7 +104,7 @@ class StateMachine(object):
             # If one outcome was not registered previously, create a new socket
             if outcome_index >= current_number_outcomes:
                 self.output_sockets.append(StateSocket(state=self, index=outcome_index, socket_name=outcome_name,
-                                                  multi_connections=False, count_on_this_side=new_number_outcomes))
+                                                       multi_connections=False))
             # Otherwise update the socket's position
             else:
                 self.output_sockets[outcome_index].update_position(new_number_outcomes)
