@@ -25,6 +25,7 @@ class TerminalSocket(AbstractSocket):
     """
         Object gathering the logic and graphical representation of a TerminalSocket
     """
+
     def __init__(self, container, socket_name, index, multi_connections=True, is_deletable=False):
         """
             Initialize the object
@@ -42,7 +43,7 @@ class TerminalSocket(AbstractSocket):
         # Create and store the graphical socket to be displayed
         self.graphics_socket = TerminalGraphicsSocket(self)
 
-    @graphics_socket.setter
+    @AbstractSocket.graphics_socket.setter
     def graphics_socket(self, graphical_socket: TerminalGraphicsSocket) -> None:
         """
             Set the graphical representation of the socket
@@ -50,7 +51,7 @@ class TerminalSocket(AbstractSocket):
             @param graphical_socket: Instance of the TerminalGraphicsSocket class
         """
         if not isinstance(graphical_socket, TerminalGraphicsSocket):
-            raise TypeError(format_raise_string("The property 'graphics_socket' must be a TerminalGraphicsSocket")) 
+            raise TypeError(format_raise_string("The property 'graphics_socket' must be a TerminalGraphicsSocket"))
         self._graphics_socket = graphical_socket
 
     @property
@@ -109,7 +110,7 @@ class TerminalSocket(AbstractSocket):
         else:
             raise TypeError("The attribute 'is_deletable' must be a boolean")
 
-    def update_name(self, new_name, save_history=True): # pylint: disable=W0221
+    def update_name(self, new_name, save_history=True):  # pylint: disable=W0221
         """
             Update the name of this object
 

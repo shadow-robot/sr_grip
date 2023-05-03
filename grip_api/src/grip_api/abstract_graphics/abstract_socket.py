@@ -16,9 +16,11 @@
 
 from abc import ABC
 
+
 class AbstractGraphicsSocket(ABC):
     """
-    
+
     """
+
     def __init__(self) -> None:
         pass

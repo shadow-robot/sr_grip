@@ -118,9 +118,9 @@ class Container:
         new_terminal_socket = TerminalSocket(container=self,
                                              socket_name=outcome_name,
                                              index=len(self.outcomes) - 1,
-                                             is_deletable = True)
+                                             is_deletable=True)
         # Set its position from the the input argument
-        new_terminal_socket.position = *position_
+        new_terminal_socket.position = position_
         # Add socket to terminal sockets
         self.terminal_sockets.append(new_terminal_socket)
         # Add the graphical socket to the graphical representation so it can be rendered
