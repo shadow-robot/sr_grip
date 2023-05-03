@@ -110,14 +110,14 @@ class TerminalSocket(AbstractSocket):
         else:
             raise TypeError("The attribute 'is_deletable' must be a boolean")
 
-    def update_name(self, new_name, save_history=True):  # pylint: disable=W0221
+    def update_name(self, new_name, save_history=True):
         """
             Update the name of this object
 
             @param new_name: Name (string) to be given to the object
             @param save_history: Boolean stating if this change should be saved into the container's history
         """
-        # If a terminal socket has already the required name, then displays a warning message and stop
+        # If a terminal socket has already the input name, then displays a warning message and stop
         if new_name in list(map(lambda x: x.name, self.container.terminal_sockets)):
             warning_message("Invalid name", "An outcome with the same name already exists!")
             return
@@ -127,7 +127,7 @@ class TerminalSocket(AbstractSocket):
         self.container.outcomes[index_in_outcomes] = new_name
         # Update the name of the socket of the state-like representation of the container if possible
         if self.container.state_machine is not None:
-            self.container.state_machine.output_sockets[self.index].update_name(new_name)
+            self.container.state_machine.output_sockets[self.index].name = new_name
         if save_history:
             self.container.history.store_current_history()
 

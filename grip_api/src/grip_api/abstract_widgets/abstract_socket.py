@@ -91,7 +91,6 @@ class AbstractSocket(ABC):
         """
         if not isinstance(name_string, str) or not name_string:
             raise TypeError(format_raise_string("The attribute 'name' must be a non-empty string"))
-
         self._name = name_string
 
     @property
@@ -129,15 +128,6 @@ class AbstractSocket(ABC):
             @param graphical_socket: Instance of a class that inherits from AbstractGraphicsSocket
         """
         raise NotImplementedError(format_raise_string("The setter of 'graphics_socket' must be implemented!"))
-
-    @abstractmethod
-    def update_name(self, new_name: str) -> None:
-        """
-            Update the name of the socket
-
-            @param new_name: New name to be given to the socket
-        """
-        raise NotImplementedError("The method 'update_name' from AbstractSocket must be implemented!")
 
     @abstractmethod
     def remove(self) -> None:

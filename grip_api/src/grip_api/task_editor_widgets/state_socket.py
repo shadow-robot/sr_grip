@@ -24,6 +24,7 @@ class StateSocket(AbstractSocket):
     """
         Object gathering all the logic related to sockets that are directly linked to a State
     """
+
     def __init__(self, state: 'State', socket_name: str, index: int = 0, multi_connections: bool = True) -> None:
         """
             Initialize the widget and set the graphical representation
@@ -67,13 +68,14 @@ class StateSocket(AbstractSocket):
         """
         return self._state
 
-    def update_name(self, new_name: str) -> None:
+    @AbstractSocket.name.setter
+    def name(self, name_string: str) -> None:
         """
-            Set the name of the socket and update the text displayed by the graphical ToolTip
+            Set the name of the socket and update the tool tip legend of its graphical representation
 
-            @param new_name: String corresponding to the new name of the socket
+            @param name_string: New name to be given to the socket
         """
-        self.name = new_name
+        super().name = name_string
         self.graphics_socket.setToolTip(self.name)
 
     def remove(self) -> None:
