@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+from typing import List, Union, Dict
 from grip_api.abstract_widgets.abstract_socket import AbstractSocket
 from grip_api.task_editor_graphics.terminal_socket import TerminalGraphicsSocket
 from grip_api.utils.formatted_print import format_raise_string
@@ -26,11 +26,12 @@ class ContainerTerminalSocket(AbstractSocket):
         Object gathering the logic and graphical representation of a ContainerTerminalSocket
     """
 
-    def __init__(self, container, socket_name, index, multi_connections=True, is_deletable=False):
+    def __init__(self, container: 'Container', socket_name: str, index: int, multi_connections: bool = True,
+                 is_deletable: bool = False) -> None:
         """
-            Initialize the object
+            Initialize the widget and set the graphical representation
 
-            @param container: Container object in which the terminal stocket will be added to
+            @param container: Container object in which the terminal socket will be added to
             @param socket_name: Name of the outcome the socket represents
             @param index: Index of the socket
             @param multi_connections: Indicate whether the socket can host several connectors. Default to True
@@ -48,7 +49,7 @@ class ContainerTerminalSocket(AbstractSocket):
         """
             Set the graphical representation of the socket
 
-            @param graphical_socket: Instance of the TerminalGraphicsSocket class
+            @param graphical_socket: Instance of a TerminalGraphicsSocket class
         """
         if not isinstance(graphical_socket, TerminalGraphicsSocket):
             raise TypeError(format_raise_string("The property 'graphics_socket' must be a TerminalGraphicsSocket"))
@@ -59,7 +60,7 @@ class ContainerTerminalSocket(AbstractSocket):
         """
             Return the position of the socket in the graphical view
 
-            @return: Current position of the socket in the following format [x, y]
+            @return: Current position of the socket following the format [x, y]
         """
         graphical_position = self._graphics_socket.pos()
         return [graphical_position.x(), graphical_position.y()]
@@ -69,70 +70,40 @@ class ContainerTerminalSocket(AbstractSocket):
         """
             Set the position of the object in the graphical view
 
-            @param position_x: x coordinate in the scene coordinates
-            @param position_y: y coordinate in the scene coordinates        
+            @param position_x_y: List of two elements containing the x and y coordinates that should be assigned to the
+                                 socket      
         """
-        if not isinstance(position_x_y, list) or len(position_x_y) != 2:
+        if not isinstance(position_x_y, list) or len(position_x_y) != 2 or \
+                any(not isinstance(element, (int, float)) for element in position_x_y):
             raise TypeError(format_raise_string("The attribute 'position' must be a list of length 2"))
         self.graphics_socket.setPos(*position_x_y)
         # Since we set the position of the object, the container is fully initialized
         self.container.is_complete = True
 
-    @property
-    def container(self):
-        return self._container
-
-    @container.setter
-    def container(self, container_object):
-        if hasattr(container_object, "graphics_container"):
-            self._container = container_object
-        else:
-            raise TypeError("The attribute 'container' must be a 'Container' object")
-
-    @property
-    def is_starting(self):
-        return self._is_starting
-
-    @is_starting.setter
-    def is_starting(self, value):
-        if isinstance(value, bool):
-            self._is_starting = value
-        else:
-            raise TypeError("The attribute 'is_starting' must be a boolean")
-
-    @property
-    def is_deletable(self):
-        return self._is_deletable
-
-    @is_deletable.setter
-    def is_deletable(self, value):
-        if isinstance(value, bool):
-            self._is_deletable = value
-        else:
-            raise TypeError("The attribute 'is_deletable' must be a boolean")
-
-    def update_name(self, new_name, save_history=True):
+    def update_name(self, new_name: str, save_history: bool = True) -> None:
         """
             Update the name of this object
 
-            @param new_name: Name (string) to be given to the object
+            @param new_name: Name to be given to the container terminal socket
             @param save_history: Boolean stating if this change should be saved into the container's history
         """
-        # If a terminal socket has already the input name, then displays a warning message and stop
+        # If a terminal socket has already the input name, then displays a warning message and stops the execution of
+        # the method here
         if new_name in list(map(lambda x: x.name, self.container.terminal_sockets)):
             warning_message("Invalid name", "An outcome with the same name already exists!")
             return
-        # If the name is valid, set it and replace the outcome in the container's attribute
+        # If the name is valid, set it and replace the name of the outcome in the container's attribute
         index_in_outcomes = self.container.outcomes.index(self.name)
         self.name = new_name
         self.container.outcomes[index_in_outcomes] = new_name
         # Update the name of the socket of the state-like representation of the container if possible
         if self.container.state_machine is not None:
             self.container.state_machine.output_sockets[self.index].name = new_name
+        # If the operation needs to be saved in the container's history
         if save_history:
             self.container.history.store_current_history()
 
-    def remove(self):
+    def remove(self) -> None:
         """
             Remove the terminal socket from its corresponding container
         """
@@ -143,7 +114,7 @@ class ContainerTerminalSocket(AbstractSocket):
         # Make sure the graphical representation is set to None
         del self.graphics_socket
 
-    def set_initial_position(self):
+    def set_initial_position(self) -> None:
         """
             Set the initial position of the socket, based on the area of the screen taken by the view
         """
@@ -171,14 +142,14 @@ class ContainerTerminalSocket(AbstractSocket):
         # Set the computed coordinates
         self.position = [position_x, position_y]
 
-    def save(self):
+    def save(self) -> Dict[str, Union[int, str, float]]:
         """
             Save the current properties of the object so it can be restored later on
 
             @return: Dictionary containing the id, the name and position of the object
         """
         # Get the current position of the terminal socket
-        current_position = self.graphics_socket.pos()
+        current_position = self.position[:]
         return dict([
             ("id", self.socket_id),
             ("name", self.name),
@@ -186,7 +157,8 @@ class ContainerTerminalSocket(AbstractSocket):
             ("position_y", current_position.y())
         ])
 
-    def restore(self, properties, socket_mapping):
+    def restore(self, properties: Dict[str, Union[int, str, float]],
+                socket_mapping: Dict[int, 'ContainerTerminalSocket']) -> None:
         """
             Restore the object to a previously saved configuration
 
@@ -202,4 +174,4 @@ class ContainerTerminalSocket(AbstractSocket):
             self.graphics_socket.update_name()
         # Set the position of the socket
         self.position = [properties["position_x"], properties["position_y"]]
-        socket_mapping[properties["id"]] = self
+        self.register_id(socket_mapping)

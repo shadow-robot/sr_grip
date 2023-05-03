@@ -36,7 +36,7 @@ class StateSocket(AbstractSocket):
         """
         super().__init__(socket_name, index, multi_connections, is_terminal=False, is_starting=multi_connections)
         # Store all the information
-        self._state = state
+        self.state = state
         self.graphics_socket = GraphicsSocket(self)
 
     @AbstractSocket.graphics_socket.setter
@@ -71,15 +71,6 @@ class StateSocket(AbstractSocket):
             @return: Current position of the socket following the format [x, y]
         """
         return self.state.get_socket_position(self)
-
-    @property
-    def state(self) -> 'State':
-        """
-            Return the instance of the State class that this socket is attached to
-
-            @return: Instance of the State class
-        """
-        return self._state
 
     def update_position(self) -> None:
         """

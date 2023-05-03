@@ -125,7 +125,7 @@ class State:
             position_x = (node_width / 2. + socket.index * scaled_socket_space -
                           total_number_of_spaces / 2. * scaled_socket_space)
 
-        return [position_x, position_y]        
+        return [position_x, position_y]
 
     def init_sockets(self):
         """
@@ -261,10 +261,10 @@ class State:
         # Get lists containing the serialized input and outputs sockets
         serialized_input_socket, serialized_output_sockets = [], []
         for socket in self.input_socket:
-            socket_id = socket.get_id()
+            socket_id = socket.socket_id
             serialized_input_socket.append(socket_id)
         for socket in self.output_sockets:
-            socket_id = socket.get_id()
+            socket_id = socket.socket_id
             serialized_output_sockets.append(socket_id)
 
         return dict([
@@ -295,19 +295,21 @@ class State:
             # The sockets created in the __init__ will naturally have a different ID number that the one to be restored
             self.input_socket[0].register_id(socket_mapping)
             # Register the mapping between the old and new sockets
-            new_sockets[data["input_socket"][0]] = self.input_socket[0].get_id()
+            new_sockets[data["input_socket"][0]] = self.input_socket[0].socket_id
             # Do the same thing for the output sockets
             for ind_socket, socket in enumerate(self.output_sockets):
                 socket.register_id(socket_mapping)
-                new_sockets[data["output_sockets"][ind_socket]] = self.output_sockets[ind_socket].get_id()
+                new_sockets[data["output_sockets"][ind_socket]] = self.output_sockets[ind_socket].socket_id
         # Otherwise, restore the ID of the sockets of this object
         else:
-            self.input_socket[0].set_socket_id(data["input_socket"][0], socket_mapping)
+            self.input_socket[0].socket_id = data["input_socket"][0]
+            self.input_socket[0].register_id(socket_mapping)
             # Get the number of output sockets
             number_output_socket = len(data["output_sockets"])
             for ind_socket, socket in enumerate(self.output_sockets):
                 # Make sure not to break if there is any discrepancy between the current configuration and the saved one
                 if ind_socket < number_output_socket:
-                    socket.set_socket_id(data["output_sockets"][ind_socket], socket_mapping)
+                    socket.socket_id = data["output_sockets"][ind_socket]
+                    socket.register_id(socket_mapping)
         # Restore the content of the state
         self.content.set_config(data["content"])

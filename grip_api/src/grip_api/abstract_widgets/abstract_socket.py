@@ -15,7 +15,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict
 from grip_api.utils.formatted_print import format_raise_string
 from grip_api.abstract_graphics.abstract_socket import AbstractGraphicsSocket
 
@@ -38,7 +38,7 @@ class AbstractSocket(ABC):
             @param is_starting: If the socket is a starting socket or not
         """
         # Store the id of the object
-        self.socket_id = id(self)
+        self._socket_id = id(self)
         # Initialise the graphics socket to be nothing at first
         self._graphics_socket = None
         # Store all the information
@@ -135,6 +135,14 @@ class AbstractSocket(ABC):
             Remove the socket from its container
         """
         raise NotImplementedError("The method 'remove' from AbstractSocket must be implemented!")
+
+    def register_id(self, socket_mapping: Dict[id, 'AbstractSocket']) -> None:
+        """
+            Add an entry to the input dictionary with the ID of the object as key and a pointer to this object as value
+
+            @param socket_mapping: Dictionary updated with ID (key) and a pointer to this socket (value)
+        """
+        socket_mapping[self.socket_id] = self
 
     def add_connector(self, connector: 'Connector') -> None:
         """

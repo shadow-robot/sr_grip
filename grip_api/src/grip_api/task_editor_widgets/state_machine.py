@@ -259,9 +259,9 @@ class StateMachine(object):
         # Get configuration of all the sockets
         input_socket, output_sockets = list(), list()
         for socket in self.input_socket:
-            input_socket.append(socket.get_id())
+            input_socket.append(socket.socket_id)
         for socket in self.output_sockets:
-            output_sockets.append(socket.get_id())
+            output_sockets.append(socket.socket_id)
 
         return dict([
             ("name", self.name),
@@ -282,10 +282,12 @@ class StateMachine(object):
         """
         # Set the position
         self.set_position(properties["pos_x"], properties["pos_y"])
-        # Set the id of the input socket
-        self.input_socket[0].set_socket_id(properties["input_socket"][0], socket_mapping)
+        # Set the id of the input socket and register it in the mapping
+        self.input_socket[0].socket_id = properties["input_socket"][0]
+        self.input_socket[0].register_id(socket_mapping)
         # Update all the sockets
         for ind_socket, socket in enumerate(self.output_sockets):
-            socket.set_socket_id(properties["output_sockets"][ind_socket], socket_mapping)
+            socket.socket_id = properties["output_sockets"][ind_socket]
+            socket.register_id(socket_mapping)
         # Link this object to the container in which the state machine is defined
         self.def_container.set_state_like(self)
