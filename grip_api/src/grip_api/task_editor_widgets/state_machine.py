@@ -46,6 +46,8 @@ class StateMachine(object):
         self.container.graphics_container.addItem(self.graphics_state)
         # Parametrize the spacing between sockets
         self.socket_spacing = 80
+        # Get the initial outcomes
+        self.outcomes = self.def_container.outcomes[:]
         # Will contain the input socket, set a list to make the update easier (see update_connectors)
         self.input_socket = list()
         # Will contain all the output sockets
@@ -54,6 +56,42 @@ class StateMachine(object):
         self.init_sockets()
         # Add the state machine to the container
         self.container.add_state_machine(self)
+
+    def get_socket_position(self, socket):
+        """
+            Return the position of an input socket, part of the state, in the view
+
+            @param socket: Socket (StateSocket) to get the position of
+            @return: Current position of the socket following the format [x, y]
+        """
+        # Since we can zoom out even after the state gets to its minimal size, we need to get a compensation factor
+        # to keep the distance between the sockets constant
+        if self.graphics_state.zoom < self.graphics_state.zoom_threshold:
+            compensation_zoom = self.graphics_state.zoom_threshold - self.graphics_state.zoom
+            compensation_factor = self.graphics_state.zoom_multiplier**compensation_zoom
+        else:
+            compensation_factor = 1
+        # If the socket is used as an input one, set it at the top center
+        if socket.is_starting:
+            position_x, position_y = self.graphics_state.boundingRect().width() / 2., 0
+        # Otherwise, depending on how many there are, compute the position given the state socket spacing
+        else:
+            # Add it at the bottom
+            position_y = self.graphics_state.boundingRect().height()
+            node_width = self.graphics_state.boundingRect().width()
+            total_number_of_spaces = len(self.outcomes) - 1
+            # Make sure to adapt the value of the socket spacing so it does not go over the node width
+            if total_number_of_spaces * self.socket_spacing * compensation_factor >= node_width:
+                socket_space = (node_width * 1./compensation_factor - 32) / total_number_of_spaces
+            else:
+                socket_space = self.socket_spacing
+            # Scale it
+            scaled_socket_space = socket_space * compensation_factor
+            # Uniformly spread the sockets on the width of the state
+            position_x = (node_width / 2. + socket.index * scaled_socket_space -
+                          total_number_of_spaces / 2. * scaled_socket_space)
+
+        return [position_x, position_y]
 
     def set_position(self, x, y):
         """
@@ -82,10 +120,8 @@ class StateMachine(object):
         """
         # Create a socket for input
         self.input_socket.append(StateSocket(state=self, socket_name="input"))
-        # Get the initial outcomes
-        outcomes = self.def_container.outcomes
         # Create a socket for each outcome
-        for counter, item in enumerate(outcomes):
+        for counter, item in enumerate(self.outcomes):
             self.output_sockets.append(StateSocket(state=self, index=counter, socket_name=item,
                                                    multi_connections=False))
 
@@ -107,7 +143,7 @@ class StateMachine(object):
                                                        multi_connections=False))
             # Otherwise update the socket's position
             else:
-                self.output_sockets[outcome_index].update_position(new_number_outcomes)
+                self.output_sockets[outcome_index].update_position()
         # If the new outcomes contain fewer elements, delete the one that should not be there anymore
         if outcome_index != current_number_outcomes - 1:
             for index in range(outcome_index + 1, current_number_outcomes):
