@@ -81,7 +81,7 @@ class GraphicsSocket(QGraphicsItem):
         # If we are zooming out, thene ignores all tranforms to keep a constant size
         self.setFlag(QGraphicsItem.ItemIgnoresTransformations, current_zoom < 0)
         # Recompute the pose the sockets
-        self.setPos(*self.socket.get_position())
+        self.setPos(*self.socket.position)
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
         """

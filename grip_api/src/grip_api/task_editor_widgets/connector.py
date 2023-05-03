@@ -104,7 +104,7 @@ class Connector(object):
             Compute the proper source and destination positions the connector should link in the view
         """
         # Get the position of the socket in its parent's coordinates
-        source_pos = self.start_socket.get_position()
+        source_pos = self.start_socket.position
         # If we have a socket, we need to add the offset of the parent (i.e. graphical representation of the state).
         # For the TerminalSocket, the function directly sends the coordinates in the scene's reference.
         if isinstance(self.start_socket, StateSocket):
@@ -114,7 +114,7 @@ class Connector(object):
         self.graphics_connector.set_source(*source_pos)
         # If the connector is not being dragged, do the same of the destination position
         if self.end_socket is not None:
-            end_pos = self.end_socket.get_position()
+            end_pos = self.end_socket.position
             # The end pos can either be another StateSocket or a TerminalSocket
             if isinstance(self.end_socket, StateSocket):
                 end_pos[0] += self.end_socket.state.graphics_state.pos().x()
