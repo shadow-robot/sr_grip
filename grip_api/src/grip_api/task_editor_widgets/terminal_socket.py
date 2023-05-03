@@ -140,7 +140,7 @@ class TerminalSocket(AbstractSocket):
         # Remove the terminal socket from the container
         self.container.remove_terminal_socket(self)
         # Make sure the graphical representation is set to None
-        self.graphics_socket = None
+        del self.graphics_socket
 
     def set_initial_position(self):
         """
