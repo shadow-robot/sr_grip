@@ -39,6 +39,8 @@ class AbstractSocket(ABC):
         """
         # Store the id of the object
         self.socket_id = id(self)
+        # Initialise the graphics socket to be nothing at first
+        self._graphics_socket = None
         # Store all the information
         self.name = socket_name
         self.index = index
@@ -50,8 +52,6 @@ class AbstractSocket(ABC):
         # Indicates if the socket marks the beginning of the object it is attached to.
         # For a StateSocket, if set to True, then the object corresponds to an input socket
         self.is_starting = is_starting
-        # Initialise the graphics socket to be nothing at first
-        self._graphics_socket = None
 
     @property
     def socket_id(self) -> int:
@@ -92,9 +92,6 @@ class AbstractSocket(ABC):
         if not isinstance(name_string, str) or not name_string:
             raise TypeError(format_raise_string("The attribute 'name' must be a non-empty string"))
         self._name = name_string
-        # If a graphical socket exists, set the tooltip accordingly
-        if self.graphics_socket is not None:
-            self.graphics_socket.setToolTip(name_string)
 
     @property
     @abstractmethod

@@ -76,7 +76,9 @@ class StateSocket(AbstractSocket):
             @param name_string: New name to be given to the socket
         """
         super(StateSocket, type(self)).name.fset(self, name_string)
-        self.graphics_socket.setToolTip(name_string)
+        # If a graphical socket exists, set the tooltip accordingly
+        if self.graphics_socket is not None:
+            self.graphics_socket.setToolTip(name_string)
 
     def remove(self) -> None:
         """
