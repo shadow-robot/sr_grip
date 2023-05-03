@@ -168,7 +168,7 @@ class TerminalSocket(AbstractSocket):
         socket_spacing = width / (num_sockets * 3.)
         position_x = self.index * socket_spacing - (total_number_of_spaces) / 2. * socket_spacing
         # Set the computed coordinates
-        self.update_position(position_x, position_y)
+        self.position = [position_x, position_y]
 
     def save(self):
         """
@@ -200,5 +200,5 @@ class TerminalSocket(AbstractSocket):
             # Make sure the change is updated on the screen
             self.graphics_socket.update_name()
         # Set the position of the socket
-        self.update_position(properties["position_x"], properties["position_y"])
+        self.position = [properties["position_x"], properties["position_y"]]
         socket_mapping[properties["id"]] = self
