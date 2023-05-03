@@ -23,7 +23,7 @@ from grip_api.abstract_graphics.abstract_socket import AbstractGraphicsSocket
 class AbstractSocket(ABC):
 
     """
-        Abstract socket class with set of variables and methods common to StateSocket and TerminalSocket
+        Abstract socket class with set of variables and methods common to StateSocket and ContainerTerminalSocket
     """
 
     def __init__(self, socket_name: str, index: int = 0, multi_connections: bool = True,
@@ -34,7 +34,7 @@ class AbstractSocket(ABC):
             @param socket_name: Name of the socket
             @param index: Index of the socket
             @param multi_connections: If the socket accepts multiple connections or not
-            @param is_terminal: If the socket is a TerminalSocket or not
+            @param is_terminal: If the socket is a ContainerTerminalSocket or not
             @param is_starting: If the socket is a starting socket or not
         """
         # Store the id of the object

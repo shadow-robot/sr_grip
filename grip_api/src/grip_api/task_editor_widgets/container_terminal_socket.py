@@ -21,9 +21,9 @@ from grip_api.utils.formatted_print import format_raise_string
 from grip_api.utils.common_dialog_boxes import warning_message
 
 
-class TerminalSocket(AbstractSocket):
+class ContainerTerminalSocket(AbstractSocket):
     """
-        Object gathering the logic and graphical representation of a TerminalSocket
+        Object gathering the logic and graphical representation of a ContainerTerminalSocket
     """
 
     def __init__(self, container, socket_name, index, multi_connections=True, is_deletable=False):

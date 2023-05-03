@@ -19,7 +19,7 @@ from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_
 from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
 from grip_api.utils.common_dialog_boxes import error_message, warning_message
-from .terminal_socket import TerminalSocket
+from .container_terminal_socket import ContainerTerminalSocket
 from grip_api.task_editor_widgets.state_socket import StateSocket
 from .connector import Connector
 from .state import State
@@ -89,14 +89,14 @@ class Container:
         # Create a terminal socket for the beginning of the container. If the container is a concurrent one then the
         # starting socket support multi connections otherwise it does not.
         is_multi = self.type == "ConcurrentStateMachine"
-        start_socket = TerminalSocket(container=self, socket_name="Start", index=0, multi_connections=is_multi)
+        start_socket = ContainerTerminalSocket(container=self, socket_name="Start", index=0, multi_connections=is_multi)
         # Add it to the terminal sockets and add it to the graphical representation
         self.terminal_sockets.append(start_socket)
         self.graphics_container.addItem(start_socket.graphics_socket)
 
         # Create a terminal socket for each outcome
         for index, outcome in enumerate(self.outcomes):
-            terminal_socket = TerminalSocket(container=self, socket_name=outcome, index=index)
+            terminal_socket = ContainerTerminalSocket(container=self, socket_name=outcome, index=index)
             self.terminal_sockets.append(terminal_socket)
             # Add the graphical socket to the graphical representation so it can be rendered
             self.graphics_container.addItem(terminal_socket.graphics_socket)
@@ -115,10 +115,10 @@ class Container:
         # Add the new name ot the outcome attribute
         self.outcomes.append(outcome_name)
         # Create the terminal socket. All terminal sockets added by this function are deletable
-        new_terminal_socket = TerminalSocket(container=self,
-                                             socket_name=outcome_name,
-                                             index=len(self.outcomes) - 1,
-                                             is_deletable=True)
+        new_terminal_socket = ContainerTerminalSocket(container=self,
+                                                      socket_name=outcome_name,
+                                                      index=len(self.outcomes) - 1,
+                                                      is_deletable=True)
         # Set its position from the the input argument
         new_terminal_socket.position = position_
         # Add socket to terminal sockets
@@ -240,7 +240,7 @@ class Container:
         """
             Remove a given terminal socket from the container
 
-            @param socket: TerminalSocket to be removed from the container
+            @param socket: ContainerTerminalSocket to be removed from the container
         """
         # If the socket is properly registered and can be removed
         if socket in self.terminal_sockets and socket.is_deletable:

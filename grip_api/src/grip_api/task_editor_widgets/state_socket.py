@@ -57,6 +57,7 @@ class StateSocket(AbstractSocket):
 
             @param name_string: New name to be given to the socket
         """
+        # This syntax is mandatory to call the parent's property setter
         super(StateSocket, type(self)).name.fset(self, name_string)
         # If a graphical socket exists, set the tooltip accordingly
         if self.graphics_socket is not None:

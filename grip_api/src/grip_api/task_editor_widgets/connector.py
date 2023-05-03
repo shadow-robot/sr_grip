@@ -106,7 +106,7 @@ class Connector(object):
         # Get the position of the socket in its parent's coordinates
         source_pos = self.start_socket.position
         # If we have a socket, we need to add the offset of the parent (i.e. graphical representation of the state).
-        # For the TerminalSocket, the function directly sends the coordinates in the scene's reference.
+        # For the ContainerTerminalSocket, the function directly sends the coordinates in the scene's reference.
         if isinstance(self.start_socket, StateSocket):
             source_pos[0] += self.start_socket.state.graphics_state.pos().x()
             source_pos[1] += self.start_socket.state.graphics_state.pos().y()
@@ -115,7 +115,7 @@ class Connector(object):
         # If the connector is not being dragged, do the same of the destination position
         if self.end_socket is not None:
             end_pos = self.end_socket.position
-            # The end pos can either be another StateSocket or a TerminalSocket
+            # The end pos can either be another StateSocket or a ContainerTerminalSocket
             if isinstance(self.end_socket, StateSocket):
                 end_pos[0] += self.end_socket.state.graphics_state.pos().x()
                 end_pos[1] += self.end_socket.state.graphics_state.pos().y()
