@@ -92,6 +92,9 @@ class AbstractSocket(ABC):
         if not isinstance(name_string, str) or not name_string:
             raise TypeError(format_raise_string("The attribute 'name' must be a non-empty string"))
         self._name = name_string
+        # If a graphical socket exists, set the tooltip accordingly
+        if self.graphics_socket is not None:
+            self.graphics_socket.setToolTip(name_string)
 
     @property
     @abstractmethod
