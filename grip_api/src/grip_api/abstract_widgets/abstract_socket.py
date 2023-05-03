@@ -113,6 +113,13 @@ class AbstractSocket(ABC):
         """
         return self._graphics_socket
 
+    @graphics_socket.deleter
+    def graphics_socket(self) -> None:
+        """
+            Delete the graphical representation of the socket
+        """
+        self._graphics_socket = None
+
     @graphics_socket.setter
     @abstractmethod
     def graphics_socket(self, graphical_socket: AbstractGraphicsSocket) -> None:

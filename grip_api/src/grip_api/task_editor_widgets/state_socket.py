@@ -84,7 +84,7 @@ class StateSocket(AbstractSocket):
         self.remove_all_connectors()
         # Remove the graphics representation from the graphics container
         self.state.container.graphics_container.removeItem(self.graphics_socket)
-        self.graphics_socket = None
+        del self.graphics_socket
 
     def get_id(self) -> id:
         """
