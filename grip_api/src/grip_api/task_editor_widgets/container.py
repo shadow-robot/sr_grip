@@ -19,7 +19,7 @@ from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_
 from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
 from grip_api.utils.common_dialog_boxes import error_message, warning_message
-from .container_terminal_socket import ContainerTerminalSocket
+from grip_api.task_editor_widgets.container_terminal_socket import ContainerTerminalSocket
 from grip_api.task_editor_widgets.state_socket import StateSocket
 from .connector import Connector
 from .state import State
