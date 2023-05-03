@@ -214,8 +214,8 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         self.move_group_editor.setEnabled(True)
         self.rviz_editor.setEnabled(True)
         # Make sure both editors are as good as new
-        self.move_group_editor.code_editor.reset()
-        self.rviz_editor.code_editor.reset()
+        self.move_group_editor.code_editor.remove_text()
+        self.rviz_editor.code_editor.remove_text()
         # Display the skeleton helping the user to change options of some of the moveit launch files
         self.move_group_editor.set_editor_content(self.get_moveit_config("move_group"))
         self.rviz_editor.set_editor_content(self.get_moveit_config("moveit_rviz"))
@@ -331,8 +331,8 @@ class MoveitConfig(GenericInterfaceConfigWidget):
             Reset the state of this widget to its initial state, i.e. empty without any field configured
         """
         # Reset the two editors
-        self.move_group_editor.code_editor.reset()
-        self.rviz_editor.code_editor.reset()
+        self.move_group_editor.code_editor.remove_text()
+        self.rviz_editor.code_editor.remove_text()
         # By default it is valid
         self.is_config_valid = True
         # Reset the user entry widget
@@ -420,7 +420,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         """
             Setup the editor allowing to modify the provided launch file
         """
-        self.launch_file_editor.code_editor.reset()
+        self.launch_file_editor.code_editor.remove_text()
         self.launch_file_editor.setEnabled(True)
         self.launch_file_editor.set_editor_content(self.get_launch_config())
 
@@ -520,7 +520,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
             Reset the state of this widget to its initial state, i.e. empty without any field configured
         """
         # Reset the code editor first
-        self.launch_file_editor.code_editor.reset()
+        self.launch_file_editor.code_editor.remove_text()
         # By default it is not valid
         self.is_config_valid = False
         for widget in self.children():
