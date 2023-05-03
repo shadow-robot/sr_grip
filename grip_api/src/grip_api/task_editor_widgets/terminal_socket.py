@@ -72,7 +72,8 @@ class TerminalSocket(AbstractSocket):
             @param position_x: x coordinate in the scene coordinates
             @param position_y: y coordinate in the scene coordinates        
         """
-        # todo: ADDc check about type
+        if not isinstance(position_x_y, list) or len(position_x_y) != 2:
+            raise TypeError(format_raise_string("The attribute 'position' must be a list of length 2"))
         self.graphics_socket.setPos(*position_x_y)
         # Since we set the position of the object, the container is fully initialized
         self.container.is_complete = True

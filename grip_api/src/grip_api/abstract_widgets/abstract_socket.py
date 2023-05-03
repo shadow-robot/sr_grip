@@ -136,12 +136,6 @@ class AbstractSocket(ABC):
         """
         raise NotImplementedError("The method 'remove' from AbstractSocket must be implemented!")
 
-    def update_position(self) -> None:
-        """
-            Method updating the position of the object in the graphical view
-        """
-        self._graphics_socket.setPos(*self.position)
-
     def add_connector(self, connector: 'Connector') -> None:
         """
             Add a provided connector to this socket

@@ -29,7 +29,7 @@ class StateSocket(AbstractSocket):
         """
             Initialize the widget and set the graphical representation
 
-            @param state: Object instanciated from the class State that will contain this socket
+            @param state: Object instantiated from the class State that will contain this socket
             @param socket_name: Name of the socket
             @param index: Index of the socket on the side of the state
             @param multi_connections: Whether the socket accepts multiple connections or not
@@ -50,6 +50,18 @@ class StateSocket(AbstractSocket):
             raise TypeError(format_raise_string("The property 'graphics_socket' must be an instance of GraphicsSocket"))
         self._graphics_socket = graphical_socket
 
+    @AbstractSocket.name.setter
+    def name(self, name_string: str) -> None:
+        """
+            Set the name of the socket and update the tool tip legend of its graphical representation
+
+            @param name_string: New name to be given to the socket
+        """
+        super(StateSocket, type(self)).name.fset(self, name_string)
+        # If a graphical socket exists, set the tooltip accordingly
+        if self.graphics_socket is not None:
+            self.graphics_socket.setToolTip(name_string)
+
     @property
     def position(self) -> List[float]:
         """
@@ -68,17 +80,11 @@ class StateSocket(AbstractSocket):
         """
         return self._state
 
-    @AbstractSocket.name.setter
-    def name(self, name_string: str) -> None:
+    def update_position(self) -> None:
         """
-            Set the name of the socket and update the tool tip legend of its graphical representation
-
-            @param name_string: New name to be given to the socket
+            Method updating the position of the object in the graphical view
         """
-        super(StateSocket, type(self)).name.fset(self, name_string)
-        # If a graphical socket exists, set the tooltip accordingly
-        if self.graphics_socket is not None:
-            self.graphics_socket.setToolTip(name_string)
+        self.graphics_socket.setPos(*self.position)
 
     def remove(self) -> None:
         """
