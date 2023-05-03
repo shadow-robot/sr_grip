@@ -71,7 +71,7 @@ class ContainerTerminalSocket(AbstractSocket):
             Set the position of the object in the graphical view
 
             @param position_x_y: List of two elements containing the x and y coordinates that should be assigned to the
-                                 socket      
+                                 socket
         """
         if not isinstance(position_x_y, list) or len(position_x_y) != 2 or \
                 any(not isinstance(element, (int, float)) for element in position_x_y):
