@@ -149,12 +149,12 @@ class ContainerTerminalSocket(AbstractSocket):
             @return: Dictionary containing the id, the name and position of the object
         """
         # Get the current position of the terminal socket
-        current_position = self.position[:]
+        current_x, current_y = self.position[:]
         return dict([
             ("id", self.socket_id),
             ("name", self.name),
-            ("position_x", current_position.x()),
-            ("position_y", current_position.y())
+            ("position_x", current_x),
+            ("position_y", current_y)
         ])
 
     def restore(self, properties: Dict[str, Union[int, str, float]],
