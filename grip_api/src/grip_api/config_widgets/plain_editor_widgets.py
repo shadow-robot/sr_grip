@@ -23,64 +23,6 @@ from grip_api.utils.common_dialog_boxes import can_save_warning_message
 from grip_api.config_widgets.code_editors import YamlCodeEditor, XmlCodeEditor
 
 
-class GenericEditorWidget(QWidget):
-
-    """
-        Generic widget allowing the user to create new configuration files that can be modified in an editor
-    """
-    # Signal triggered when the state of the editor allows the config to be saved
-    canBeSaved = pyqtSignal(bool)
-
-    def __init__(self, name, enabled=False, parent=None):
-        """
-            Initialize the class by setting up the layout and the widgets
-
-            @param name: String specifying what is the editor for
-            @param enabled: Boolean determining whether the widget should be enabled or not when initialized
-            @param parent: parent of the widget
-        """
-        super().__init__(objectName="Editor {}".format(name), parent=parent)
-        self.init_ui()
-        self.name = name
-        self.create_header()
-        self.create_editor()
-        self.setEnabled(enabled)
-
-    def init_ui(self):
-        """
-            Set the layout
-        """
-        self.layout = QGridLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
-
-    def create_header(self):
-        """
-            Create a header containing the name of the widget
-        """
-        self.title = QLabel(self.name)
-        self.layout.addWidget(self.title)
-
-    def create_editor(self):
-        """
-            Initialize the code editor. Will be used by the derivated classes
-        """
-        pass
-
-    def set_editor_content(self, content):
-        """
-            Set the content of the editor
-
-            @param content: String to be displayed in the editor
-        """
-        # Make sure the editor is lexed before setting any text
-        if self.code_editor.lexer() is None:
-            self.code_editor.make_editable()
-        self.code_editor.set_text_and_trigger_checks(content)
-        self.code_editor.setReadOnly(False)
-        self.setEnabled(True)
-
-
 class YAMLEditorWidget(GenericEditorWidget):
 
     """
@@ -111,11 +53,11 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
         return self.file_path
 
-    def create_header(self):
+    def _create_header(self):
         """
             Create the header allowing to create, open, save, and close a new YAML file
         """
-        super().create_header()
+        super()._create_header()
         self.new_button = QPushButton("New")
         # Allows to have button that fit the text width
         self.new_button.setMaximumWidth(self.new_button.fontMetrics().boundingRect(self.new_button.text()).width() + 10)
@@ -144,13 +86,13 @@ class YAMLEditorWidget(GenericEditorWidget):
         self.layout.addWidget(self.save_as_button, 0, 5)
         self.layout.addWidget(self.close_button, 0, 6)
 
-    def create_editor(self):
+    def _create_editor(self):
         """
             Initialize and set a YAML editor to the layout
         """
-        self.code_editor = YamlCodeEditor()
-        self.layout.addWidget(self.code_editor, 1, 0, 1, 7)
-        self.code_editor.contentIsModified.connect(self.check_arguments_validity)
+        self._code_editor = YamlCodeEditor()
+        self.layout.addWidget(self._code_editor, 1, 0, 1, 7)
+        self._code_editor.contentIsModified.connect(self.check_arguments_validity)
 
     def check_arguments_validity(self, is_different):
         """
@@ -159,7 +101,7 @@ class YAMLEditorWidget(GenericEditorWidget):
             @param is_different: Boolean sent by the signal stating whether the changes made lead to a different
                                  state of the editor
         """
-        current_valid = self.code_editor.parsed_content if not self.code_editor.wrong_format_lines else None
+        current_valid = self._code_editor.parsed_content if not self._code_editor.wrong_format_lines else None
         if not self.should_emit_signal:
             self.initial_input = copy.deepcopy(current_valid) if current_valid is not None else None
             self.should_emit_signal = True
@@ -168,12 +110,12 @@ class YAMLEditorWidget(GenericEditorWidget):
             self.valid_input = current_valid
             self.canBeSaved.emit(self.valid_input != self.initial_input and self.valid_input is not None)
 
-        if self.code_editor.wrong_format_lines:
+        if self._code_editor.wrong_format_lines:
             test = True
         else:
             test = is_different
 
-        self.title.setText(self.name + "*" if test and self.file_path else self.name)
+        self._header_title.setText(self.name + "*" if test and self.file_path else self.name)
 
         if self.update_init_state:
             self.update_init_widget()
@@ -182,9 +124,9 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
             Set the current state of the widget as the initial one
         """
-        self.code_editor.reset_initial_content()
+        self._code_editor.reset_initial_content()
         self.update_init_state = False
-        self.title.setText(self.name)
+        self._header_title.setText(self.name)
 
     def load_file(self):
         """
@@ -200,7 +142,7 @@ class YAMLEditorWidget(GenericEditorWidget):
             Open an already existing YAML file selected by the user
         """
         # If a file is already open make sure the user would not loose unaved changes
-        if self.file_path and "*" in self.title.text():
+        if self.file_path and "*" in self._header_title.text():
             should_save = can_save_warning_message("Before closing...", "The current file has been modified",
                                                    additional_text="Do you want to save your changes?", parent=self)
             if should_save:
@@ -220,7 +162,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
         if self.file_path is not None:
             with open(self.file_path, "w") as file_:
-                file_.writelines(self.code_editor.text())
+                file_.writelines(self._code_editor.text())
             self.update_init_widget()
 
     def save_file_path(self, message):
@@ -249,7 +191,7 @@ class YAMLEditorWidget(GenericEditorWidget):
             Create a new YAML file
         """
         # If a file is already open make sure the user would not loose unaved changes
-        if self.file_path and "*" in self.title.text():
+        if self.file_path and "*" in self._header_title.text():
             should_save = can_save_warning_message("Before closing...", "The current file has been modified",
                                                    additional_text="Do you want to save your changes?", parent=self)
             if should_save:
@@ -257,24 +199,24 @@ class YAMLEditorWidget(GenericEditorWidget):
             elif should_save is None:
                 return
         if self.save_file_path("Save new configuration file as"):
-            self.code_editor.make_editable()
-            self.code_editor.remove_text()
+            self._code_editor.make_editable()
+            self._code_editor.remove_text()
 
     def close_file(self):
         """
             Unlinks the file from the editor, but the latter reamins enabled
         """
-        self.code_editor.reinitialize()
+        self._code_editor.reinitialize()
         self.file_path = None
-        self.title.setText(self.name)
+        self._header_title.setText(self.name)
 
     def reset(self):
         """
             Reset the editor and unlinks any file from the editor
         """
-        self.code_editor.remove_text()
+        self._code_editor.remove_text()
         self.file_path = None
-        self.title.setText(self.name)
+        self._header_title.setText(self.name)
 
     def get_yaml_formatted_content(self):
         """
@@ -282,10 +224,10 @@ class YAMLEditorWidget(GenericEditorWidget):
 
             @return: None if the content is empty, otherwise a YAML-formated dictionary
         """
-        if not self.code_editor.text():
+        if not self._code_editor.text():
             return None
 
-        return self.code_editor.parsed_content
+        return self._code_editor.parsed_content
 
     def update_number_of_elements(self):
         """
@@ -297,7 +239,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         else:
             self.number_components = len(yaml_formatted)
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Save the current state of the widget
 
@@ -314,7 +256,7 @@ class YAMLEditorWidget(GenericEditorWidget):
             settings.remove("file_path")
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Set the different components of the widget according to a specified configuration
 
@@ -328,7 +270,7 @@ class YAMLEditorWidget(GenericEditorWidget):
             self.file_path = settings.value("file_path")
             self.load_file()
         else:
-            self.code_editor.remove_text()
+            self._code_editor.remove_text()
         self.setEnabled(settings.value("enabled", type=bool))
         settings.endGroup()
 
@@ -364,21 +306,21 @@ class XMLEditorWidget(GenericEditorWidget):
         formated_arguments = formated_arguments.rsplit("\t", 1)[0]
         return formated_arguments
 
-    def create_editor(self):
+    def _create_editor(self):
         """
             Initialize and set a XML compatible editor to the layout
         """
-        self.code_editor = XmlCodeEditor()
-        self.code_editor.contentIsModified.connect(self.check_arguments_validity)
-        self.layout.addWidget(self.code_editor)
+        self._code_editor = XmlCodeEditor()
+        self._code_editor.contentIsModified.connect(self.check_arguments_validity)
+        self.layout.addWidget(self._code_editor)
 
     def check_arguments_validity(self):
         """
             Make sure the parsed arguments are valid for the given editor
         """
         final_valid = None
-        if self.code_editor.parsed_content is not None and not self.code_editor.wrong_format_lines:
-            final_valid = self.code_editor.parsed_content[:]
+        if self._code_editor.parsed_content is not None and not self._code_editor.wrong_format_lines:
+            final_valid = self._code_editor.parsed_content[:]
         if final_valid != self.valid_input:
             self.valid_input = final_valid
             self.canBeSaved.emit(self.valid_input != self.initial_input and self.valid_input is not None)
@@ -398,7 +340,7 @@ class XMLEditorWidget(GenericEditorWidget):
         self.valid_input = None
         self.initial_input = None
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Save the current state of the widget
 
@@ -413,7 +355,7 @@ class XMLEditorWidget(GenericEditorWidget):
         settings.endGroup()
         self.reset_initial_input()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Set the different components of the widget according to a specified configuration
 
@@ -431,4 +373,4 @@ class XMLEditorWidget(GenericEditorWidget):
         # Fill in the arguments
         if isinstance(self.valid_input, list):
             for index, input in enumerate(self.valid_input):
-                self.code_editor.insertAt("  " + input + "\n", 2 + index, 0)
+                self._code_editor.insertAt("  " + input + "\n", 2 + index, 0)

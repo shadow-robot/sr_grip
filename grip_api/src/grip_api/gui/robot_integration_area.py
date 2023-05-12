@@ -552,7 +552,7 @@ class RobotIntegrationArea(QTabWidget):
         # After resetting everything, make sure unsaved changes cannot be found
         self.can_be_saved = False
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget and its children into settings
 
@@ -563,11 +563,11 @@ class RobotIntegrationArea(QTabWidget):
         settings.setValue("type", class_name)
         for tab_index in range(self.count()):
             widget_in_tab = self.widget(tab_index)
-            widget_in_tab.save_config(settings)
+            widget_in_tab.save_widget_configuration(settings)
         settings.endGroup()
         self.can_be_saved = False
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the children's widget from the configuration saved in settings
 
@@ -576,7 +576,7 @@ class RobotIntegrationArea(QTabWidget):
         settings.beginGroup(self.objectName())
         for tab_index in range(self.count()):
             widget_in_tab = self.widget(tab_index)
-            widget_in_tab.restore_config(settings)
+            widget_in_tab.restore_widget_configuration(settings)
         settings.endGroup()
         # Make sure to update the commanders config
         self.send_commanders_config()

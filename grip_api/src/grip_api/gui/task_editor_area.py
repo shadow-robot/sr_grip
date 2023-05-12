@@ -117,7 +117,7 @@ class TaskEditorArea(QWidget):
             self.state_displayer.load_states(self.framework_gui.state_sources[1:])
         return True
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget and its children into settings
 
@@ -130,7 +130,7 @@ class TaskEditorArea(QWidget):
         settings.setValue("type", class_name)
         # For each subwindow part of the task editor, save its configuration
         for subwindow in self.mdi_area.subWindowList():
-            subwindow.widget().save_config(settings)
+            subwindow.widget().save_widget_configuration(settings)
         # Save the index of the current subwindow being active
         settings.setValue("current_subwindow", self.mdi_area.get_current_subwindow_index())
         settings.endGroup()
@@ -142,7 +142,7 @@ class TaskEditorArea(QWidget):
         else:
             settings.remove("state_sources")
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the widget's children from the configuration saved in settings
 
@@ -158,7 +158,7 @@ class TaskEditorArea(QWidget):
         # For each subwindow that has been previously stored
         for subwindow_index in range(len(settings.childGroups())):
             # Restore the corresponding GraphicalEditorWidget
-            self.mdi_area.subWindowList()[subwindow_index].widget().restore_config(settings)
+            self.mdi_area.subWindowList()[subwindow_index].widget().restore_widget_configuration(settings)
         # Activate the same subwindow as when the config was saved
         self.mdi_area.set_current_subwindow_from_index(settings.value("current_subwindow", type=int))
         settings.endGroup()

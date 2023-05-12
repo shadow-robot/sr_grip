@@ -272,7 +272,7 @@ class GraphicalEditorWidget(QWidget):
         elif action == self.add_new_outcome:
             self.add_outcome(event.pos())
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the configuration of this widget into settings
 
@@ -285,12 +285,12 @@ class GraphicalEditorWidget(QWidget):
         # Get all information related to the container as a dictionary and save it
         settings.setValue("container", self.container.save())
         # Save the view
-        self.editor_view.save_config(settings)
+        self.editor_view.save_widget_configuration(settings)
         # If saved, set the initial snapshot
         self.container.history.set_initial_snapshot()
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the configuration of this widget from the parameters saved in settings
 

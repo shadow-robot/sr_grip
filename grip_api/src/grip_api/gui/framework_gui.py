@@ -339,12 +339,12 @@ class FrameworkGui(QMainWindow):
             widget_to_save = self.tab_container.currentWidget()
 
         if widget_to_save is self.robot_integration_area:
-            widget_to_save.save_config(self.latest_robot_config)
+            widget_to_save.save_widget_configuration(self.latest_robot_config)
             self.settings.setValue("latest_robot_config", self.robot_config_path)
         else:
             if self.latest_task_config is None:
                 self.init_task_config()
-            widget_to_save.save_config(self.latest_task_config)
+            widget_to_save.save_widget_configuration(self.latest_task_config)
             self.settings.setValue("latest_task_config", self.task_config_path)
 
     def save_file_as(self):
@@ -507,12 +507,12 @@ class FrameworkGui(QMainWindow):
         info_file = QFileInfo(self.robot_config_path)
         # Initialize the Qt settings file
         self.latest_robot_config = QSettings(self.robot_config_path, QSettings.IniFormat)
-        # Introspect all the children widgets and call their restore_config() function
+        # Introspect all the children widgets and call their restore_widget_configuration() function
         if info_file.exists() and info_file.isFile():
             widget_names = self.latest_robot_config.childGroups()
             for widget_name in widget_names:
                 widget = self.findChild(self.str_to_class(widget_name + "/type"), widget_name)
-                widget.restore_config(self.latest_robot_config)
+                widget.restore_widget_configuration(self.latest_robot_config)
 
     def init_task_config(self):
         """
@@ -532,7 +532,7 @@ class FrameworkGui(QMainWindow):
         self.latest_task_config = QSettings(self.task_config_path, QSettings.IniFormat)
         # Restore the configuration of the task editor if one is found
         if info_file.exists() and info_file.isFile():
-            self.task_editor_area.restore_config(self.latest_task_config)
+            self.task_editor_area.restore_widget_configuration(self.latest_task_config)
 
     def str_to_class(self, class_name):
         """
@@ -572,6 +572,7 @@ class FrameworkGui(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
 
 if __name__ == "__main__":
     rospy.init_node("framework_GUI")

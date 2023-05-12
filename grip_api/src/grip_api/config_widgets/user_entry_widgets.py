@@ -171,7 +171,7 @@ class GenericUserEntryWidget(QWidget):
         # Make it enabled or disabled depending on how it was configured at first
         self.setEnabled(self.originally_enabled)
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Save the current state of the widget
 
@@ -185,7 +185,7 @@ class GenericUserEntryWidget(QWidget):
         settings.endGroup()
         self.reset_init_input()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Set the different components of the widget according to a specified configuration
 

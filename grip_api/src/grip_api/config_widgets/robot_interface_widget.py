@@ -135,7 +135,7 @@ class RobotInterfaceWidget(QWidget):
                 widget.reset()
         self.modifiers = dict()
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget and its children into settings
 
@@ -146,10 +146,10 @@ class RobotInterfaceWidget(QWidget):
         settings.setValue("type", class_name)
         for widget in self.children():
             if not isinstance(widget, QHBoxLayout):
-                widget.save_config(settings)
+                widget.save_widget_configuration(settings)
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the children's widget from the configuration saved in settings
 
@@ -158,5 +158,5 @@ class RobotInterfaceWidget(QWidget):
         settings.beginGroup(self.objectName())
         for widget in self.children():
             if not isinstance(widget, QHBoxLayout):
-                widget.restore_config(settings)
+                widget.restore_widget_configuration(settings)
         settings.endGroup()

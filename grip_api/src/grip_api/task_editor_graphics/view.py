@@ -208,7 +208,7 @@ class TaskEditorView(QGraphicsView):
             self.viewScaled.emit(self.current_zoom)
             self.scale(zoom_to_apply, zoom_to_apply)
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the configuration of the view into settings
 

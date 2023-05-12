@@ -145,7 +145,7 @@ class SimulationConfig(GenericInterfaceConfigWidget):
         # Configuration of the simulation, set to the initial one
         self.configuration = SIMU_CONFIG.copy()
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget and its children into settings
 
@@ -156,10 +156,10 @@ class SimulationConfig(GenericInterfaceConfigWidget):
         settings.setValue("is_checked", current_state)
         self.initial_checked = current_state
         for widget in (self.gazebo_file_entry_widget, self.gazebo_folder_entry_widget, self.starting_pose_entry_widget):
-            widget.save_config(settings)
+            widget.save_widget_configuration(settings)
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the children's widget from the configuration saved in settings
 
@@ -170,7 +170,7 @@ class SimulationConfig(GenericInterfaceConfigWidget):
         self.initial_checked = state_to_set
         self.check_box.setChecked(state_to_set)
         for widget in (self.gazebo_file_entry_widget, self.gazebo_folder_entry_widget, self.starting_pose_entry_widget):
-            widget.restore_config(settings)
+            widget.restore_widget_configuration(settings)
         settings.endGroup()
 
 
@@ -340,7 +340,7 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         # Configuration of the moveit interface
         self.configuration = MOVEIT_CONFIG.copy()
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget into settings
 
@@ -349,19 +349,19 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         settings.beginGroup(self.objectName())
         for widget in self.children():
             if not (isinstance(widget, QLabel) or isinstance(widget, QLayout)):
-                widget.save_config(settings)
+                widget.save_widget_configuration(settings)
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the children's widget from the configuration saved in settings
 
             @param settings: QSettings object that contains information of the widgets to restore
         """
         settings.beginGroup(self.objectName())
-        self.moveit_package_entry_widget.restore_config(settings)
-        self.move_group_editor.restore_config(settings)
-        self.rviz_editor.restore_config(settings)
+        self.moveit_package_entry_widget.restore_widget_configuration(settings)
+        self.move_group_editor.restore_widget_configuration(settings)
+        self.rviz_editor.restore_widget_configuration(settings)
         settings.endGroup()
 
 
@@ -529,7 +529,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         # Configuration of the interface, set to the initial one
         self.configuration = INTERFACE_CONFIG.copy()
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget and its children into settings
 
@@ -538,10 +538,10 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         settings.beginGroup(self.objectName())
         for widget in self.children():
             if not (isinstance(widget, QLabel) or isinstance(widget, QLayout)):
-                widget.save_config(settings)
+                widget.save_widget_configuration(settings)
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the children's widget from the configuration saved in settings
 
@@ -550,7 +550,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         settings.beginGroup(self.objectName())
         for widget in self.children():
             if not (isinstance(widget, QLabel) or isinstance(widget, QLayout)):
-                widget.restore_config(settings)
+                widget.restore_widget_configuration(settings)
         settings.endGroup()
 
 
@@ -633,7 +633,7 @@ class HardwareSpinBox(QWidget):
         self.initial_value = 0
         self.set_value(0)
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget into settings
 
@@ -644,7 +644,7 @@ class HardwareSpinBox(QWidget):
         settings.endGroup()
         self.initial_value = self.get_value()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore this widget's configuration from settings
 

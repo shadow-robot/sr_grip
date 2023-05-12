@@ -174,7 +174,7 @@ class HardwareConfigWidget(QWidget):
         self.editor_content_changed = dict()
         self.configuration = ARM_CONFIG.copy() if self.hardware_part == "Arm" else HAND_CONFIG.copy()
 
-    def save_config(self, settings):
+    def save_widget_configuration(self, settings):
         """
             Store the state of this widget and its children into settings
 
@@ -187,10 +187,10 @@ class HardwareConfigWidget(QWidget):
         for widget in self.children():
             # We don't consider the layout
             if not isinstance(widget, QGridLayout):
-                widget.save_config(settings)
+                widget.save_widget_configuration(settings)
         settings.endGroup()
 
-    def restore_config(self, settings):
+    def restore_widget_configuration(self, settings):
         """
             Restore the children's widget from the configuration saved in settings
 
@@ -199,5 +199,5 @@ class HardwareConfigWidget(QWidget):
         settings.beginGroup(self.objectName())
         for widget in self.children():
             if not isinstance(widget, QGridLayout):
-                widget.restore_config(settings)
+                widget.restore_widget_configuration(settings)
         settings.endGroup()
