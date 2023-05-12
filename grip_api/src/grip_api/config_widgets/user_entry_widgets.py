@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -15,9 +15,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import rospkg
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QToolButton, QFileDialog
 from PyQt5.QtCore import pyqtSignal
-import rospkg
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_api.utils.files_specifics import FILE_TO_EXTENSION
 
@@ -42,7 +42,7 @@ class GenericUserEntryWidget(QWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(GenericUserEntryWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.is_optional = is_optional
         self.originally_enabled = enabled
         self.entry_name = entry_name
@@ -216,8 +216,7 @@ class UrdfEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(UrdfEntryWidget, self).__init__("Robot's URDF file", False, browser_button, placeholder_text,
-                                              enabled, parent)
+        super().__init__("Robot's URDF file", False, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """
@@ -243,8 +242,7 @@ class UrdfArgumentsEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(UrdfArgumentsEntryWidget, self).__init__("URDF arguments (optional)", True, browser_button,
-                                                       placeholder_text, enabled, parent)
+        super().__init__("URDF arguments (optional)", True, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """
@@ -270,8 +268,7 @@ class LaunchFileEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(LaunchFileEntryWidget, self).__init__("Custom launch file", True, browser_button, placeholder_text,
-                                                    enabled, parent)
+        super().__init__("Custom launch file", True, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """
@@ -298,8 +295,7 @@ class CollisionFileEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(CollisionFileEntryWidget, self).__init__("Collision scene", True, browser_button, placeholder_text,
-                                                       enabled, parent)
+        super().__init__("Collision scene", True, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """
@@ -324,8 +320,7 @@ class GazeboWorldEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(GazeboWorldEntryWidget, self).__init__("Gazebo world file", False, browser_button, placeholder_text,
-                                                     enabled, parent)
+        super().__init__("Gazebo world file", False, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """
@@ -350,8 +345,7 @@ class GazeboFolderEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(GazeboFolderEntryWidget, self).__init__("Gazebo model folder", False, browser_button, placeholder_text,
-                                                      enabled, parent)
+        super().__init__("Gazebo model folder", False, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """
@@ -376,8 +370,7 @@ class StartingPoseEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(StartingPoseEntryWidget, self).__init__("Starting pose", True, browser_button, placeholder_text,
-                                                      enabled, parent)
+        super().__init__("Starting pose", True, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """
@@ -409,8 +402,7 @@ class MoveitPackageEntryWidget(GenericUserEntryWidget):
             @param placeholder_text: Optional text that can be displayed initially inside the edit line
             @param enabled: Boolean stating whether the widget should be initially enabled or not
         """
-        super(MoveitPackageEntryWidget, self).__init__("Moveit package", True, browser_button, placeholder_text,
-                                                       enabled, parent)
+        super().__init__("Moveit package", True, browser_button, placeholder_text, enabled, parent)
 
     def check_input_validity(self):
         """

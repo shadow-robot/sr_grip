@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2021 Shadow Robot Company Ltd.
+# Copyright 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -19,6 +19,7 @@ class ContainerHistory(object):
     """
         Object that stores snapshots of the state of a given container at a given time
     """
+
     def __init__(self, container, memory_length=32):
         """
             Initialize the object
@@ -140,6 +141,14 @@ class ContainerHistory(object):
         if self.initial_snapshot is None:
             return
 
+        # Values of both dictionaries corresponding to elements with names
+        named_elements = zip(list(self.initial_snapshot.values())[:-1], list(snapshot.values())[:-1])
+        # Values of both dictionaries corresponding to the connectors
+        unnamed_elements = zip(list(self.initial_snapshot.values())[-1:], list(snapshot.values())[-1:])
         # We need to have the sorted because each value is a list and the order of the elements might change
-        is_different = any(sorted(x) != sorted(y) for x, y in zip(self.initial_snapshot.values(), snapshot.values()))
+        change_in_named_elements = any(sorted(x, key=lambda k: k["name"]) != sorted(y, key=lambda k: k["name"])
+                                       for x, y in named_elements)
+        change_in_unnamed_elements = any(sorted(x, key=lambda k: k["start"]) != sorted(y, key=lambda k: k["start"])
+                                         for x, y in unnamed_elements)
+        is_different = change_in_named_elements or change_in_unnamed_elements
         self.container.editor_widget.hasBeenModified.emit(is_different)

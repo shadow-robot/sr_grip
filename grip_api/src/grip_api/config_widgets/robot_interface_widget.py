@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -16,7 +16,7 @@
 
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout
 from PyQt5.QtCore import pyqtSignal
-from interface_config_widgets import RobotInterfaceConfig, SimulationConfig, MoveitConfig
+from .interface_config_widgets import RobotInterfaceConfig, SimulationConfig, MoveitConfig
 
 
 class RobotInterfaceWidget(QWidget):
@@ -35,7 +35,7 @@ class RobotInterfaceWidget(QWidget):
 
             @param parent: parent of the widget
         """
-        super(RobotInterfaceWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName("Robot interface widget")
         self.init_ui()
         self.create_widgets()

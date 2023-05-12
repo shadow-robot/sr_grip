@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import copy
+import rospkg
 from PyQt5.QtWidgets import QFileDialog, QInputDialog, QLineEdit
 from PyQt5.QtCore import pyqtSignal
 from grip_core.utils.common_paths import CATKIN_WS
@@ -21,11 +24,7 @@ from grip_core.utils.file_parsers import is_def_file_valid
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_api.utils.common_checks import is_pose_valid, is_topic_valid, is_moveit_planner_valid, is_launchfile_valid
 from grip_api.utils.files_specifics import SOCKET_COLORS
-from plain_editor_widgets import YAMLEditorWidget
-from collections import OrderedDict
-import os
-import copy
-import rospkg
+from .plain_editor_widgets import YAMLEditorWidget
 
 
 class ComponentEditorWidget(YAMLEditorWidget):
@@ -45,11 +44,11 @@ class ComponentEditorWidget(YAMLEditorWidget):
             @param parent: parent of the widget
         """
         self.margin_marker = margin_marker
-        super(ComponentEditorWidget, self).__init__(name=name, enabled=enabled, parent=parent)
+        super().__init__(name=name, enabled=enabled, parent=parent)
         # Number of components to integrate
         self.number_components = 0
         # Dictionary gathering all required information to run and call the component
-        self.components = OrderedDict()
+        self.components = dict()
         # Fields a components must contain to be integrated to the framework
         self.mandatory_fields = ["file", "action/service", "server_name", "node_type", "number_outcomes"]
         # Get the maximum number of outcomes supported
@@ -59,7 +58,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         """
             Create a YAML editor with a marker in the margin to add a new component
         """
-        super(ComponentEditorWidget, self).create_editor()
+        super().create_editor()
         if self.margin_marker:
             self.code_editor.marginClicked.connect(self.on_margin_click)
             self.code_editor.set_margin_marker()
@@ -71,10 +70,10 @@ class ComponentEditorWidget(YAMLEditorWidget):
             @param is_different: Boolean sent by the signal stating whether the changes made lead to a different
                                  state of the editor
         """
-        filtered_input = OrderedDict()
-        self.components = OrderedDict()
+        filtered_input = dict()
+        self.components = dict()
         for component_name, component_args in self.code_editor.parsed_content.items():
-            is_dict = isinstance(component_args, OrderedDict)
+            is_dict = isinstance(component_args, dict)
             # If the argument is not a dict or does not contain the mandatory fields when mark it as wrong
             if not is_dict or not set(self.mandatory_fields).issubset(set(component_args)):
                 self.code_editor.mark_component(component_name)
@@ -83,7 +82,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
                 filtered_input[component_name] = component_args
                 # Make sure the dictionary exists (not the case when loading a saved config)
                 if component_name not in self.components:
-                    self.components[component_name] = OrderedDict()
+                    self.components[component_name] = dict()
                     self.components[component_name]["run_node"] = True
                     correct_file = self.fill_component(component_name, component_args["file"])
                     correct_action = self.fill_component(component_name, component_args["action/service"], False)
@@ -173,7 +172,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         # If no input is provided then exit
         if not (component_name and ok):
             return
-        self.components[component_name] = OrderedDict()
+        self.components[component_name] = dict()
         self.components[component_name]["run_node"] = True
         returned_server_path, _ = QFileDialog.getOpenFileName(self, "Select the action/service server",
                                                               filter="python(*.py);;C++(*.cpp)", directory=CATKIN_WS)
@@ -262,7 +261,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         """
             Loads a configuration file integrating components to the framework
         """
-        super(ComponentEditorWidget, self).load_file()
+        super().load_file()
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
 
@@ -270,7 +269,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
         """
             Create a new file for integrating components
         """
-        super(ComponentEditorWidget, self).new_file()
+        super().new_file()
         self.number_components = 0
         if self.file_path and self.margin_marker:
             self.code_editor.markerAdd(0, 1)
@@ -280,7 +279,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
             Save the content of the editor to the linked file and emit a signal stating that the content of the file has
             been modified
         """
-        super(ComponentEditorWidget, self).save_file()
+        super().save_file()
         # Emit the signal
         self.contentUpdated.emit()
 
@@ -289,7 +288,7 @@ class ComponentEditorWidget(YAMLEditorWidget):
             Reset the editor, unlinks the editor to any file and emit a signal stating that the content of the file has
             been modified
         """
-        super(ComponentEditorWidget, self).close_file()
+        super().close_file()
         # Make sure valid_input is set to None
         self.valid_input = None
         # Emit the signal
@@ -310,7 +309,7 @@ class MoveItPlannerEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(MoveItPlannerEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.planners_info = None
         self.mandatory_fields = ["planner_name", "robot_speed_factor", "number_plan_attempt", "planning_max_time"]
 
@@ -330,9 +329,9 @@ class MoveItPlannerEditorWidget(ComponentEditorWidget):
             @param is_different: Boolean sent by the signal stating whether the changes made lead to a different
                                  state of the editor
         """
-        filtered_input = OrderedDict()
+        filtered_input = dict()
         for component_name, component_args in self.code_editor.parsed_content.items():
-            is_dict = isinstance(component_args, OrderedDict)
+            is_dict = isinstance(component_args, dict)
             if not is_dict:
                 self.code_editor.mark_component(component_name)
             elif not set(self.mandatory_fields).issubset(set(component_args)):
@@ -347,7 +346,7 @@ class MoveItPlannerEditorWidget(ComponentEditorWidget):
         """
             Add a component to the editor
         """
-        items_to_display = self.planners_info.keys() if self.planners_info else [""]
+        items_to_display = list(self.planners_info.keys()) if self.planners_info else [""]
 
         component_name, ok = QInputDialog().getItem(self, "Input name", "Name of the group:", items_to_display)
         if not (component_name and ok):
@@ -376,7 +375,7 @@ class RosControllersEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(RosControllersEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.controllers_info = None
         self.mandatory_fields = "type"
 
@@ -396,9 +395,9 @@ class RosControllersEditorWidget(ComponentEditorWidget):
             @param is_different: Boolean sent by the signal stating whether the changes made lead to a different
                                  state of the editor
         """
-        filtered_input = OrderedDict()
+        filtered_input = dict()
         for component_name, component_args in self.code_editor.parsed_content.items():
-            is_dict = isinstance(component_args, OrderedDict)
+            is_dict = isinstance(component_args, dict)
             if not is_dict:
                 self.code_editor.mark_component(component_name)
             elif self.mandatory_fields not in component_args:
@@ -411,7 +410,7 @@ class RosControllersEditorWidget(ComponentEditorWidget):
         """
             Add a controller to the editor
         """
-        items_to_display = self.controllers_info.keys() if self.controllers_info else [""]
+        items_to_display = list(self.controllers_info.keys()) if self.controllers_info else [""]
 
         component_name, ok = QInputDialog().getItem(self, "Input name", "Name of the controller:", items_to_display)
         if not (component_name and ok):
@@ -457,8 +456,8 @@ class JointStateEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(JointStateEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=False, parent=parent)
-        self.valid_input = OrderedDict()
+        super().__init__(name=name, enabled=enabled, margin_marker=False, parent=parent)
+        self.valid_input = dict()
 
     def check_arguments_validity(self, is_different):
         """
@@ -467,10 +466,10 @@ class JointStateEditorWidget(ComponentEditorWidget):
             @param is_different: Boolean sent by the signal stating whether the changes made lead to a different
                                  state of the editor
         """
-        filtered_input = OrderedDict()
+        filtered_input = dict()
         for component_name, component_args in self.code_editor.parsed_content.items():
             # If the argument is not a dict then mark it as wrong
-            if not isinstance(component_args, OrderedDict):
+            if not isinstance(component_args, dict):
                 self.code_editor.mark_component(component_name)
             # If every field has a non empty value and has the proper type of data add it to the filtered_input
             elif all(isinstance(x, float) or isinstance(x, int) for x in component_args.values()):
@@ -494,10 +493,10 @@ class PoseEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(PoseEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.mandatory_fields = "reference_frame"
-        self.poses = OrderedDict()
-        self.cartesian_poses = OrderedDict()
+        self.poses = dict()
+        self.cartesian_poses = dict()
 
     def add_component(self):
         """
@@ -522,12 +521,12 @@ class PoseEditorWidget(ComponentEditorWidget):
                                  state of the editor
         """
         # Reinitialise the two dictionaries
-        self.poses = OrderedDict()
-        self.cartesian_poses = OrderedDict()
+        self.poses = dict()
+        self.cartesian_poses = dict()
         # Keep only the properly formated elements
-        filtered_input = OrderedDict()
+        filtered_input = dict()
         for component_name, component_args in self.code_editor.parsed_content.items():
-            is_dict = isinstance(component_args, OrderedDict)
+            is_dict = isinstance(component_args, dict)
             # If the argument is not a dict or does not contain a valid mandatory field then mark it as wrong
             if not is_dict or self.mandatory_fields not in component_args:
                 self.code_editor.mark_component(component_name)
@@ -556,7 +555,7 @@ class PoseEditorWidget(ComponentEditorWidget):
                 # If the corresponding value is not a dictionary or is not properly formatted then switch the boolean
                 # to false and mark the component as wrong
                 is_bad_format = not is_pose_valid(ee_args, add_reference_frame=False)
-                if not isinstance(ee_args, OrderedDict) or is_bad_format:
+                if not isinstance(ee_args, dict) or is_bad_format:
                     is_cartesian_pose = False
                     self.code_editor.mark_component(component_name)
                     break
@@ -582,7 +581,7 @@ class TrajectoryEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(TrajectoryEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.mandatory_fields = ["name", "interpolate_time", "pause_time"]
         self.known_checkpoints = list()
 
@@ -606,7 +605,7 @@ class TrajectoryEditorWidget(ComponentEditorWidget):
             @param is_different: Boolean sent by the signal stating whether the changes made lead to a different
                                  state of the editor
         """
-        filtered_input = OrderedDict()
+        filtered_input = dict()
         for component_name, component_args in self.code_editor.parsed_content.items():
             is_list = isinstance(component_args, list)
             # If the argument is not a list then mark the component as wrong
@@ -614,7 +613,7 @@ class TrajectoryEditorWidget(ComponentEditorWidget):
                 self.code_editor.mark_component(component_name)
                 continue
             # If any element of the list is not a dictionary then mark the component as wrong
-            if any(not isinstance(x, OrderedDict) for x in component_args):
+            if any(not isinstance(x, dict) for x in component_args):
                 self.code_editor.mark_component(component_name)
                 continue
             is_trajectory_valid = True
@@ -669,7 +668,7 @@ class SensorEditorWidget(ComponentEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(SensorEditorWidget, self).__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
+        super().__init__(name=name, enabled=enabled, margin_marker=True, parent=parent)
         self.mandatory_fields = ["data_topics", "initial_pose", "frame_id"]
         self.known_poses = list()
 
@@ -680,9 +679,9 @@ class SensorEditorWidget(ComponentEditorWidget):
             @param is_different: Boolean sent by the signal stating whether the changes made lead to a different
                                  state of the editor
         """
-        filtered_input = OrderedDict()
+        filtered_input = dict()
         for component_name, component_args in self.code_editor.parsed_content.items():
-            is_dict = isinstance(component_args, OrderedDict)
+            is_dict = isinstance(component_args, dict)
             if not is_dict or not set(self.mandatory_fields).issubset(set(component_args)):
                 self.code_editor.mark_component(component_name)
             elif not is_topic_valid(component_args["data_topics"]):

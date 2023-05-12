@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2019 Shadow Robot Company Ltd.
+# Copyright 2019, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -134,7 +134,7 @@ def triplet_floats_to_list(string_value):
     # Check that it contains the proper number of elements
     if len(list_float) != 3:
         raise argparse.ArgumentError
-    return map(float, list_float)
+    return list(map(float, list_float))
 
 if __name__ == '__main__':
     # Initialise the node

@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -31,7 +31,7 @@ class GraphicsContainer(QGraphicsScene):
             @param container: Container object this widget represents
             @param parent: Parent of this widget
         """
-        super(GraphicsContainer, self).__init__(parent)
+        super().__init__(parent)
         self.container = container
         # Set background colour
         self.color_background = QColor("#535353")

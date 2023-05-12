@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2019, 2021 Shadow Robot Company Ltd.
+# Copyright 2019, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -32,7 +32,7 @@ class AllowCollisions(smach.State):
             @param group_name: Name of the move group for which we want to modify collision checks. If set to "", the
                                ACM will be modified for all the links that compose each configured commander
             @param allow: Specify whether the state should allow or disallow collision check for the group
-            @param collision_type: Kind of modification to be brought to the ACM (self collision or object collision)
+            @param collision_type: Kind of modification to apply to the ACM ("self collision" or "object collision")
             @param objects: Optional list of objects we want to allow the manipulator to collide with.
                             If left empty all added objects will be considered
             @param outcomes: Possible outcomes of the state. Default "success" and "fail"
@@ -49,11 +49,11 @@ class AllowCollisions(smach.State):
         self.modification = {"self collision": 0, "object collision": 1}.get(collision, None)
         # If collision is not supported display an error message
         if self.modification is None:
-            rospy.logerr("The parameter collision_type must be either \"self collision\" or \"object-collision\"")
+            rospy.logerr("The parameter collision_type must be either \"self collision\" or \"object collision\"")
         # Store the objects to be modified
         self.objects = objects
         # Store the option
-        self.allow_collision = True if allow == "True" else False
+        self.allow_collision = allow
         # Store the group for which the ACM must be modified
         self.group_name = group_name
         # Store the outcomes
@@ -68,7 +68,7 @@ class AllowCollisions(smach.State):
         """
         # Sanity check during execution
         if self.modification is None:
-            rospy.logerr("The parameter collision_type must be either \"self collision\" or \"object-collision\"")
+            rospy.logerr("The parameter collision_type must be either \"self collision\" or \"object collision\"")
             return self.outcomes[-1]
         # List that is going to get all the robot links for which the change should apply
         robot_links = list()
@@ -85,14 +85,16 @@ class AllowCollisions(smach.State):
             group_names.append(self.group_name)
         # For each group, get the associated links
         for group in group_names:
-            robot_links += userdata.commanders.values()[0]._robot_commander.get_link_names(group)
+            robot_links += list(userdata.commanders.values())[0]._robot_commander.get_link_names(group)
 
+        rospy.logwarn(robot_links)
         # If nothing has been retrieved dispaly and error message and sttop here
         if not robot_links:
             rospy.logerr("Could not retrieve the robot links from the commanders...")
             return self.outcomes[-1]
 
         # Call the service that modifies the current ACM
+        rospy.logwarn(f"Allow collision is {self.allow_collision}")
         response = self.modify_acm(self.modification, robot_links, self.objects, self.allow_collision, True)
         # If anything went wrong on the service side display an error message and fail the state
         if not response.success:

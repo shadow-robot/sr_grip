@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2021 Shadow Robot Company Ltd.
+# Copyright 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,9 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
-from connector import Connector
-from state_machine import StateMachine
+from .connector import Connector
+from .state_machine import StateMachine
 
 
 class Clipboard(object):
@@ -57,8 +56,8 @@ class Clipboard(object):
 
         non_valid_connectors = list()
         # Get the ID of all the sockets that were selected
-        selected_sockets = map(lambda x: x["input_socket"] + x["output_sockets"],
-                               selected_states + selected_state_machines)
+        selected_sockets = list(map(lambda x: x["input_socket"] + x["output_sockets"],
+                                    selected_states + selected_state_machines))
         # Make several lists into a single one
         selected_sockets = [item for sublist in selected_sockets for item in sublist]
         # Remove all the connectors that are not connected on both ends
@@ -69,8 +68,8 @@ class Clipboard(object):
             selected_connectors.remove(connector)
 
         # Store the valid content
-        self.content = OrderedDict([('states', selected_states), ('state_machines', selected_state_machines),
-                                    ('connectors', selected_connectors), ('containers', selected_containers)])
+        self.content = dict([('states', selected_states), ('state_machines', selected_state_machines),
+                             ('connectors', selected_connectors), ('containers', selected_containers)])
         # If required, remove the selected items
         if remove_copied:
             container.get_view().delete_selected()

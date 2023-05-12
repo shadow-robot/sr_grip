@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -32,7 +32,7 @@ class GraphicsConnector(QGraphicsPathItem):
             @param connector: Connector object corresponding to this graphical representation
             @param parent: Parent of the widget
         """
-        super(GraphicsConnector, self).__init__(parent)
+        super().__init__(parent)
 
         self.connector = connector
         # Initialize the source and destination positions (values set here are arbitrary)
@@ -58,7 +58,7 @@ class GraphicsConnector(QGraphicsPathItem):
         # Compute the compensation factor required to always have a connector with a consistent proportion wrt states
         self.view = self.connector.container.get_view()
         if self.view.current_zoom < -7:
-                self.pen_width_compensator = self.view.zoom_in_multiplier**(-7 - self.view.current_zoom)
+            self.pen_width_compensator = self.view.zoom_in_multiplier**(-7 - self.view.current_zoom)
         else:
             self.pen_width_compensator = 1
 
@@ -138,8 +138,8 @@ class GraphicsConnector(QGraphicsPathItem):
         before_destination_position = [self.destination_position[0], self.destination_position[1] - 10]
 
         # Format all the points to create the path
-        points = map(lambda x: QPointF(*x), [self.source_position, after_source_position,
-                                             before_destination_position, self.destination_position])
+        points = list(map(lambda x: QPointF(*x), [self.source_position, after_source_position,
+                                                  before_destination_position, self.destination_position]))
         # Start the path from the source
         path = QPainterPath(points[0])
         for index, current_point in enumerate(points[1:-1], 1):

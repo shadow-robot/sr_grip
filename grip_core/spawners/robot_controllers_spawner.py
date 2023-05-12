@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2019, 2020 Shadow Robot Company Ltd.
+# Copyright 2019, 2020, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -87,8 +87,8 @@ class ControllerSpawner(object):
         try:
             rospy.wait_for_service('controller_manager/switch_controller', 5.0)
             switch_controllers = rospy.ServiceProxy('controller_manager/switch_controller', SwitchController)
-            switched_controllers = switch_controllers(controllers_to_start, None,
-                                                      SwitchController._request_class.BEST_EFFORT)
+            switched_controllers = switch_controllers(controllers_to_start, list(),
+                                                      SwitchController._request_class.BEST_EFFORT, False, 0)
         except rospy.ServiceException:
             success = False
         if not switched_controllers.ok:

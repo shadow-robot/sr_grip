@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2019, 2020 Shadow Robot Company Ltd.
+# Copyright 2019, 2020, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
-from state_descriptor import StateDescriptor
+from .state_descriptor import StateDescriptor
 
 
 class StateMachineDescriptor(object):
@@ -42,7 +41,7 @@ class StateMachineDescriptor(object):
         # List that will gather the source of the states used to create the state machine
         self.states_source = list()
         # Ordered dictionary containing all the states composing the state machine
-        self.components = OrderedDict()
+        self.components = dict()
         # Load the parameters of the state machine
         self._load_params(state_machine_description)
 

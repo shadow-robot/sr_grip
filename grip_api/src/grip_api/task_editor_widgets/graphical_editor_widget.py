@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,18 +14,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import subprocess
 from PyQt5.QtWidgets import QGridLayout, QWidget, QInputDialog, QLineEdit, QMenu
 from PyQt5.QtCore import Qt, QDataStream, QIODevice, pyqtSignal
 from grip_api.task_editor_graphics.view import TaskEditorView
-from container import Container
-from state_machine import StateMachine
 from grip_api.utils.files_specifics import LISTITEM_MIMETYPE
 from grip_core.state_machine_generator.state_machine_generator import generate_state_machines
 from grip_core.utils.common_paths import GENERATED_STATE_MACHINE_FOLDER, BASE_STATE_MACHINE_FOLDER
 from grip_api.utils.common_dialog_boxes import warning_message
-from state import State
-import os
-import subprocess
+from .container import Container
+from .state_machine import StateMachine
+from .state import State
 
 
 class GraphicalEditorWidget(QWidget):
@@ -46,7 +46,7 @@ class GraphicalEditorWidget(QWidget):
             @param container_type: Type of the state machine container to load
             @param parent: Parent of the widget
         """
-        super(GraphicalEditorWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Create the container associated to this widget
         self.container = Container(editor_widget=self, container_type=container_type)
         self.init_ui()
@@ -219,7 +219,7 @@ class GraphicalEditorWidget(QWidget):
                                 commanders_config)
         # Get the name of the root file
         python_file_to_run = os.path.join(GENERATED_STATE_MACHINE_FOLDER, parsed_container["name"] + ".py")
-        self.launch_process = subprocess.Popen(['python -B {}'.format(python_file_to_run)], shell=True)
+        self.launch_process = subprocess.Popen(['python3 {}'.format(python_file_to_run)], shell=True)
         # While running the execute option is disabled
         self.can_be_executed = False
         self.launch_process.communicate()

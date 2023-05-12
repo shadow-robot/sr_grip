@@ -1,6 +1,6 @@
-# !/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -34,7 +34,7 @@ class TaskEditorArea(QWidget):
 
             @param parent: Parent of the widget
         """
-        super(TaskEditorArea, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the object name to be able to look it up and restore it
         self.setObjectName("Task editor area")
         self.framework_gui = parent

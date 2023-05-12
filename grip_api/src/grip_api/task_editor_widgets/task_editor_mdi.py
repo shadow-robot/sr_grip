@@ -1,6 +1,6 @@
-# !/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -18,8 +18,8 @@ from PyQt5.QtWidgets import QMdiArea, QMdiSubWindow, QMenu
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from grip_core.utils.common_paths import RED_CIRCLE, GREEN_CIRCLE
-from graphical_editor_widget import GraphicalEditorWidget
-from task_editor_clipboard import Clipboard
+from .graphical_editor_widget import GraphicalEditorWidget
+from .task_editor_clipboard import Clipboard
 
 
 class TaskEditorMDIArea(QMdiArea):
@@ -35,7 +35,7 @@ class TaskEditorMDIArea(QMdiArea):
 
             @param parent: Parent of the widget
         """
-        super(TaskEditorMDIArea, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.init_ui()
         # Will contain the name of each subwindow and whether it can be saved
         self.modifiers = dict()
@@ -202,7 +202,7 @@ class TaskEditorSubWindow(QMdiSubWindow):
             @param state_machine_type: Type of the state machine that will be loaded to the GraphicalEditorWidget
             @param parent: Parent of the widget
         """
-        super(TaskEditorSubWindow, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.init_ui()
         # Set the subwindow icon
         self.setWindowIcon(self.red_icon)

@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -16,8 +16,8 @@
 
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from PyQt5.QtCore import pyqtSignal
-from plain_editor_widgets import YAMLEditorWidget
-from component_editor_widgets import ComponentEditorWidget, RosControllersEditorWidget, MoveItPlannerEditorWidget
+from .plain_editor_widgets import YAMLEditorWidget
+from .component_editor_widgets import ComponentEditorWidget, RosControllersEditorWidget, MoveItPlannerEditorWidget
 from grip_api.utils.files_specifics import ARM_CONFIG, HAND_CONFIG
 
 
@@ -36,7 +36,7 @@ class HardwareConfigWidget(QWidget):
             @param hardware_part: String stating whether the widget is meant for an "Arm" or a "Hand"
             @param parent: parent of the widget
         """
-        super(HardwareConfigWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.hardware_part = hardware_part
         self.setObjectName("{} config widget".format(hardware_part))
         # Configuration of the hardware config

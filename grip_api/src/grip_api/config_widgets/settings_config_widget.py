@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -16,10 +16,10 @@
 
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from PyQt5.QtCore import pyqtSignal
-from plain_editor_widgets import YAMLEditorWidget
 from grip_api.utils.files_specifics import SETTINGS_CONFIG
-from component_editor_widgets import (SensorEditorWidget, JointStateEditorWidget, ComponentEditorWidget,
-                                      PoseEditorWidget, TrajectoryEditorWidget)
+from .plain_editor_widgets import YAMLEditorWidget
+from .component_editor_widgets import (SensorEditorWidget, JointStateEditorWidget, ComponentEditorWidget,
+                                       PoseEditorWidget, TrajectoryEditorWidget)
 
 
 class SettingsConfigWidget(QWidget):
@@ -35,7 +35,7 @@ class SettingsConfigWidget(QWidget):
 
             @param parent: parent of the widget
         """
-        super(SettingsConfigWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName("Setup config widget")
         # Configuration of the settings config
         self.configuration = SETTINGS_CONFIG.copy()
@@ -102,14 +102,14 @@ class SettingsConfigWidget(QWidget):
         """
             Set the available joint states defined in the corresponding editor
         """
-        known_checkpoints = list() if not self.sender().valid_input else self.sender().valid_input.keys()
+        known_checkpoints = list() if not self.sender().valid_input else list(self.sender().valid_input)
         self.named_trajectories.set_known_checkpoints(known_checkpoints)
 
     def update_new_poses(self):
         """
             Set the available poses defined in the corresponding editor
         """
-        self.sensor_configs.set_known_poses(self.sender().poses.keys())
+        self.sensor_configs.set_known_poses(list(self.sender().poses))
 
     def connect_update(self):
         """

@@ -1,6 +1,6 @@
-# !/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -15,15 +15,14 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from collections import OrderedDict
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog
 from PyQt5.QtCore import pyqtSignal
-from list_widgets import StateListWidget, StateMachineListWidget
 from grip_core.utils.common_paths import CATKIN_WS, INTERNAL_SRC_CORE
 from grip_api.utils.common_dialog_boxes import error_message
 from grip_core.utils.file_parsers import fill_available_states, fill_available_state_machines
 from grip_api.utils.files_specifics import EDITOR_TO_DESCRIPTION
 from grip_api.utils.common_checks import is_state_source_valid
+from .list_widgets import StateListWidget, StateMachineListWidget
 
 
 class CommonSideDisplayer(QWidget):
@@ -40,7 +39,7 @@ class CommonSideDisplayer(QWidget):
             @param push_button_text: Text that will be set to a push button allowing to add new elements
             @param parent: Parent of the widget
         """
-        super(CommonSideDisplayer, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.init_ui()
         self.list_widget = list_widget
         self.add_widgets(push_button_text)
@@ -90,7 +89,7 @@ class StateMachinesDisplayer(CommonSideDisplayer):
 
             @param parent: Parent of the widget
         """
-        super(StateMachinesDisplayer, self).__init__(StateMachineListWidget(), "Import templates", parent)
+        super().__init__(StateMachineListWidget(), "Import templates", parent)
 
     def on_click(self):
         """
@@ -127,7 +126,7 @@ class StatesDisplayer(CommonSideDisplayer):
 
             @param parent: Parent of the widget
         """
-        super(StatesDisplayer, self).__init__(StateListWidget(), "Import states", parent)
+        super().__init__(StateListWidget(), "Import states", parent)
         # Going to store whether at least one of the hardware part is configured through MoveIt!
         self.commander_configs = dict()
         # Going to store the name of all the components integrated to the framework
@@ -177,7 +176,7 @@ class StatesDisplayer(CommonSideDisplayer):
         else:
             self.external_sources[self.sender()] = self.sender().valid_input
         # Create a temporary dictionary that contains all the states to display
-        up_to_date_integrated = OrderedDict()
+        up_to_date_integrated = dict()
         for sender, components in self.external_sources.items():
             for component_name, component_params in components.items():
                 # Set the same format as the other states

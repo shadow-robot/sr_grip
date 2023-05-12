@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess
+import os
 from PyQt5.QtWidgets import QTabWidget, QPushButton
 from PyQt5.QtCore import pyqtSignal
 from grip_api.config_widgets.robot_interface_widget import RobotInterfaceWidget
@@ -24,9 +26,6 @@ from grip_api.utils.common_checks import create_yaml_file
 from grip_core.launch_file_generator.launch_templater import LaunchFileTemplater
 from grip_core.utils.common_paths import API_PATH
 from grip_core.utils.manager_utils import reinitialise_managers
-import subprocess
-import os
-from collections import OrderedDict
 
 
 class RobotIntegrationArea(QTabWidget):
@@ -49,7 +48,7 @@ class RobotIntegrationArea(QTabWidget):
 
             @param parent: parent of the widget
         """
-        super(RobotIntegrationArea, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         # Set the object name to be able to look it up and restore it
         self.setObjectName("Robot integration area")
         self.config_changed = dict()
@@ -495,7 +494,7 @@ class RobotIntegrationArea(QTabWidget):
         if all(not x for x in (arm_connection, hand_connection)):
             return
         # Will contain the final hardware connection
-        fused_hardware_connection = OrderedDict()
+        fused_hardware_connection = dict()
         # Set the robot_hardware field
         fused_hardware_connection["robot_hardware"] = list()
         # Merge both files

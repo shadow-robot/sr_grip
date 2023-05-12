@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QSpinBox, QHBoxLayout, QCheckBox, QLayout
-from PyQt5.QtCore import pyqtSignal
-from plain_editor_widgets import XMLEditorWidget
-import user_entry_widgets as uew
-from grip_api.utils.files_specifics import SIMU_CONFIG, INTERFACE_CONFIG, MOVEIT_CONFIG
 import os
 import re
 import yaml
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QSpinBox, QHBoxLayout, QCheckBox, QLayout
+from PyQt5.QtCore import pyqtSignal
+from grip_api.utils.files_specifics import SIMU_CONFIG, INTERFACE_CONFIG, MOVEIT_CONFIG
+from .plain_editor_widgets import XMLEditorWidget
+from . import user_entry_widgets as uew
 
 
 class GenericInterfaceConfigWidget(QWidget):
@@ -37,7 +37,7 @@ class GenericInterfaceConfigWidget(QWidget):
             @param name: Name given to the object. Used to look it up when restoring a configuration
             @param parent: parent of the widget
         """
-        super(GenericInterfaceConfigWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName(name)
         self.init_ui()
 
@@ -64,7 +64,7 @@ class SimulationConfig(GenericInterfaceConfigWidget):
 
             @param parent: parent of the widget
         """
-        super(SimulationConfig, self).__init__("Simulation parameters", parent=parent)
+        super().__init__("Simulation parameters", parent=parent)
         self.initial_checked = True
         # Configuration of the simulation
         self.configuration = SIMU_CONFIG.copy()
@@ -186,7 +186,7 @@ class MoveitConfig(GenericInterfaceConfigWidget):
 
             @param parent: parent of the widget
         """
-        super(MoveitConfig, self).__init__("Moveit parameters", parent=parent)
+        super().__init__("Moveit parameters", parent=parent)
         # Configuration of the moveit interface
         self.configuration = MOVEIT_CONFIG.copy()
         # By default it is valid
@@ -214,8 +214,8 @@ class MoveitConfig(GenericInterfaceConfigWidget):
         self.move_group_editor.setEnabled(True)
         self.rviz_editor.setEnabled(True)
         # Make sure both editors are as good as new
-        self.move_group_editor.code_editor.reset()
-        self.rviz_editor.code_editor.reset()
+        self.move_group_editor.code_editor.remove_text()
+        self.rviz_editor.code_editor.remove_text()
         # Display the skeleton helping the user to change options of some of the moveit launch files
         self.move_group_editor.set_editor_content(self.get_moveit_config("move_group"))
         self.rviz_editor.set_editor_content(self.get_moveit_config("moveit_rviz"))
@@ -331,8 +331,8 @@ class MoveitConfig(GenericInterfaceConfigWidget):
             Reset the state of this widget to its initial state, i.e. empty without any field configured
         """
         # Reset the two editors
-        self.move_group_editor.code_editor.reset()
-        self.rviz_editor.code_editor.reset()
+        self.move_group_editor.code_editor.remove_text()
+        self.rviz_editor.code_editor.remove_text()
         # By default it is valid
         self.is_config_valid = True
         # Reset the user entry widget
@@ -377,7 +377,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
 
             @param parent: parent of the widget
         """
-        super(RobotInterfaceConfig, self).__init__("Robot interface", parent=parent)
+        super().__init__("Robot interface", parent=parent)
         # Configuration of the interface
         self.configuration = INTERFACE_CONFIG.copy()
         # By default it is not valid
@@ -420,7 +420,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
         """
             Setup the editor allowing to modify the provided launch file
         """
-        self.launch_file_editor.code_editor.reset()
+        self.launch_file_editor.code_editor.remove_text()
         self.launch_file_editor.setEnabled(True)
         self.launch_file_editor.set_editor_content(self.get_launch_config())
 
@@ -520,7 +520,7 @@ class RobotInterfaceConfig(GenericInterfaceConfigWidget):
             Reset the state of this widget to its initial state, i.e. empty without any field configured
         """
         # Reset the code editor first
-        self.launch_file_editor.code_editor.reset()
+        self.launch_file_editor.code_editor.remove_text()
         # By default it is not valid
         self.is_config_valid = False
         for widget in self.children():
@@ -568,7 +568,7 @@ class HardwareSpinBox(QWidget):
             @param name: text to write after the spin box
             @param parent: parent of the widget
         """
-        super(HardwareSpinBox, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setObjectName("spin {}".format(name))
         self.init_ui()
         self.original_text = name

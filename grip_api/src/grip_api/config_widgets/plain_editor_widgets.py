@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -14,14 +14,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+import os
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QPushButton, QSpacerItem, QFileDialog
 from grip_core.utils.common_paths import CATKIN_WS
 from grip_api.utils.common_dialog_boxes import can_save_warning_message
-from code_editors import GenericCodeEditor, YamlCodeEditor, XmlCodeEditor
-from collections import OrderedDict
-import copy
-import os
+from grip_api.config_widgets.code_editors import YamlCodeEditor, XmlCodeEditor
 
 
 class GenericEditorWidget(QWidget):
@@ -40,7 +39,7 @@ class GenericEditorWidget(QWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(GenericEditorWidget, self).__init__(objectName="Editor {}".format(name), parent=parent)
+        super().__init__(objectName="Editor {}".format(name), parent=parent)
         self.init_ui()
         self.name = name
         self.create_header()
@@ -66,7 +65,7 @@ class GenericEditorWidget(QWidget):
         """
             Initialize the code editor. Will be used by the derivated classes
         """
-        self.code_editor = GenericCodeEditor()
+        pass
 
     def set_editor_content(self, content):
         """
@@ -75,8 +74,8 @@ class GenericEditorWidget(QWidget):
             @param content: String to be displayed in the editor
         """
         # Make sure the editor is lexed before setting any text
-        if not self.code_editor.is_lexed:
-            self.code_editor.set_lexer()
+        if self.code_editor.lexer() is None:
+            self.code_editor.make_editable()
         self.code_editor.set_text_and_trigger_checks(content)
         self.code_editor.setReadOnly(False)
         self.setEnabled(True)
@@ -88,7 +87,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         Widget containing the header and editor required to work with YAML files.
     """
 
-    def __init__(self, name, enabled=False, parent=None):
+    def __init__(self, name, enabled=True, parent=None):
         """
             Initialize the class by setting up the layout and the widgets
 
@@ -98,9 +97,9 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
         self.file_path = None
         self.initial_path = None
-        super(YAMLEditorWidget, self).__init__(name=name, enabled=enabled, parent=parent)
-        self.initial_input = OrderedDict()
-        self.valid_input = OrderedDict()
+        super().__init__(name=name, enabled=enabled, parent=parent)
+        self.initial_input = dict()
+        self.valid_input = dict()
         self.update_init_state = False
         self.should_emit_signal = True
 
@@ -116,7 +115,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
             Create the header allowing to create, open, save, and close a new YAML file
         """
-        super(YAMLEditorWidget, self).create_header()
+        super().create_header()
         self.new_button = QPushButton("New")
         # Allows to have button that fit the text width
         self.new_button.setMaximumWidth(self.new_button.fontMetrics().boundingRect(self.new_button.text()).width() + 10)
@@ -183,7 +182,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
             Set the current state of the widget as the initial one
         """
-        self.code_editor.reset_init_content()
+        self.code_editor.reset_initial_content()
         self.update_init_state = False
         self.title.setText(self.name)
 
@@ -258,8 +257,8 @@ class YAMLEditorWidget(GenericEditorWidget):
             elif should_save is None:
                 return
         if self.save_file_path("Save new configuration file as"):
-            self.code_editor.set_lexer()
-            self.code_editor.reset()
+            self.code_editor.make_editable()
+            self.code_editor.remove_text()
 
     def close_file(self):
         """
@@ -273,7 +272,7 @@ class YAMLEditorWidget(GenericEditorWidget):
         """
             Reset the editor and unlinks any file from the editor
         """
-        self.code_editor.reset()
+        self.code_editor.remove_text()
         self.file_path = None
         self.title.setText(self.name)
 
@@ -329,7 +328,7 @@ class YAMLEditorWidget(GenericEditorWidget):
             self.file_path = settings.value("file_path")
             self.load_file()
         else:
-            self.code_editor.reset()
+            self.code_editor.remove_text()
         self.setEnabled(settings.value("enabled", type=bool))
         settings.endGroup()
 
@@ -348,7 +347,7 @@ class XMLEditorWidget(GenericEditorWidget):
             @param enabled: Boolean determining whether the widget should be enabled or not when initialized
             @param parent: parent of the widget
         """
-        super(XMLEditorWidget, self).__init__(name=name, enabled=enabled, parent=parent)
+        super().__init__(name=name, enabled=enabled, parent=parent)
         self.reinitialize_inputs()
 
     def get_formated_arguments(self):

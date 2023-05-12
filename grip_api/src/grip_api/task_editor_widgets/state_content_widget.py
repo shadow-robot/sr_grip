@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020 Shadow Robot Company Ltd.
+# Copyright 2020, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -16,11 +16,11 @@
 
 import inflection
 import os
-from collections import OrderedDict
+import re
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from grip_core.utils.file_parsers import AVAILABLE_STATES, get_import_statement
 from grip_core.utils.common_paths import EXTERNAL_COMPONENT_TEMPLATE, GENERATED_STATES_FOLDER, SENSOR_TEMPLATE
-from state_config_widgets import StateConfigBox, CommanderStateConfigBox, GeneratedStateConfigBox, StateMachineConfigBox
+from .state_config_widgets import StateConfigBox, CommanderStateConfigBox, GeneratedStateConfigBox, StateMachineConfigBox
 
 
 class StateContentWidget(QWidget):
@@ -38,7 +38,7 @@ class StateContentWidget(QWidget):
         """
         # Get the state
         self.state = state
-        super(StateContentWidget, self).__init__(parent)
+        super().__init__(parent)
         # State displayer in which the state is displayed
         state_displayer = self.state.container.editor_widget.parent().parent().parent().parent().state_displayer
         # Get the name of the states to be generated (i.e. corresponding to integrated components)
@@ -116,15 +116,15 @@ class StateContentWidget(QWidget):
         if "action/service" in state_info:
             self.state_info["template"] = EXTERNAL_COMPONENT_TEMPLATE
             outcomes = [str(i) for i in range(state_info["number_outcomes"])] + ["state_failure"]
-            self.state_info["parameters"] = OrderedDict([("input", None), ("input_type", None), ("output_type", None),
-                                                         ("output", None), ("outcomes", outcomes)])
+            self.state_info["parameters"] = dict([("input", None), ("input_type", None), ("output_type", None),
+                                                  ("output", None), ("outcomes", outcomes)])
             self.state_info["action/service"] = state_info["action/service"]
             self.state_info["server_name"] = state_info["server_name"]
         elif "data_topics" in state_info:
             self.state_info["template"] = SENSOR_TEMPLATE
             outcomes = ["success", "failure"]
-            self.state_info["parameters"] = OrderedDict([("sensor_topic", None), ("output", None),
-                                                         ("outcomes", outcomes)])
+            self.state_info["parameters"] = dict([("sensor_topic", None), ("output", None),
+                                                  ("outcomes", outcomes)])
             self.state_info["data_topics"] = state_info["data_topics"]
         # Get common values regardless of what kind of state is generated
         self.state_info["filename"] = inflection.underscore(self.state.type)
@@ -157,7 +157,7 @@ class StateContentWidget(QWidget):
 
             @return: Dictionary mapping the name of the parameters of the state to their configured values
         """
-        state_config = OrderedDict()
+        state_config = dict()
         # Extract the different information from the state's content
         for parameter_name, default_config in self.state_info["parameters"].items():
             # Make sure to only extract displayed parameters
@@ -169,7 +169,7 @@ class StateContentWidget(QWidget):
                     user_config = self.config_state.get_slot_config(parameter_name)
                 # If the configuration slot was left empty, get the default configuration if it's not None
                 if user_config == "" and default_config is not None:
-                    user_config = self.config_state.to_format(default_config)
+                    user_config = self.to_format(default_config)
                 # Store the user config in the dictionary
                 state_config[parameter_name] = user_config
         return state_config
@@ -183,6 +183,32 @@ class StateContentWidget(QWidget):
         for param_name, param_value in config.items():
             self.config_state.set_slot_value(param_name, param_value)
 
+
+    def to_format(self, input_string):
+        """
+            Turn the string input to the intended format (list, string, int, float or boolean)
+
+            @param input_string: String to convert
+            @return: Either a list, string, an int, a float or a boolean
+        """
+        # If the text does not correspond to a list or tuple
+        if not("[" in input_string and "]" in input_string):
+            return self.config_state.to_format(input_string)
+
+        # If the config is a list or tuple, remove the corresponding brackets.
+        input_string = re.search("[^\[\(].*[^\]\)]", input_string)
+        # If the current configuration is an empty list
+        if input_string is None:
+            split_text = list()
+        else:
+            input_string = input_string.group(0)
+            # Split the text according to "," and store what it finds in a list
+            split_text = re.split("\,\s*", input_string)
+        # Generate the list with all the elements parsed
+        final_list = list()
+        for text in split_text:
+            final_list.append(self.to_format(text))
+        return final_list
 
 class StateMachineContentWidget(QWidget):
 
@@ -199,7 +225,7 @@ class StateMachineContentWidget(QWidget):
         """
         # Store the state machine
         self.state_machine = state_machine
-        super(StateMachineContentWidget, self).__init__(parent)
+        super().__init__(parent)
         # Initialize the UI
         self.init_ui()
 

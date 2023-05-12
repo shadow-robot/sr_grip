@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -17,12 +17,12 @@
 from PyQt5.QtWidgets import QGraphicsView
 from PyQt5.QtCore import Qt, QEvent, pyqtSignal, QPoint
 from PyQt5.QtGui import QPainter, QMouseEvent
-from socket import GraphicsSocket
-from terminal_socket import TerminalGraphicsSocket
 from grip_api.task_editor_widgets.connector import Connector
-from connector import GraphicsConnector
-from state import GraphicsState, GraphicsStateContent
-from state_machine import GraphicsStateMachine
+from .socket import GraphicsSocket
+from .terminal_socket import TerminalGraphicsSocket
+from .connector import GraphicsConnector
+from .state import GraphicsState, GraphicsStateContent
+from .state_machine import GraphicsStateMachine
 
 
 class TaskEditorView(QGraphicsView):
@@ -40,7 +40,7 @@ class TaskEditorView(QGraphicsView):
             @param graphics_scene: QGraphicsScene object linked to the widget
             @param parent: Parent of the widget
         """
-        super(TaskEditorView, self).__init__(parent)
+        super().__init__(parent)
         # Store the QGraphicsScene
         self.graphics_scene = graphics_scene
         self.init_ui()
@@ -263,7 +263,7 @@ class TaskEditorView(QGraphicsView):
         elif event.button() == Qt.RightButton:
             self.rightMouseButtonPress(event)
         else:
-            super(TaskEditorView, self).mousePressEvent(event)
+            super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         """
@@ -279,7 +279,7 @@ class TaskEditorView(QGraphicsView):
         elif event.button() == Qt.RightButton:
             self.rightMouseButtonRelease(event)
         else:
-            super(TaskEditorView, self).mouseReleaseEvent(event)
+            super().mouseReleaseEvent(event)
 
     def middleMouseButtonPress(self, event):
         """
@@ -290,7 +290,7 @@ class TaskEditorView(QGraphicsView):
         # Make sure we release any mouse button event that might have been triggered before by the user
         release_event = QMouseEvent(QEvent.MouseButtonRelease, event.localPos(), event.screenPos(),
                                     Qt.LeftButton, Qt.NoButton, event.modifiers())
-        super(TaskEditorView, self).mouseReleaseEvent(release_event)
+        super().mouseReleaseEvent(release_event)
         # If we want to move the scene around while dragging a connector, need to make the dragged connector not visible
         # when pressing down the middle (wheel) button
         if self.is_dragging:
@@ -300,7 +300,7 @@ class TaskEditorView(QGraphicsView):
         # Emulate the event that would normally be triggered by a left mouse press
         fake_event = QMouseEvent(event.type(), event.localPos(), event.screenPos(),
                                  Qt.LeftButton, event.buttons() | Qt.LeftButton, event.modifiers())
-        super(TaskEditorView, self).mousePressEvent(fake_event)
+        super().mousePressEvent(fake_event)
 
     def middleMouseButtonRelease(self, event):
         """
@@ -311,7 +311,7 @@ class TaskEditorView(QGraphicsView):
         # Make the event of release the left click to drag
         fake_event = QMouseEvent(event.type(), event.localPos(), event.screenPos(),
                                  Qt.LeftButton, event.buttons() & ~Qt.LeftButton, event.modifiers())
-        super(TaskEditorView, self).mouseReleaseEvent(fake_event)
+        super().mouseReleaseEvent(fake_event)
         # Set the dragging
         self.setDragMode(QGraphicsView.RubberBandDrag)
         # When this button is realease, make sure to reset the dragged connector visible
@@ -341,7 +341,7 @@ class TaskEditorView(QGraphicsView):
             if is_connector_created:
                 return
         # Make sure to execute the normal behaviour if required
-        super(TaskEditorView, self).mousePressEvent(event)
+        super().mousePressEvent(event)
 
     def leftMouseButtonRelease(self, event):
         """
@@ -358,7 +358,7 @@ class TaskEditorView(QGraphicsView):
             # If the connector is created then don't run the original behaviour
             if is_connector_created:
                 return
-        super(TaskEditorView, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
 
     def rightMouseButtonPress(self, event):
         """
@@ -367,7 +367,7 @@ class TaskEditorView(QGraphicsView):
             @param event: QMouseEvent sent by PyQt5
         """
         # Do nothing special, but if not overriden, then the right mouse does not answer properly
-        super(TaskEditorView, self).mousePressEvent(event)
+        super().mousePressEvent(event)
 
     def rightMouseButtonRelease(self, event):
         """
@@ -376,7 +376,7 @@ class TaskEditorView(QGraphicsView):
             @param event: QMouseEvent sent by PyQt5
         """
         # Do nothing special, but if not overriden, then the right mouse does not answer properly
-        super(TaskEditorView, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event):
         """
@@ -394,7 +394,7 @@ class TaskEditorView(QGraphicsView):
         # If the mouse is not hovering any object, then update the latest valid cursor position
         if self.itemAt(event_position) is None:
             self.latest_valid_cursor_position = pos
-        super(TaskEditorView, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         """
@@ -410,7 +410,7 @@ class TaskEditorView(QGraphicsView):
                 self.is_dragging = True
                 self.connector_drag_start(item)
                 return
-        super(TaskEditorView, self).mouseDoubleClickEvent(event)
+        super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event):
         """
@@ -419,7 +419,7 @@ class TaskEditorView(QGraphicsView):
             @param event: QKeyEvent sent by PyQt5
         """
         # Do nothing special, but if not overriden, then the event related to the keyboard does not worf properly
-        super(TaskEditorView, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
     def dragEnterEvent(self, event):
         """
@@ -437,7 +437,7 @@ class TaskEditorView(QGraphicsView):
             @param event: QShowEvent
         """
         # Show the view
-        super(TaskEditorView, self).showEvent(event)
+        super().showEvent(event)
         # If the container is not completely initialized (i.e. the terminal sockets are not properly located) and if
         # the subwindow in which the view is located is maximized, then set the position of the terminal sockets so
         # they are properly fit to the avaialble disaply area
@@ -470,7 +470,7 @@ class TaskEditorView(QGraphicsView):
         pointed_item = self.itemAt(event.pos())
         # Make sure to be able to scroll the content of the state with the wheel
         if isinstance(pointed_item, GraphicsStateContent):
-            super(TaskEditorView, self).wheelEvent(event)
+            super().wheelEvent(event)
             return
         # Perform the zoom
         self.perform_unit_zoom(event.angleDelta().y() > 0)

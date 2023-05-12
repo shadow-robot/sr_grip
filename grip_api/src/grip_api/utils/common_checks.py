@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2020, 2021 Shadow Robot Company Ltd.
+# Copyright 2020, 2021, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -15,7 +15,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from collections import OrderedDict
 import rospkg
 import ruamel.yaml
 from ruamel.yaml.comments import CommentedMap
@@ -70,7 +69,7 @@ def is_topic_valid(topic_info):
         @param topic_info: Value provided by the user
         @return: True if the value is properly formatted, False otherwise
     """
-    if not isinstance(topic_info, OrderedDict):
+    if not isinstance(topic_info, dict):
         return False
 
     if any(not isinstance(topic_name, str) for topic_type, topic_name in topic_info.items()):
@@ -104,9 +103,9 @@ def is_moveit_planner_valid(moveit_planner):
 
 def create_yaml_file(dictionary, file_path):
     """
-        Given a dictionary (or OrderedDict), write a YAML file
+        Write the input dictionary into a YAML file
 
-        @param dictionary: Dictionary (or OrderedDict) containing inforamtion to be written in a YAML file
+        @param dictionary: Dictionary containing inforamtion to be written in a YAML file
         @param file_path: Path specifying where to store the file
     """
     yaml_conf = ruamel.yaml.YAML(typ='rt')
@@ -123,9 +122,9 @@ def to_ruamel_format(element):
         @param element: String, integer or dictionary that needs to be stored in a YAML file
         @return: Properly formatted element
     """
-    # If it's a dictionary or OrderedDict
+    # If it's a dictionary
     if isinstance(element, dict):
-        # This is the equivalent of an OrderedDict
+        # This is the equivalent of a dictionary
         commented_map = CommentedMap()
         # Call recursively this function on values of the dictionary
         for key, value in element.items():

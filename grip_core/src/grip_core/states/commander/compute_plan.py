@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2019 Shadow Robot Company Ltd.
+# Copyright 2019, 2023 Shadow Robot Company Ltd.
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -81,8 +81,8 @@ class ComputePlan(smach.State):
         """
         if isinstance(joint_state, dict):
             joint_state_message = JointState()
-            joint_state_message.name = joint_state.keys()
-            joint_state_message.position = joint_state.values()
+            joint_state_message.name = list(joint_state.keys())
+            joint_state_message.position = list(joint_state.values())
         else:
             joint_state_message = joint_state
         moveit_robot_state = RobotState()
