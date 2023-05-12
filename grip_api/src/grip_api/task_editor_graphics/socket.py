@@ -30,7 +30,7 @@ class GraphicsSocket(QGraphicsItem):
         """
             Initialize the widget
 
-            @param socket: StateSocket object this QGraphicsItem relates to
+            @param state_socket: StateSocket object this QGraphicsItem relates to
         """
         # Store the socket
         self.socket = state_socket
