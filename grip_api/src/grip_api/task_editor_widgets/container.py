@@ -19,15 +19,15 @@ from grip_core.utils.file_parsers import (extract_state_machine_parameters_from_
 from grip_core.utils.common_paths import TASK_EDITOR_ROOT_TEMPLATE
 from grip_api.task_editor_graphics.container import GraphicsContainer
 from grip_api.utils.common_dialog_boxes import error_message, warning_message
-from .terminal_socket import TerminalSocket
-from .socket import Socket
+from grip_api.task_editor_widgets.container_terminal_socket import ContainerTerminalSocket
+from grip_api.task_editor_widgets.state_socket import StateSocket
 from .connector import Connector
 from .state import State
 from .state_machine import StateMachine
 from .container_history import ContainerHistory
 
 
-class Container(object):
+class Container:
 
     """
         Object keeping record of which widgets are currently composing a state machine.
@@ -50,20 +50,20 @@ class Container(object):
         self.graphics_container = GraphicsContainer(self)
         self.graphics_container.set_graphics_scene(64000, 64000)
         # Store the different states present in the container
-        self.states = list()
+        self.states = []
         # Get specific list of states that need to be generated
-        self.states_to_generate = list()
+        self.states_to_generate = []
         # Store the different connectors present in the container
-        self.connectors = list()
+        self.connectors = []
         # Store the different state machines added to this container
-        self.state_machines = list()
+        self.state_machines = []
         # Extract the default outcomes of the state machine container
         self.outcomes = self.get_outcomes()
         # If applicable, will contain the state-like representation of this container in another GraphicalEditorWidget
         self.state_machine = None
         # Attribute tracking the current "layer" height required to be sure to have a widget overposing all the others
         self.z_tracker = 0
-        self.output_userdata = list()
+        self.output_userdata = []
         # History of the actions performed inside the container
         self.history = ContainerHistory(self)
 
@@ -84,19 +84,19 @@ class Container(object):
             Create and add the terminal sockets of this state machine container
         """
         # Will contain the terminal sockets
-        self.terminal_sockets = list()
+        self.terminal_sockets = []
 
         # Create a terminal socket for the beginning of the container. If the container is a concurrent one then the
         # starting socket support multi connections otherwise it does not.
         is_multi = self.type == "ConcurrentStateMachine"
-        start_socket = TerminalSocket(container=self, socket_name="Start", index=0, multi_connections=is_multi)
+        start_socket = ContainerTerminalSocket(container=self, socket_name="Start", index=0, multi_connections=is_multi)
         # Add it to the terminal sockets and add it to the graphical representation
         self.terminal_sockets.append(start_socket)
         self.graphics_container.addItem(start_socket.graphics_socket)
 
         # Create a terminal socket for each outcome
         for index, outcome in enumerate(self.outcomes):
-            terminal_socket = TerminalSocket(container=self, socket_name=outcome, index=index)
+            terminal_socket = ContainerTerminalSocket(container=self, socket_name=outcome, index=index)
             self.terminal_sockets.append(terminal_socket)
             # Add the graphical socket to the graphical representation so it can be rendered
             self.graphics_container.addItem(terminal_socket.graphics_socket)
@@ -105,21 +105,22 @@ class Container(object):
         # Since the terminal sockets have not been properly located yet, the initialisation of the container is not done
         self.is_complete = False
 
-    def add_terminal_socket(self, outcome_name, position):
+    def add_terminal_socket(self, outcome_name, position_):
         """
             Add a terminal socket to the container, which represents a new outcome of the task
 
             @param outcome_name: Name given to the new terminal socket
-            @param position: List containing the scene coordinates (x, y) of where the socket should be located
+            @param position_: List containing the scene coordinates (x, y) of where the socket should be located
         """
         # Add the new name ot the outcome attribute
         self.outcomes.append(outcome_name)
-        # Create the terminal socket
-        new_terminal_socket = TerminalSocket(container=self, socket_name=outcome_name, index=len(self.outcomes) - 1)
+        # Create the terminal socket. All terminal sockets added by this function are deletable
+        new_terminal_socket = ContainerTerminalSocket(container=self,
+                                                      socket_name=outcome_name,
+                                                      index=len(self.outcomes) - 1,
+                                                      is_deletable=True)
         # Set its position from the the input argument
-        new_terminal_socket.set_position(*position)
-        # All terminal sockets added by this function are deletable
-        new_terminal_socket.is_deletable = True
+        new_terminal_socket.position = position_
         # Add socket to terminal sockets
         self.terminal_sockets.append(new_terminal_socket)
         # Add the graphical socket to the graphical representation so it can be rendered
@@ -239,7 +240,7 @@ class Container(object):
         """
             Remove a given terminal socket from the container
 
-            @param socket: TerminalSocket to be removed from the container
+            @param socket: ContainerTerminalSocket to be removed from the container
         """
         # If the socket is properly registered and can be removed
         if socket in self.terminal_sockets and socket.is_deletable:
@@ -300,7 +301,7 @@ class Container(object):
         counter = 0
         # As long as we find the given name in states or state machines, generate another one
         while any(final_name == x.name for x in (self.states + self.state_machines)):
-            final_name = name + "{}".format(counter)
+            final_name = f"{name}{counter}"
             counter += 1
         return final_name
 
@@ -344,7 +345,7 @@ class Container(object):
 
             @return: Dictionary with all the information related to the container's type
         """
-        info_dictionary = dict()
+        info_dictionary = {}
         # If it's the root container, add an extra argument to identify it to ROS when run
         if self.type == "base":
             source = os.path.basename(TASK_EDITOR_ROOT_TEMPLATE)
@@ -374,12 +375,12 @@ class Container(object):
 
             @return: Dictionary with following format: {terminal1: {state1: state1_outcome, ...}, terminal2: ....}
         """
-        outcome_map = dict()
+        outcome_map = {}
         # For all terminal nodes that are neither the starting or default one, extract which transitions leads to this
         # terminal outcome
         for terminal_socket in self.terminal_sockets:
             if not terminal_socket.is_starting and terminal_socket.name != self.default_socket.name:
-                socket_dict = dict()
+                socket_dict = {}
                 # For each connector set to this outcome, get the state and the outcome of the state it is linked to
                 for connector in terminal_socket.connectors:
                     socket_dict[str(connector.start_socket.state.name)] = str(connector.start_socket.name)
@@ -394,10 +395,10 @@ class Container(object):
         """
         # Get the states and state machines in "flowing" order (from start to terminal)
         ordered_components = self.get_ordered_components()
-        container_components = list()
+        container_components = []
         # Get the information of each component that belongs to this container
         for component in ordered_components:
-            state_dictionary = dict()
+            state_dictionary = {}
             state_dictionary[component.name] = component.get_config()
             container_components.append(state_dictionary)
         information_dict["states"] = container_components
@@ -408,9 +409,9 @@ class Container(object):
 
             @return: List of State or StateMachine objects
         """
-        ordered_components = list()
+        ordered_components = []
         # Should only have one component except if it's a concurrent container
-        starting_components = list()
+        starting_components = []
         for component in (self.states + self.state_machines):
             # If one of the connector of the input socket of the component is linked to the Starting terminal socket
             # then signal this component as "initial"
@@ -423,7 +424,7 @@ class Container(object):
             ordered_components.append(oldest_component)
             connected_states = []
             for socket in oldest_component.output_sockets:
-                if isinstance(socket.connectors[0].end_socket, Socket):
+                if isinstance(socket.connectors[0].end_socket, StateSocket):
                     state = socket.connectors[0].end_socket.state
                     # Check that this state is not already registered
                     if state not in ordered_components:
@@ -442,12 +443,12 @@ class Container(object):
         has_some_generated = "Generated" in list_available_states.states_to_display
         has_some_commanders = "Commander" in list_available_states.states_to_display
         # Get the list of the generated, constant and commander states
-        generated_states = list() if not has_some_generated else list_available_states.states_to_display["Generated"]
+        generated_states = [] if not has_some_generated else list_available_states.states_to_display["Generated"]
         constant_states = list_available_states.states_to_display["Constant"]
-        commander_states = list() if not has_some_commanders else list_available_states.states_to_display["Commander"]
+        commander_states = [] if not has_some_commanders else list_available_states.states_to_display["Commander"]
 
         # Will contain all the states that can't be found
-        cannot_be_found_states = list()
+        cannot_be_found_states = []
         # For all the states that are currently being used
         for state in self.states:
             is_available = state.type in constant_states or state.type in commander_states
@@ -466,7 +467,7 @@ class Container(object):
             states_name = ", ".join(map(lambda x: x.name, cannot_be_found_states))
             warning_message(
                 "Error parsing the task", "Some states aren't available anymore due to missing configurations",
-                additional_text="Please add the missing configuration for the states {}".format(states_name))
+                additional_text=f"Please add the missing configuration for the states {states_name}")
 
             for state in cannot_be_found_states:
                 state.set_opacity(0.5)
@@ -486,7 +487,7 @@ class Container(object):
         """
         # Lists containing required information to restore the current configuration of the terminal sockets, states,
         # state machines and connectors.
-        terminal_sockets, states, state_machines, connectors = list(), list(), list(), list()
+        terminal_sockets, states, state_machines, connectors = [], [], [], []
         # Save their configuration
         for socket in self.terminal_sockets:
             terminal_sockets.append(socket.save())
@@ -507,7 +508,7 @@ class Container(object):
             ('connectors', connectors)
         ])
 
-    def restore_states(self, list_of_states, socket_mapping, offset=list(), new_sockets=None):
+    def restore_states(self, list_of_states, socket_mapping, offset=[], new_sockets=None):
         """
             Restore the states stored in a list of saved states
 
@@ -522,11 +523,11 @@ class Container(object):
         has_some_generated = "Generated" in list_available_states.states_to_display
         has_some_commanders = "Commander" in list_available_states.states_to_display
         # Get the list of the generated, contant and commander states
-        generated_states = list() if not has_some_generated else list_available_states.states_to_display["Generated"]
+        generated_states = [] if not has_some_generated else list_available_states.states_to_display["Generated"]
         constant_states = list_available_states.states_to_display["Constant"]
-        commander_states = list() if not has_some_commanders else list_available_states.states_to_display["Commander"]
+        commander_states = [] if not has_some_commanders else list_available_states.states_to_display["Commander"]
 
-        cannot_be_found_states = list()
+        cannot_be_found_states = []
         # Make sure that each state to be restores is compatible with the current robot configuration
         for state_data in list_of_states:
             state_type = state_data["type"]
@@ -549,7 +550,7 @@ class Container(object):
         if cannot_be_found_states:
             states_name = ", ".join(cannot_be_found_states)
             error_message("Error while restoring items", "Some states could not be loaded due to missing configuration",
-                          additional_text="The states named {} will be missing.".format(states_name))
+                          additional_text=f"The states named {states_name} will be missing.")
 
     def get_state_machine_by_name(self, name):
         """

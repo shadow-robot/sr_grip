@@ -30,7 +30,7 @@ class TerminalGraphicsSocket(QGraphicsItem):
         """
             Initialize the widget
 
-            @param socket: Socket linked to this graphical representation
+            @param socket: ContainerTerminalSocket linked to this graphical representation
             @param parent: Parent of this widget
         """
         super().__init__(parent=parent)
@@ -150,7 +150,7 @@ class TerminalGraphicsSocket(QGraphicsItem):
             @param event: QMouseEvent sent by PyQt5
         """
         super().mouseMoveEvent(event)
-        # Socket is being moved
+        # ContainerTerminalSocket is being moved
         self.has_moved = True
         # Update all the connectors that are linked to this terminal socket
         for connector in self.socket.connectors:

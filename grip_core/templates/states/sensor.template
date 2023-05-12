@@ -16,7 +16,7 @@
 
 import smach
 import rospy
-from {{ sensor.msg_import_statement }} import {{ sensor.msg_name }}
+from {{sensor.msg_import_statement}} import {{sensor.msg_name}}
 
 
 class {{ sensor.name }}(smach.State):
