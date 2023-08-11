@@ -101,7 +101,10 @@ class GenericConfigBoxWidget(QGroupBox):
             Check if the initial configuration of the state is different from the current one
         """
         # Call the method that compares the initial state of a container from the current one
-        self.parent().state.container.history.evaluate_snapshot()
+        if hasattr(self.parent(), "state"):
+            self.parent().state.container.history.evaluate_snapshot()
+        else:
+            self.parent().state_machine.container.history.evaluate_snapshot()
 
     def get_slot_config(self, slot_name):
         """
